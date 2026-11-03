@@ -1,0 +1,14 @@
+{
+  "name": "android-use",
+  "version": "0.2.1",
+  "description": "通过 ADB 和 UiAutomator2 操作 Android，支持实时屏幕侧边栏、控件树、截图、中文输入和批处理。",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Android Use",
+    "shortDescription": "Android 控制与实时手机屏幕",
+    "defaultPrompt": [
+      "打开 Android 实时屏幕，验证 READY 后完成手机任务。"
+    ]
+  }
+}

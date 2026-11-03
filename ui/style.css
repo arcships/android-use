@@ -1,0 +1,63 @@
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color-scheme: light dark;
+  color: #363638;
+  background: #fafafa;
+  --foreground: #363638;
+  --muted: #929294;
+  --line: #e6e6e8;
+  --surface: #fff;
+  --hover: #f0f0f2;
+  --live: #39a76c;
+}
+* { box-sizing: border-box; }
+body { margin: 0; height: 100dvh; overflow: hidden; }
+#app {
+  --screen-ratio: .45;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  max-width: calc(min((100dvh - 108px) * var(--screen-ratio), 100vw - 28px) + 28px);
+  height: 100%;
+  margin: auto;
+  padding: 14px;
+  gap: 12px;
+}
+header { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 24px; flex: none; padding: 0 2px; }
+.device-label { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.device-label svg { width: 15px; height: 17px; flex: none; stroke: var(--muted); stroke-width: 1.5; }
+#model { font-size: 12px; font-weight: 500; letter-spacing: .01em; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+#status { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 10px; white-space: nowrap; }
+#status i { width: 5px; height: 5px; background: #a5a5a8; border-radius: 50%; }
+[data-state="live"] #status i { background: var(--live); }
+[data-state="paused"] #status i { background: #c69a46; }
+#stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+#device { position: relative; aspect-ratio: 9/20; height: 100%; max-width: 100%; max-height: 100%; overflow: hidden; border: 1px solid #0000001a; border-radius: 16px; background: #101011; box-shadow: 0 2px 8px #00000009, 0 14px 40px #00000007; touch-action: none; }
+#frame { width: 100%; height: 100%; object-fit: contain; display: block; user-select: none; }
+#frame:not([src]) { visibility: hidden; }
+#overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: #171719f0; color: #e7e7e9; text-align: center; padding: 24px; }
+#overlay[hidden] { display: none; }
+#overlay-text { font-size: 13px; font-weight: 500; }
+#overlay-detail { font-size: 11px; color: #8e8e94; line-height: 1.6; }
+#pointer { display: none; position: absolute; width: 20px; height: 20px; border: 1.5px solid #ffffffc9; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; background: #ffffff20; }
+footer { display: flex; align-items: center; align-self: center; flex: none; gap: 2px; height: 44px; padding: 4px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); box-shadow: 0 2px 5px #00000003; }
+button { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--foreground); cursor: pointer; transition: background .15s, opacity .15s; }
+button svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
+button:hover:not(:disabled) { background: var(--hover); }
+button:focus-visible { outline: 2px solid #7a9fdf; outline-offset: 1px; }
+button:active:not(:disabled) { background: var(--line); }
+button:disabled { opacity: .28; cursor: default; }
+.divider { height: 15px; width: 1px; background: var(--line); margin: 0 5px; }
+#notice { position: absolute; z-index: 2; bottom: 72px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 40px); width: max-content; padding: 8px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--foreground); box-shadow: 0 4px 16px #0000000c; font-size: 11px; line-height: 1.4; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+#notice:empty { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root { color: #d6d6d8; background: #19191b; --foreground: #d6d6d8; --muted: #77777e; --line: #363639; --surface: #242426; --hover: #333336; --live: #67b98a; }
+  #device { border-color: #ffffff10; box-shadow: 0 4px 24px #0000001c; }
+}
+@media (max-height: 480px) {
+  #app { padding: 8px 14px; gap: 6px; max-width: calc(min((100dvh - 96px) * var(--screen-ratio), 100vw - 28px) + 28px); }
+  header { height: 20px; }
+}
+@media (prefers-reduced-motion: reduce) { button { transition: none; } }

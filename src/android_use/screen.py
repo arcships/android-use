@@ -1,0 +1,453 @@
+"""Independent, memory-only H.264 preview. Never uses UI snapshots or screenshots."""
+
+import base64
+import hashlib
+import io
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import threading
+import time
+import urllib.error
+import urllib.request
+import uuid
+
+from PIL import Image
+
+from .backend import Backend, UseError, device_lock, state_dir
+
+LEASE_SECONDS = 5
+MAX_FRAME_BYTES = 3 * 1024 * 1024
+
+
+def device_paths(key):
+    digest = hashlib.sha256(key.encode()).hexdigest()[:24]
+    return state_dir() / (digest + ".preview.json"), state_dir() / (digest + ".paused")
+
+
+class JPEGParser:
+    def __init__(self, limit=MAX_FRAME_BYTES):
+        self.buffer = bytearray()
+        self.limit = limit
+
+    def feed(self, data):
+        self.buffer.extend(data)
+        result = []
+        while True:
+            start = self.buffer.find(b"\xff\xd8")
+            if start < 0:
+                self.buffer = self.buffer[-1:] if self.buffer[-1:] == b"\xff" else bytearray()
+                break
+            if start:
+                del self.buffer[:start]
+            end = self.buffer.find(b"\xff\xd9", 2)
+            if end < 0:
+                if len(self.buffer) > self.limit:
+                    self.buffer = bytearray()
+                break
+            raw = bytes(self.buffer[: end + 2])
+            del self.buffer[: end + 2]
+            if len(raw) <= self.limit:
+                result.append(raw)
+        return result
+
+
+class VideoPipeline:
+    def __init__(self, serial, publish, failed, size=None):
+        self.serial, self.publish, self.failed = serial, publish, failed
+        self.adb = self.decoder = None
+        self.stopped = threading.Event()
+        self.size = size or [1080, 2400]
+        self.pid_path = "/data/local/tmp/android-use-video-" + uuid.uuid4().hex + ".pid"
+        self.decoded_frames = 0
+        self.bytes_received = 0
+
+    def start(self):
+        adb = os.environ.get("ANDROID_USE_ADB") or shutil.which("adb")
+        ffmpeg = os.environ.get("ANDROID_USE_FFMPEG") or shutil.which("ffmpeg")
+        if not adb or not ffmpeg:
+            raise UseError(
+                "preview_dependency_missing", "Live preview requires adb and ffmpeg on PATH"
+            )
+        # Bound bandwidth while retaining display aspect ratio. No video files are written.
+        scale = min(1, 1200 / max(self.size))
+        width, height = [max(2, int(n * scale) // 2 * 2) for n in self.size]
+        script = (
+            f"screenrecord --output-format=h264 --bit-rate 2000000 --size {width}x{height} "
+            "--time-limit 170 - & p=$!; "
+            's=$(cut -d " " -f 22 /proc/$p/stat); '
+            f'printf "%s %s\\n" "$p" "$s" > {self.pid_path}; '
+            f'wait "$p"; rm -f {self.pid_path}'
+        )
+        self.adb = subprocess.Popen(
+            [
+                adb,
+                "-s",
+                self.serial,
+                "exec-out",
+                "sh",
+                "-c",
+                script,
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+        try:
+            self.decoder = subprocess.Popen(
+                [
+                    ffmpeg,
+                    "-hide_banner",
+                    "-loglevel",
+                    "error",
+                    "-probesize",
+                    "32",
+                    "-analyzeduration",
+                    "0",
+                    "-flags",
+                    "low_delay",
+                    "-f",
+                    "h264",
+                    "-i",
+                    "pipe:0",
+                    "-vf",
+                    "select=isnan(prev_selected_t)+gte(t-prev_selected_t\\,0.1),scale=out_range=full",
+                    "-pix_fmt",
+                    "yuvj420p",
+                    "-threads",
+                    "1",
+                    "-fps_mode",
+                    "passthrough",
+                    "-flush_packets",
+                    "1",
+                    "-f",
+                    "image2pipe",
+                    "-vcodec",
+                    "mjpeg",
+                    "-q:v",
+                    "5",
+                    "pipe:1",
+                ],
+                stdin=self.adb.stdout,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+            )
+        except Exception:
+            self.close()
+            raise
+        self.adb.stdout.close()
+        threading.Thread(target=self._read, daemon=True, name="android-use-video").start()
+
+    def _read(self):
+        parser = JPEGParser()
+        try:
+            while not self.stopped.is_set():
+                chunk = os.read(self.decoder.stdout.fileno(), 65536)
+                if not chunk:
+                    break
+                self.bytes_received += len(chunk)
+                for raw in parser.feed(chunk):
+                    with Image.open(io.BytesIO(raw)) as picture:
+                        size = picture.size
+                    self.decoded_frames += 1
+                    self.publish(self, raw, size)
+        except (OSError, ValueError):
+            pass
+        finally:
+            if not self.stopped.is_set():
+                self.failed(self)
+
+    def close(self):
+        self.stopped.set()
+        # ADB socket closure need not kill screenrecord. Match this pipeline's private
+        # PID record, kernel start time and executable before stopping the device child.
+        adb = os.environ.get("ANDROID_USE_ADB") or shutil.which("adb")
+        if self.adb is not None and adb:
+            cleanup = (
+                f"if [ -r {self.pid_path} ]; then read p s < {self.pid_path}; "
+                'case "$p:$s" in *[!0-9:]*|:*) exit 0;; esac; '
+                'if [ -n "$p" ] && [ -n "$s" ] && [ "$p" -gt 1 ] && '
+                '[ "$(cat /proc/$p/comm 2>/dev/null)" = screenrecord ] && '
+                '[ "$(cut -d " " -f 22 /proc/$p/stat 2>/dev/null)" = "$s" ]; '
+                f'then kill "$p"; fi; rm -f {self.pid_path}; fi'
+            )
+            try:
+                subprocess.run(
+                    [adb, "-s", self.serial, "shell", cleanup],
+                    capture_output=True,
+                    timeout=2,
+                    check=False,
+                )
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+        # Kill only children started by this pipeline, never processes found by port/name.
+        for child in (self.adb, self.decoder):
+            if child is not None:
+                if child.poll() is None:
+                    child.terminate()
+                    try:
+                        child.wait(timeout=1)
+                    except subprocess.TimeoutExpired:
+                        child.kill()
+                        child.wait(timeout=1)
+                for stream in (child.stdout, child.stderr):
+                    if stream:
+                        stream.close()
+
+
+class ScreenHub:
+    def __init__(self, serial, key, *, backend=None, pipeline_factory=VideoPipeline):
+        self.serial, self.key = serial, key
+        self.backend = backend or Backend(serial)
+        self.pipeline_factory = pipeline_factory
+        self.pause_path = device_paths(key)[1]
+        self.lock = threading.RLock()
+        self.pipeline = None
+        self.frame_data = None
+        self.frame_size = None
+        self.seq = 0
+        self.stream_id = uuid.uuid4().hex
+        self.received = None
+        self.lease_until = 0
+        self.last_activity = time.monotonic()
+        self.last_health = 0
+        self.locked = True  # Fail closed until the independent metadata check completes.
+        self.connected = False
+        self.closed = threading.Event()
+        self.retry_at = 0
+        self.error = None
+        self.model = "Android"
+        self.viewport = None
+
+    def start(self):
+        threading.Thread(target=self._watch, daemon=True, name="android-use-preview-watch").start()
+
+    def _publish(self, pipeline, raw, size):
+        with self.lock:
+            if (
+                pipeline is self.pipeline
+                and not self.pause_path.exists()
+                and not self.locked
+                and time.monotonic() < self.lease_until
+            ):
+                self.seq += 1
+                self.frame_data, self.frame_size = raw, size
+                self.received = time.monotonic()
+
+    def _failed(self, pipeline):
+        with self.lock:
+            if pipeline is self.pipeline:
+                self.error = "video_stream_ended"
+                self.retry_at = time.monotonic() + 1
+                self._stop_video(clear=False)
+
+    def _stop_video(self, *, clear=True):
+        pipeline, self.pipeline = self.pipeline, None
+        if pipeline:
+            pipeline.close()
+        if clear:
+            self.frame_data = self.frame_size = self.received = None
+
+    def _health(self):
+        try:
+            locked = self.backend.locked()
+            # These are display/device metadata reads, never UiAutomator snapshots.
+            raw = self.backend.shell(["wm", "size"], timeout=2)
+            sizes = re.findall(r"(\d+)x(\d+)", raw)
+            size = [int(x) for x in sizes[-1]] if sizes else None
+            rotation = re.search(
+                r"orientation=(\d+)", self.backend.shell(["dumpsys", "display"], timeout=2)
+            )
+            if size and rotation and int(rotation[1]) % 2:
+                size.reverse()
+            model = (
+                self.model
+                if self.model != "Android"
+                else self.backend.shell(["getprop", "ro.product.model"], timeout=2)
+            )
+            with self.lock:
+                if size != self.viewport:
+                    self._stop_video()
+                self.locked, self.connected, self.viewport = locked, True, size
+                self.model = model or "Android"
+                self.last_health = time.monotonic()
+        except Exception:
+            with self.lock:
+                self.connected = False
+                self.last_health = time.monotonic()
+
+    def _watch(self):
+        while not self.closed.is_set():
+            now = time.monotonic()
+            with self.lock:
+                active = now < self.lease_until
+                paused = self.pause_path.exists()
+            if active and not paused and now - self.last_health > 1:
+                self._health()
+            with self.lock:
+                if paused or not active or self.locked or not self.connected:
+                    self._stop_video()
+                elif self.pipeline is None and now >= self.retry_at:
+                    try:
+                        pipeline = self.pipeline_factory(
+                            self.serial, self._publish, self._failed, size=self.viewport
+                        )
+                        self.pipeline = pipeline
+                        pipeline.start()
+                        self.error = None
+                    except Exception as exc:
+                        self._stop_video()
+                        self.error = exc.code if isinstance(exc, UseError) else "video_start_failed"
+                        self.retry_at = now + 3
+            self.closed.wait(0.2)
+
+    def frame(self, after_seq=0):
+        with self.lock:
+            self.last_activity = time.monotonic()
+            self.lease_until = self.last_activity + LEASE_SECONDS
+            paused = self.pause_path.exists()
+            if paused or self.locked or not self.connected:
+                self._stop_video()
+            data = None
+            if self.frame_data and not paused and not self.locked and self.seq != after_seq:
+                data = {
+                    "seq": self.seq,
+                    "data": base64.b64encode(self.frame_data).decode(),
+                    "width": self.frame_size[0],
+                    "height": self.frame_size[1],
+                    "mimeType": "image/jpeg",
+                }
+            return {
+                "ok": True,
+                "stream_id": self.stream_id,
+                "seq": self.seq,
+                "frame": data,
+                "frame_available": self.frame_data is not None and not paused and not self.locked,
+                "frame_age_ms": int((time.monotonic() - self.received) * 1000)
+                if self.received
+                else None,
+                "paused": paused or (self.locked and self.connected),
+                "pause_reason": "authentication"
+                if paused
+                else "device_locked"
+                if self.locked and self.connected
+                else None,
+                "connected": self.connected,
+                "capturing": self.pipeline is not None,
+                "device": {"model": self.model},
+                "viewport": self.viewport,
+                "error": self.error,
+                "transport": "adb-screenrecord-h264",
+                "video": {
+                    "decoded_frames": getattr(self.pipeline, "decoded_frames", 0),
+                    "bytes_received": getattr(self.pipeline, "bytes_received", 0),
+                },
+            }
+
+    def stop_capture(self):
+        with self.lock:
+            self._stop_video()
+
+    def save_frame(self):
+        with self.lock:
+            if self.pause_path.exists() or self.locked or not self.frame_data:
+                raise UseError("preview_paused", "No active frame is available to save")
+            directory = state_dir() / "screenshots"
+            directory.mkdir(mode=0o700, exist_ok=True)
+            path = directory / (uuid.uuid4().hex + ".jpg")
+            path.write_bytes(self.frame_data)
+            path.chmod(0o600)
+            return {"ok": True, "saved_path": str(path)}
+
+    def close(self):
+        self.closed.set()
+        self.stop_capture()
+
+
+class ScreenClient:
+    """Private loopback daemon shared by CLI, MCP widgets and the Codex browser panel."""
+
+    def __init__(self, serial, key):
+        self.serial, self.key = serial, key
+        self.info_path, self.pause_path = device_paths(key)
+        self.info = None
+
+    def _load(self):
+        try:
+            info = json.loads(self.info_path.read_text())
+            if info.get("device_key") == self.key:
+                self.info = info
+                return True
+        except (OSError, ValueError):
+            pass
+        return False
+
+    @property
+    def url(self):
+        return f"http://127.0.0.1:{self.info['port']}/{self.info['token']}/"
+
+    def request(self, endpoint, arguments=None):
+        if not self.info and not self._load():
+            raise UseError("preview_not_started", "Open the Android screen first")
+        request = urllib.request.Request(
+            self.url + "api/" + endpoint,
+            data=json.dumps(arguments or {}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            # Never forward private preview requests to an environment HTTP proxy.
+            with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(
+                request, timeout=8
+            ) as r:
+                return json.load(r)
+        except (OSError, ValueError, urllib.error.URLError) as exc:
+            raise UseError("preview_unreachable", "Live preview process is unavailable") from exc
+
+    def ensure(self):
+        with device_lock(self.key + "-preview-start"):
+            if self._load():
+                try:
+                    self.request("status")
+                    if self.info["serial"] != self.serial:
+                        changed = self.request("switch_serial", {"serial": self.serial})
+                        if not changed.get("ok"):
+                            raise UseError(
+                                "preview_transport_changed", "Could not switch preview transport"
+                            )
+                        self._load()
+                    return self.url
+                except UseError:
+                    pass
+            if not (os.environ.get("ANDROID_USE_FFMPEG") or shutil.which("ffmpeg")):
+                raise UseError("preview_dependency_missing", "Install ffmpeg for live preview")
+            subprocess.Popen(
+                [
+                    sys.executable,
+                    "-m",
+                    "android_use.preview_daemon",
+                    "--serial",
+                    self.serial,
+                    "--key",
+                    self.key,
+                ],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+            deadline = time.monotonic() + 8
+            while time.monotonic() < deadline:
+                if self._load():
+                    try:
+                        self.request("status")
+                        return self.url
+                    except UseError:
+                        pass
+                time.sleep(0.1)
+        raise UseError("preview_start_failed", "Live preview process did not start")
+
+    def stop_capture_if_running(self):
+        if self._load():
+            self.request("stop_capture")

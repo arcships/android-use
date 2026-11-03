@@ -1,0 +1,37 @@
+[project]
+name = "android-use"
+version = "0.2.1"
+requires-python = ">=3.11"
+description = "Local Android device control for coding agents over MCP and ADB"
+license = "MIT"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+readme = "README.md"
+dependencies = [
+    "jsonschema>=4,<5",
+    "mcp>=1.12,<2",
+    "pillow>=10,<13",
+    "uiautomator2==3.7.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+android-use = "android_use.cli:main"
+android-use-mcp = "android_use.server:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "B"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "ruff>=0.17.3",
+]

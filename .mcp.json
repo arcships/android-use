@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "android_use": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--frozen", "--directory", "${PLUGIN_ROOT}", "android-use-mcp"],
+      "cwd": "${PLUGIN_ROOT}"
+    }
+  }
+}

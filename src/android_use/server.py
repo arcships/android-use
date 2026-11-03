@@ -1,0 +1,236 @@
+"""MCP stdio entrypoint. stdout is exclusively reserved for protocol messages."""
+
+import asyncio
+import json
+from importlib.resources import files
+
+from mcp.server import Server
+from mcp.server.lowlevel.helper_types import ReadResourceContents
+from mcp.server.stdio import stdio_server
+from mcp.types import CallToolResult, ImageContent, Resource, TextContent, Tool, ToolAnnotations
+
+from .models import ARG_MODELS, BatchStep
+from .runtime import Runtime, extract_images
+
+SCREEN_URI = "ui://android-use/phone-0.2.1.html"
+SCREEN_META = {
+    "ui": {
+        "csp": {"connectDomains": [], "resourceDomains": []},
+        "prefersBorder": False,
+        "permissions": {"clipboardWrite": {}},
+    },
+    "openai/ui": {"availableDisplayModes": ["fullscreen"], "preferredDisplayMode": "fullscreen"},
+}
+
+
+def obj(properties=None):
+    return {"type": "object", "properties": properties or {}, "additionalProperties": False}
+
+
+SCHEMAS = {name: model.model_json_schema() for name, model in ARG_MODELS.items()}
+SCHEMAS.update(
+    {
+        "doctor": obj(),
+        "setup": obj(
+            {
+                "action": {
+                    "type": "string",
+                    "enum": ["status", "discover", "configure", "start"],
+                    "default": "status",
+                },
+                "serial": {"type": "string", "minLength": 1},
+            }
+        ),
+        "ready": obj({"screenshot": {"type": "boolean", "default": False}}),
+        "apps": obj(
+            {
+                "query": {"type": "string", "default": ""},
+                "limit": {"type": "integer", "minimum": 1, "maximum": 500, "default": 100},
+            }
+        ),
+        "pause": obj(),
+        "resume": obj(),
+        "screen": obj(),
+        "screen_frame": obj({"after_seq": {"type": "integer", "minimum": 0}}),
+        "screen_action": obj(
+            {
+                "action": {
+                    "type": "string",
+                    "enum": ["refresh", "home", "back", "tap", "swipe", "save"],
+                },
+                "x": {"type": "integer", "minimum": 0},
+                "y": {"type": "integer", "minimum": 0},
+                "direction": {"type": "string", "enum": ["up", "down", "left", "right"]},
+            }
+        ),
+        "batch": obj(
+            {
+                "steps": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 20,
+                    "items": BatchStep.model_json_schema(),
+                }
+            }
+        ),
+    }
+)
+SCHEMAS["batch"]["required"] = ["steps"]
+SCHEMAS["screen_action"]["required"] = ["action"]
+DESCRIPTIONS = {
+    "doctor": "Read local ADB device inventory and configuration. Does not start a phone service.",
+    "setup": "First use: status/discover, start once if needed, then ready. configure selects a serial. "
+    "start pushes a pinned JAR and reuses/starts UiAutomator without root or keyboard APK.",
+    "ready": "Verify unlocked screen, UiAutomator, foreground, display and a nonempty tree. "
+    "Does not start/restart services. Reuse the returned observation.",
+    "observe": "Read a current accessibility tree and/or screenshot. Coordinates are Android display "
+    "pixels; image pixels multiplied by pixel_to_device give action coordinates.",
+    "find": "Find exact text/description/resource_id/class_name/package or substring text/description. "
+    "Multiple targets require an explicit 0-based index; bounds don't prove unobstructed access.",
+    "tap": "Tap once by selector OR x/y display pixels. Ambiguity returns candidates and a screenshot. "
+    "Optional observation_id checks same runtime/app/display context. No automatic replay.",
+    "type_text": "Set Unicode text on a focused, editable, non-password field. Focus it with tap first. "
+    "Default replace=true, no submit. verify checks exact readback. App must support setText. "
+    "Newlines need allow_newlines=true. Never blindly retry uncertain input.",
+    "swipe": "Perform one swipe. Direction is finger motion: up usually reveals later rows. "
+    "Use display-pixel region if needed, observe for next-step context. No automatic retries.",
+    "press_button": "Press home/back/recent/enter/volume once. Enter may submit; user must authorize it.",
+    "launch_app": "Launch an installed package's launcher activity once; no force-stop or data reset.",
+    "apps": "List installed third-party package IDs; query matches package ID, not human app name.",
+    "wait": "Wait at most 20 seconds for a selector. found=false means timeout, not business failure.",
+    "batch": "Execute up to 20 known steps, using each operation's normal args. Entire plan is "
+    "validated before actions. Stops on error, wait timeout, Enter submission or 25s budget. "
+    "Resume from stopped_at; never replay completed/uncertain steps.",
+    "pause": "Pause Android Use reads/actions for user authentication takeover across CLI/MCP processes.",
+    "resume": "Resume only after user confirms authentication is finished; then get a fresh observation.",
+    "screen": "Open/reuse the Android live screen sidebar. Uses an independent H.264 video stream, "
+    "not screenshot/tree polling. Requires ffmpeg. READY also links the same panel.",
+    "screen_frame": "App-only cached video frame. Does not query UI trees or capture screenshots.",
+    "screen_action": "App-only preview toolbar and pointer actions. Blocked during authentication takeover.",
+}
+
+
+def create_server(runtime=None):
+    runtime = runtime or Runtime()
+    server = Server(
+        "android-use",
+        version="0.2.1",
+        instructions="First call aua_setup(status), start if absent, then aua_ready. "
+        "Use trees first, screenshots for visual content/failures. "
+        "Execute actions once; do not replay uncertain mutations. "
+        "Password/PIN/OTP authentication belongs to the user: pause, ask, await confirmation, "
+        "resume and observe. Verify final business outcomes from actual device state.",
+    )
+
+    @server.list_tools()
+    async def list_tools():
+        reads = {"doctor", "observe", "find", "wait", "apps", "ready"}
+        tools = [
+            Tool(
+                name="aua_" + name,
+                description=DESCRIPTIONS[name],
+                inputSchema=schema,
+                annotations=ToolAnnotations(
+                    readOnlyHint=name in reads, idempotentHint=name in reads, openWorldHint=True
+                ),
+            )
+            for name, schema in SCHEMAS.items()
+        ]
+        for tool in tools:
+            if tool.name in {"aua_ready", "aua_screen"}:
+                tool.meta = {"ui": {"resourceUri": SCREEN_URI}}
+            if tool.name == "aua_screen":
+                tool.meta["openai/ui"] = {"entrypoints": [{"type": "thread"}]}
+                tool.annotations = ToolAnnotations(
+                    readOnlyHint=False,
+                    destructiveHint=False,
+                    idempotentHint=True,
+                    openWorldHint=False,
+                )
+            if tool.name in {"aua_pause", "aua_resume"}:
+                tool.annotations = ToolAnnotations(
+                    readOnlyHint=False,
+                    destructiveHint=False,
+                    idempotentHint=True,
+                    openWorldHint=False,
+                )
+            if tool.name in {"aua_screen_frame", "aua_screen_action"}:
+                tool.meta = {"ui": {"visibility": ["app"]}}
+            if tool.name == "aua_screen_frame":
+                tool.annotations = ToolAnnotations(
+                    readOnlyHint=True, idempotentHint=True, openWorldHint=False
+                )
+        return tools
+
+    @server.list_resources()
+    async def list_resources():
+        return [
+            Resource(
+                uri=SCREEN_URI,
+                name="Android 手机屏幕",
+                mimeType="text/html;profile=mcp-app",
+                _meta=SCREEN_META,
+            )
+        ]
+
+    @server.read_resource()
+    async def read_resource(uri):
+        if str(uri) != SCREEN_URI:
+            raise ValueError("Unknown screen resource")
+        return [
+            ReadResourceContents(
+                content=files("android_use").joinpath("assets/phone-screen.html").read_text(),
+                mime_type="text/html;profile=mcp-app",
+                meta=SCREEN_META,
+            )
+        ]
+
+    @server.call_tool()
+    async def call_tool(name, arguments):
+        if not name.startswith("aua_") or name[4:] not in SCHEMAS:
+            raise ValueError("Unknown tool")
+        # Worker thread keeps blocking ADB/HTTP away from the protocol event loop.
+        # Runtime calls are additionally serialized by the per-device cross-process lock.
+        result = await asyncio.to_thread(runtime.call, name[4:], **arguments)
+        if name == "aua_ready" and result.get("ready"):
+            opened = await asyncio.to_thread(runtime.screen_call, "screen")
+            result["preview"] = {
+                "available": opened.get("ok", False),
+                "resource_uri": SCREEN_URI,
+                "error": opened.get("error"),
+            }
+        clean, pictures = extract_images(result)
+        if name == "aua_screen":
+            clean.pop("url", None)  # Private loopback token is unnecessary in the native widget.
+        if name == "aua_screen_frame":
+            return CallToolResult(content=[], structuredContent=clean, isError=not clean["ok"])
+        content = [TextContent(type="text", text=json.dumps(clean, ensure_ascii=False))]
+        content.extend(
+            ImageContent(type="image", data=data, mimeType="image/jpeg") for data in pictures
+        )
+        return CallToolResult(
+            content=content,
+            structuredContent=clean,
+            isError=not clean["ok"],
+            **(
+                {"_meta": {"openai/widgetSessionId": "android-use-screen"}}
+                if name in {"aua_ready", "aua_screen"}
+                else {}
+            ),
+        )
+
+    return server
+
+
+async def run():
+    server = create_server()
+    async with stdio_server() as (read, write):
+        await server.run(read, write, server.create_initialization_options())
+
+
+def main():
+    asyncio.run(run())
+
+
+if __name__ == "__main__":
+    main()
