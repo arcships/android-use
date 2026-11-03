@@ -2,11 +2,26 @@
 
 [![Tests](https://github.com/JackCaow/android-use/actions/workflows/test.yml/badge.svg)](https://github.com/JackCaow/android-use/actions/workflows/test.yml)
 
-让 Codex 等 coding agent 通过 MCP 操作 Android 真机或模拟器，并在侧边栏实时查看手机画面。
+**标准 MCP Server**：让 Codex、Claude Desktop、Cursor、VS Code 等支持本地 stdio MCP 的客户端操作 Android 真机或模拟器；支持 MCP Apps 的客户端还可以内嵌实时手机画面。
 
-Local Android control for coding agents: MCP tools, a CLI, a live screen sidebar, and image clipboard capture. Connect your own device through USB or an already-authorized wireless ADB connection; no root required.
+Local Android control through a standard stdio MCP server, with an optional MCP Apps live screen UI, a CLI, and image clipboard capture. Connect your own device through USB or an already-authorized wireless ADB connection; no root required.
 
-**快速导航：** [让 Agent 自动安装](#让-agent-自动安装) · [手动安装](#安装) · [首次连接手机](#首次连接手机) · [Codex 插件](#安装-codex-插件) · [实时屏幕与图片复制](#实时屏幕与图片复制) · [CLI 使用](#cli-使用) · [常见问题](#常见问题)
+**快速导航：** [标准 MCP 与兼容性](#标准-mcp-与兼容性) · [让 Agent 自动安装](#让-agent-自动安装) · [手动安装](#安装) · [首次连接手机](#首次连接手机) · [Codex 插件](#安装-codex-插件) · [其他 MCP 客户端](#其他-mcp-客户端) · [实时屏幕与图片复制](#实时屏幕与图片复制) · [CLI 使用](#cli-使用) · [常见问题](#常见问题)
+
+## 标准 MCP 与兼容性
+
+Android Use 的核心是使用[官方 Python MCP SDK](https://github.com/modelcontextprotocol/python-sdk)实现的**标准本地 stdio MCP Server**。客户端启动 `android-use-mcp`，通过 MCP 初始化、工具发现与调用、资源读取等标准接口连接；无需安装 Codex 插件即可使用手机控制工具。
+
+| 层次 | 接入要求与行为 |
+| --- | --- |
+| MCP 手机控制 | 支持本地 stdio MCP 的客户端可调用 `aua_*` 工具；截图以 MCP 图片内容返回，显示与模型识图能力取决于客户端 |
+| MCP Apps 实时界面 | 使用 [MCP Apps 扩展](https://modelcontextprotocol.io/extensions/apps/overview)的 `ui://` 资源；宿主支持该扩展时可内嵌手机画面，具体呈现为聊天卡片、面板还是侧边栏由宿主决定 |
+| 本机浏览器预览 | 客户端不渲染 MCP Apps 时，在仓库根目录执行 `uv run android-use screen`，用本机浏览器打开返回的 URL，控制工具仍通过 MCP 使用 |
+| Codex 插件 | 将 MCP 配置、使用技能和界面信息打包，方便在 Codex 安装；其他 MCP 客户端不需要本地市场或插件打包步骤 |
+
+当前只提供 **stdio** MCP 传输，未提供远程 HTTP / SSE MCP 端点。本机视频预览的 HTTP URL 不是 MCP 服务地址，不能填入客户端的远程 MCP URL 配置。运行 MCP 进程的电脑需要能通过 ADB 访问目标设备；仅支持远程 URL 的客户端不能直接接入本版。
+
+下文提供各客户端官方配置格式的示例。项目已有标准 MCP stdio 握手、工具调用和资源读取测试；Claude Desktop、Cursor、VS Code 的具体版本尚未逐一完成端到端验收，内嵌视频、剪贴板权限和界面布局需以实际宿主表现为准。
 
 ## 界面预览
 
@@ -335,7 +350,30 @@ MCP 工具以 `aua_` 为前缀：
 
 ## 其他 MCP 客户端
 
-无需安装 Codex 插件，也可以手工配置本地 stdio MCP。支持 `mcpServers` JSON 配置的客户端可参考：
+### 1. 完成本机安装与设备准备
+
+先按[安装](#安装)章节准备 Git、uv、Python、ADB 和 ffmpeg，克隆仓库并执行 `uv sync --frozen --python 3.13`，再按[首次连接手机](#首次连接手机)完成设备选择、USB 授权及 READY 验证。**无需安装 Codex CLI、生成 `dist/android-use` 或注册 Codex 插件。**
+
+MCP 客户端负责启动 stdio 服务，不必先在另一个终端常驻运行 `android-use-mcp`。MCP 工具不会自动附带 Codex 插件中的技能；可以让 agent 阅读仓库的 `skills/android-use/SKILL.md`，按后面的首次使用提示完成连接。
+
+希望由 agent 代装时，可在前面的[自动安装指令](#让-agent-自动安装)末尾补充：“我使用的是 Claude Desktop / Cursor / VS Code，请按 README 的对应客户端配置本地 stdio MCP，跳过 Codex CLI、插件打包与市场注册。合并现有配置，保留其他 MCP 服务。”将客户端名称改为实际使用的一个。
+
+### 2. 配置客户端
+
+以下路径均为占位示例。将 `/absolute/path/android-use` 改为实际仓库的**绝对路径**；Windows 可以写成 `C:/tools/android-use`，使用反斜杠时需按 JSON 规则写成 `C:\\tools\\android-use`。不要使用 `${PLUGIN_ROOT}`，它属于 Codex 插件环境。
+
+GUI 客户端的 `PATH` 可能与终端不同。找不到 `uv` 时，将 `command` 改为 uv 可执行文件的绝对路径；ADB 和 ffmpeg 也必须对该进程可见。本项目支持用 `env` 中的 `ANDROID_USE_ADB`、`ANDROID_USE_FFMPEG` 指定这两个可执行文件的绝对路径。
+
+#### Claude Desktop
+
+在 **Settings → Developer → Edit Config** 打开 `claude_desktop_config.json`，把下面的 `android_use` 条目合并到已有的 `mcpServers` 中；若文件为空，可直接使用完整示例。保存后完全退出并重新启动 Claude Desktop，在连接器 / 工具列表中确认 Android Use 已加载。配置流程见 [MCP 官方本地服务指南](https://modelcontextprotocol.io/docs/develop/connect-local-servers)。
+
+常见配置文件位置：
+
+| 系统 | 路径 |
+| --- | --- |
+| macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
 
 ```json
 {
@@ -354,13 +392,89 @@ MCP 工具以 `aua_` 为前缀：
 }
 ```
 
-将路径改为仓库的绝对路径，并确保客户端进程能在 `PATH` 中找到 `uv`、`adb` 和 `ffmpeg`。如果已按上文安装 Codex 插件，就不要再重复注册同一个 MCP 服务。
+#### Cursor
+
+按 [Cursor 官方 MCP 文档](https://cursor.com/docs/mcp)，可将配置保存到用户级 `~/.cursor/mcp.json`，或当前项目的 `.cursor/mcp.json`。合并下面的条目，保留已有服务；在 **Customize** 中启用该服务，必要时重启 Cursor，并确认 agent 的工具列表出现 `aua_*`。这是本机 stdio 连接；云端 agent 不会因此获得本机的 USB 设备访问能力。
+
+```json
+{
+  "mcpServers": {
+    "android_use": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "--frozen",
+        "--directory",
+        "/absolute/path/android-use",
+        "android-use-mcp"
+      ]
+    }
+  }
+}
+```
+
+#### VS Code / GitHub Copilot
+
+打开本地工作区，运行命令面板中的 **MCP: Add Server**，选择 **Command (stdio)**，输入下面的启动命令，服务 ID 填 `android_use`，再选择配置范围。按客户端提示确认启动并检查工具是否可用。见 [VS Code 官方接入指南](https://code.visualstudio.com/docs/agent-customization/mcp-servers)。
+
+```bash
+uv run --frozen --directory /absolute/path/android-use android-use-mcp
+```
+
+也可以手动编辑工作区的 `.vscode/mcp.json`。**这个文件的顶层字段是 `servers`，不是 `mcpServers`：**
+
+```json
+{
+  "servers": {
+    "android_use": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "--frozen",
+        "--directory",
+        "/absolute/path/android-use",
+        "android-use-mcp"
+      ]
+    }
+  }
+}
+```
+
+若向导选择的是新版 **Copilot Global**，其默认文件为 `~/.copilot/mcp-config.json`（设置 `COPILOT_HOME` 时随之改变），使用前面的 `mcpServers` 格式；工作区根目录 `.mcp.json` 也使用该格式。不要把两种文件格式混用，详见[官方配置参考](https://code.visualstudio.com/docs/agents/reference/mcp-configuration)。在 Remote SSH、WSL 或容器中，配置路径、依赖与 ADB 都属于实际运行服务的环境，需要该环境能访问手机。
+
+#### 其他支持本地 stdio 的客户端
+
+使用客户端提供的“本地命令 / stdio”入口，启动命令为 `uv`，参数依次为 `run`、`--frozen`、`--directory`、仓库绝对路径、`android-use-mcp`。支持 `mcpServers` 配置的客户端可参考 Claude Desktop 示例；具体文件位置及是否需要 `type` 字段按其官方文档填写。
+
+只提供“远程 MCP URL”的入口不能使用这条本地命令，也不能使用手机预览 URL 代替。
+
+### 3. 首次使用与验收
+
+重新加载客户端工具后，可以直接对 agent 说：
+
+```text
+请使用 Android Use MCP 连接我的 Android。
+先调用 aua_setup，action 为 status；需要发现设备时使用 discover。
+有多台设备且目标未指定时让我选择；服务未启动时只 start 一次，然后调用 aua_ready。
+请实际调用工具并报告 ready 是否为 true、前台应用和工具返回的状态。
+验证完成后读取一次当前界面，不执行其他手机操作。
+```
+
+客户端可能给工具加服务名前缀，以实际列出的名称为准。**MCP 已加载**以能发现并成功调用工具为准；**手机已就绪**以实际返回 `ready=true` 为准。没有设备时也能完成 MCP 安装，但不能报告手机验收成功。
+
+需要实时画面时调用 `aua_screen`；宿主支持 MCP Apps 时可显示内嵌界面。若没有显示，在仓库根目录执行 `uv run android-use screen`，用本机浏览器打开返回的 URL。图片复制还需要浏览器或宿主允许图片剪贴板写入，具体操作见[实时屏幕与图片复制](#实时屏幕与图片复制)。
+
+### 仅在 Codex CLI 注册 MCP
 
 只想在 Codex CLI 注册 MCP、而不安装技能和插件清单时，也可以使用：
 
 ```bash
 codex mcp add android_use -- uv run --frozen --directory /absolute/path/android-use android-use-mcp
 ```
+
+如果已经安装 Codex 插件，不要再重复注册同一个 MCP 服务。
 
 ## 更新
 
@@ -373,7 +487,7 @@ uv run python scripts/package.py
 codex plugin add android-use@android-use-local
 ```
 
-更新插件安装副本后，在客户端新建聊天或重新加载工具。只使用 CLI 的用户执行前两条即可。
+更新插件安装副本后，在客户端新建聊天或重新加载工具。只使用 CLI 或其他 MCP 客户端的用户执行前两条即可；其他 MCP 客户端还需重启 / 重新连接该服务，通常无需修改指向原仓库的启动配置。
 
 ## 常见问题
 
