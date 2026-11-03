@@ -8,7 +8,7 @@
     <a href="#mcp-client-support"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="Standard stdio MCP" /></a>
   </p>
   <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
-  <p><a href="#quick-start"><strong>Get started →</strong></a> · <a href="docs/guide.md">Full guide</a> · <a href="docs/guide.md#other-mcp-clients">Client setup</a> · <a href="https://github.com/JackCaow/android-use/issues">Report an issue</a></p>
+  <p><a href="#quick-start"><strong>Get started →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.3.0">Download v0.3.0</a> · <a href="docs/guide.md">Full guide</a> · <a href="docs/guide.md#other-mcp-clients">Client setup</a> · <a href="https://github.com/JackCaow/android-use/issues">Report an issue</a></p>
 </div>
 
 ---
@@ -85,7 +85,7 @@ uv sync --frozen --python 3.13
 <details>
 <summary><strong>Codex plugin</strong> — MCP tools, usage skill, and screen integration</summary>
 
-Run from the repository root with the Codex CLI installed:
+For a prebuilt plugin ZIP, follow the [release installation steps](docs/guide.md#install-the-release-zip). To install from a source checkout, run from the repository root with the Codex CLI installed:
 
 ```bash
 uv run python scripts/package.py
@@ -160,7 +160,7 @@ Actions support optional postconditions. A timeout reports what happened and sto
 
 ## Project status
 
-**v0.3.0 · MIT · 69 Python tests · 6 browser tests.** Native device acceptance covers Android 16 on a Xiaomi 15 Ultra, including gesture events, delayed UI conditions, auto-scroll, and pause/resume. [Acceptance evidence and scope →](docs/validation.md)
+**v0.3.0 · MIT · 70 Python tests · 6 browser tests.** Native device acceptance covers Android 16 on a Xiaomi 15 Ultra, including gesture events, delayed UI conditions, auto-scroll, and pause/resume. [Acceptance evidence and scope →](docs/validation.md)
 
 Multi-touch, arbitrary gesture paths, fine-grained text selection, and custom-editor input fallbacks are not implemented. Device and app behavior varies; a matched UI condition is not proof of a completed business transaction. This project runs the control service and preview locally; tool results are handled by your chosen MCP client/model.
 

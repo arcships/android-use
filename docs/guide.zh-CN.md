@@ -177,6 +177,28 @@ uv run android-use --serial SERIAL ready
 
 ## 安装 Codex 插件
 
+可选发行包或源码安装。已从源码使用 `android-use-local` 时，直接更新原安装，避免同时启用两份工具。
+
+### 安装发行包 ZIP
+
+从 [GitHub Release v0.3.0](https://github.com/JackCaow/android-use/releases/tag/v0.3.0) 下载 `android-use-0.3.0-plugin.zip` 和 `SHA256SUMS`。ZIP 已含编译好的界面、Python 源码与锁文件、技能、双语文档和可注册的本地市场；不包含 Python、ADB、ffmpeg，先按上文准备依赖。首次安装需要联网下载 Python 依赖。
+
+macOS / Linux 下载后执行：
+
+```bash
+# 先校验下载文件；Linux 也可使用 sha256sum -c SHA256SUMS。
+shasum -a 256 -c SHA256SUMS
+unzip android-use-0.3.0-plugin.zip -d android-use-v0.3.0
+cd android-use-v0.3.0
+uv sync --frozen --python 3.13
+codex plugin marketplace add .
+codex plugin add android-use@android-use-release
+```
+
+Windows 可用解压工具展开 ZIP，在该目录打开终端执行 uv / Codex 命令；Windows 真机操作尚未完成验收。安装后重新加载工具或新建聊天，启用 Android Use，再完成[手机连接与 READY](#首次连接手机)。发行包市场名为 `android-use-release`，源码市场仍为 `android-use-local`。ZIP 安装无需克隆仓库或再次运行打包脚本。
+
+### 从源码安装
+
 先完成上面的项目安装。在仓库根目录执行：
 
 ```bash

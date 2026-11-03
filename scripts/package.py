@@ -1,4 +1,4 @@
-"""Build a local-plugin ZIP from an explicit source allowlist (no device state)."""
+"""Build an installable plugin ZIP from an explicit source allowlist (no device state)."""
 
 import json
 import shutil
@@ -40,6 +40,31 @@ def main():
     with ZipFile(output, "w", ZIP_DEFLATED) as archive:
         for path in sorted(files):
             archive.write(path, path.relative_to(root))
+        # A downloaded archive is a complete local marketplace. Source checkouts
+        # retain android-use-local -> dist/android-use; the release name keeps
+        # registration separate from an existing development checkout.
+        archive.writestr(
+            ".agents/plugins/marketplace.json",
+            json.dumps(
+                {
+                    "name": "android-use-release",
+                    "interface": {"displayName": "Android Use Release"},
+                    "plugins": [
+                        {
+                            "name": manifest["name"],
+                            "source": {"source": "local", "path": "./"},
+                            "policy": {
+                                "installation": "AVAILABLE",
+                                "authentication": "ON_INSTALL",
+                            },
+                            "category": "Productivity",
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+        )
     expanded = output.parent / "android-use"
     if expanded.exists():
         shutil.rmtree(expanded)

@@ -134,6 +134,28 @@ Wireless debugging must already be paired and visible to ADB. Android Use does n
 
 ## Codex plugin
 
+Choose a release ZIP or a source checkout. If you already use `android-use-local` from a checkout, update that installation instead of enabling a second copy.
+
+### Install the release ZIP
+
+Download `android-use-0.3.0-plugin.zip` and `SHA256SUMS` from [GitHub Release v0.3.0](https://github.com/JackCaow/android-use/releases/tag/v0.3.0). The ZIP includes the compiled UI, Python source/lockfile, skills, bilingual docs, and a ready-to-register local marketplace. It does not bundle Python, ADB, or ffmpeg; prepare the dependencies above. First installation needs network access to install Python dependencies.
+
+On macOS/Linux, extract it and run:
+
+```bash
+# Check the downloaded archive first (Linux can use sha256sum -c SHA256SUMS).
+shasum -a 256 -c SHA256SUMS
+unzip android-use-0.3.0-plugin.zip -d android-use-v0.3.0
+cd android-use-v0.3.0
+uv sync --frozen --python 3.13
+codex plugin marketplace add .
+codex plugin add android-use@android-use-release
+```
+
+On Windows, extract the ZIP with your archive tool, open a terminal in that directory, and run the uv/Codex commands. Windows device operation remains outside completed native acceptance. Reload tools/start a new chat and enable Android Use, then complete [device setup and READY](#connect-a-device). The release marketplace is named `android-use-release`; the source-checkout marketplace remains `android-use-local`. Registering the ZIP does not require cloning the repository or running `scripts/package.py`.
+
+### Install from source
+
 After installing dependencies, run from the repository root:
 
 ```bash

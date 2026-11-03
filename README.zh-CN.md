@@ -8,7 +8,7 @@
     <a href="#mcp-客户端支持"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="标准 stdio MCP" /></a>
   </p>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
-  <p><a href="#快速开始"><strong>开始使用 →</strong></a> · <a href="docs/guide.zh-CN.md">完整指南</a> · <a href="docs/guide.zh-CN.md#其他-mcp-客户端">客户端配置</a> · <a href="https://github.com/JackCaow/android-use/issues">反馈问题</a></p>
+  <p><a href="#快速开始"><strong>开始使用 →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.3.0">下载 v0.3.0</a> · <a href="docs/guide.zh-CN.md">完整指南</a> · <a href="docs/guide.zh-CN.md#其他-mcp-客户端">客户端配置</a> · <a href="https://github.com/JackCaow/android-use/issues">反馈问题</a></p>
 </div>
 
 ---
@@ -84,7 +84,7 @@ uv sync --frozen --python 3.13
 <details>
 <summary><strong>Codex 插件</strong> — MCP 工具、使用技能与实时屏幕集成</summary>
 
-安装 Codex CLI 后，在仓库根目录运行：
+预打包 ZIP 按[发行包安装步骤](docs/guide.zh-CN.md#安装发行包-zip)操作；从源码安装时，先安装 Codex CLI，再在仓库根目录运行：
 
 ```bash
 uv run python scripts/package.py
@@ -159,7 +159,7 @@ uv run android-use scroll_until '{"selector":{"text":"显示与亮度"},"directi
 
 ## 项目状态
 
-**v0.3.0 · MIT · 69 项 Python 测试 · 6 项浏览器测试。** 已在 Android 16 / Xiaomi 15 Ultra 上验收原生手势事件、延迟控件、自动滚动与暂停恢复。[验收证据与范围 →](docs/validation.md)
+**v0.3.0 · MIT · 70 项 Python 测试 · 6 项浏览器测试。** 已在 Android 16 / Xiaomi 15 Ultra 上验收原生手势事件、延迟控件、自动滚动与暂停恢复。[验收证据与范围 →](docs/validation.md)
 
 多指缩放、任意轨迹、精细文本选区、自绘编辑器输入兜底尚未实现。设备和 App 行为存在差异，UI 条件满足不等于业务已完成。控制服务和预览运行于本机；工具结果由你选择的 MCP 客户端 / 模型处理。
 
