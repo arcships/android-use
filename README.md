@@ -1,143 +1,401 @@
 # Android Use
 
-Local Android control for coding agents, with MCP tools, a CLI, and a live screen sidebar. Connect your own phone over USB or an already-authorized wireless ADB connection; no root required.
+[![Tests](https://github.com/JackCaow/android-use/actions/workflows/test.yml/badge.svg)](https://github.com/JackCaow/android-use/actions/workflows/test.yml)
 
-让 coding agent 通过 MCP 操作 Android 真机和模拟器。提供实时屏幕侧边栏、控件树、截图、语义/坐标点击、单次滑动、中文输入、App 启动和有界批处理，同时提供同一实现的 CLI。
+让 Codex 等 coding agent 通过 MCP 操作 Android 真机或模拟器，并在侧边栏实时查看手机画面。
 
-## 原理
+Local Android control for coding agents: MCP tools, a CLI, a live screen sidebar, and image clipboard capture. Connect your own device through USB or an already-authorized wireless ADB connection; no root required.
 
-参考本机 iPhone Use 0.3.17 的分层设计，独立实现 Android 端：
+**快速导航：** [安装](#安装) · [首次连接手机](#首次连接手机) · [Codex 插件](#安装-codex-插件) · [实时屏幕与图片复制](#实时屏幕与图片复制) · [CLI 使用](#cli-使用) · [常见问题](#常见问题)
 
-```text
-Agent / Codex / Claude
-        │ MCP stdio
-Android Use（Python，设备锁、参数校验、观察与动作语义）
-        │ ADB USB / 已授权的无线 ADB
-UiAutomator2 JAR（Android app_process，设备端 9008）
-        │ Android UiAutomation
-前台 App：控件树 / 点击 / 滑动 / Unicode setText / 截图
+## 界面预览
+
+| 浅色界面 | 深色界面 |
+| --- | --- |
+| ![Android Use 浅色侧边栏](docs/images/sidebar-light.jpg) | ![Android Use 深色侧边栏](docs/images/sidebar-dark.jpg) |
+
+上图使用当前侧边栏前端渲染；手机内容为文档示例画面，不包含真实设备、账号或通知信息。侧边栏随电脑系统明暗主题切换。
+
+## 能做什么
+
+| 能力 | 说明 |
+| --- | --- |
+| 实时屏幕 | 独立 H.264 视频通道，支持 MCP App 侧边栏和本机浏览器预览 |
+| 直接操作 | 按控件文字、描述、资源 ID 或屏幕坐标点击，支持单次滑动、Home、返回 |
+| 中文与 emoji | 输入、替换、追加和完整文本回读，默认不提交 |
+| 读取界面 | 控件树、截图、目标查询和有界等待 |
+| 图片复制 | 点击“复制画面”，将当前显示帧直接写入系统剪贴板，供聊天或文档粘贴 |
+| 连贯任务 | 批处理最多 20 步，明确报告完成位置与停止原因 |
+| 认证接管 | 暂停读屏、控制与视频采集，用户完成认证后再恢复 |
+
+不需要 root、Appium、手机端签名或键盘 APK。普通使用不需要 Node.js；仓库已包含编译好的侧边栏 UI。
+
+## 安装
+
+### 1. 准备依赖
+
+| 依赖 | 用途 |
+| --- | --- |
+| Git | 克隆和更新仓库 |
+| Python 3.11+ | 运行本机服务；下面使用已验证的 Python 3.13 |
+| [uv](https://docs.astral.sh/uv/getting-started/installation/) | 安装 Python、管理锁定依赖和启动命令 |
+| [Android SDK Platform Tools](https://developer.android.com/tools/releases/platform-tools) | 提供 `adb`，连接 USB / 无线调试设备 |
+| [ffmpeg](https://ffmpeg.org/download.html) | 解码实时屏幕视频 |
+| Codex 客户端及 CLI | 安装 Codex 插件时需要；只使用 CLI 或其他 MCP 客户端时可跳过 |
+
+macOS 已安装 Homebrew 时，可以执行：
+
+```bash
+brew install uv ffmpeg
+brew install --cask android-platform-tools
 ```
 
-iPhone Use 底层使用 XCTest/WebDriverAgent 和 USB 转发；Android Use 使用 [ADB](https://developer.android.com/tools/adb) 和 [UiAutomator2](https://github.com/openatx/uiautomator2)。不需要 root、Appium、签名或系统改造。启动会向 `/data/local/tmp/android-use-u2.jar` 推送依赖内附的 JAR，并启动手机端服务；不会安装键盘 APK 或切换输入法。MCP 使用[官方 Python SDK](https://github.com/modelcontextprotocol/python-sdk)。详细取舍见 [实现说明](docs/architecture.md)。
+Windows / Linux 可以按上表官方链接安装依赖，将 `uv`、`adb` 和 `ffmpeg` 加入运行客户端的 `PATH`。以下终端示例使用 Bash / zsh。
 
-## 安装与开始
+检查依赖是否可用：
 
-需要 Python 3.11+、[uv](https://docs.astral.sh/uv/)、Android SDK Platform Tools（`adb` 在 PATH），以及用于实时视频解码的 `ffmpeg`。手机开启开发者选项、USB 调试，并在手机上授权此电脑。部分厂商还需要开启“USB 调试（安全设置）”才允许注入操作。
+```bash
+uv --version
+adb version
+ffmpeg -version
+```
 
-```sh
-uv sync --frozen
+### 2. 克隆并安装项目
+
+```bash
+git clone https://github.com/JackCaow/android-use.git
+cd android-use
+
+uv sync --frozen --python 3.13
+uv run android-use --help
+```
+
+`uv` 会按需下载 Python 和项目依赖。后续命令默认在此仓库根目录运行。
+
+目前已在 **macOS + Android 16 / Xiaomi 15 Ultra** 上完成真机验证；Linux CI 覆盖自动化测试，Windows、Linux 真机和其他厂商设备尚未验收，详见[验证记录](docs/validation.md)。
+
+## 首次连接手机
+
+### 1. 开启并授权 USB 调试
+
+1. 在手机上开启“开发者选项”和“USB 调试”。
+2. 用支持数据传输的 USB 线连接电脑，在手机上确认信任 / 调试授权。
+3. 保持手机亮屏并解锁。部分厂商还需要开启“USB 调试（安全设置）”才能注入点击和输入。
+
+在电脑上检查：
+
+```bash
+adb devices -l
+```
+
+目标设备应显示 `device`。如果显示 `unauthorized`，先在手机上接受调试授权；没有设备则检查线缆、USB 模式或驱动。完整连接步骤参考 [Android ADB 官方文档](https://developer.android.com/tools/adb)。
+
+### 2. 检查并启动控制服务
+
+```bash
 uv run android-use doctor
 uv run android-use setup '{"action":"status"}'
+```
+
+服务未启动时执行：
+
+```bash
 uv run android-use setup '{"action":"start"}'
+```
+
+`start` 会推送依赖包内的 UiAutomator2 JAR 并启动服务；已有可用服务会被复用。无需每次任务重复安装或启动。
+
+最后验证：
+
+```bash
 uv run android-use ready
 ```
 
-只有 `ready=true` 才证明解锁、亮屏、前台、视口与控件树可用。多设备时先 discover，再用 `setup '{"action":"configure","serial":"你的序列号"}'`，也可以每次 CLI 传 `--serial` 或给 MCP 设置 `ANDROID_SERIAL`。不会自动选择多台设备中的第一台，也不会在原设备断开时切换设备。
+输出中应包含：
 
-```sh
-uv run android-use launch_app '{"package":"com.android.settings","observe":"tree"}'
-uv run android-use tap '{"selector":{"text":"关于手机"},"observe":"tree"}'
-uv run android-use swipe '{"direction":"up","observe":"both"}'
-uv run android-use type_text '{"text":"中文测试","verify":true}'
-uv run android-use press_button '{"name":"back"}'
+```json
+{
+  "ok": true,
+  "ready": true,
+  "state": "ready"
+}
 ```
 
-输入必须先聚焦非密码 EditText。上面点击的文字以设备当前树为准。输入默认替换、不提交；`verify=true` 做完整文本回读。截图通过 CLI 的 `image_paths` 返回本机文件，通过 MCP 返回原生图片块。截图像素乘 `pixel_to_device` 得到 Android 显示像素，动作坐标使用显示像素而非 dp。
+完整结果还会返回设备、前台 App、视口和当前控件树。只有 `ready=true` 才证明控制通道可用；单纯发现设备或端口开放不足以证明 READY。
 
-## 在 agent 中使用
+### 3. 多设备或切换 USB / 无线连接
 
-本仓库包含本地插件市场、插件清单、MCP 配置、技能和预编译的 MCP App UI。安装步骤：
+列出候选设备，再明确选择目标：
 
-```sh
-git clone https://github.com/JackCaow/android-use.git
-cd android-use
-uv sync --frozen
+```bash
+uv run android-use setup '{"action":"discover"}'
+uv run android-use setup '{"action":"configure","serial":"SERIAL"}'
+uv run android-use ready
+```
+
+把 `SERIAL` 替换为 `adb devices -l` 显示的设备序列号或无线 ADB 地址。配置会保存在本机，后续调用复用该目标。
+
+也可以只为单次 CLI 指定设备；全局选项放在子命令之前：
+
+```bash
+uv run android-use --serial SERIAL ready
+```
+
+工具也支持 `ANDROID_SERIAL` 环境变量。多台设备不会自动选择第一台；指定目标断开时，不会静默切到另一台。USB 与无线地址若属于同一台手机，会共享操作锁和认证暂停状态。
+
+无线方式需要先按 Android 的无线调试流程完成配对，并确认设备已出现在 `adb devices -l` 中；本工具不替你开启无线调试或输入配对凭据。
+
+## 安装 Codex 插件
+
+先完成上面的项目安装。在仓库根目录执行：
+
+```bash
 uv run python scripts/package.py
-codex plugin marketplace add "$PWD"
+codex plugin marketplace add .
 codex plugin add android-use@android-use-local
 ```
 
-插件通过 `uv run --frozen` 复用锁定依赖。插件安装后需宿主加载工具；当前已运行的聊天若未热加载，仍可用下文的右侧浏览器面板立即预览，后续新聊天可直接调用 aua_screen。
+**不要跳过打包。** 本地市场的插件目录指向 `dist/android-use`，由 `scripts/package.py` 生成；该目录不随 Git 仓库提交。
 
-## 实时屏幕侧边栏
+安装后在客户端开启新聊天，选择 / 启用 Android Use。若工具未出现，重新加载客户端；支持本地插件目录的桌面客户端也可以在插件设置中选择 `Android Use Local` 来源。可用以下命令检查市场：
 
-`aua_screen()` 打开/复用本聊天的手机屏幕；`aua_ready()` 也关联同一个面板。它是原生 MCP App 资源，使用独立视频通道：
-
-```text
-Android screenrecord → H.264 / ADB exec-out → ffmpeg → 内存 JPEG 缓存
-                                                      ↓
-                            MCP App 侧边栏 / Codex 右侧浏览器面板
+```bash
+codex plugin marketplace list
 ```
 
-前端读取约 10fps 上限的视频缓存，**不轮询手机截图或控件树**，也不占用常规手机操作锁。支持实时画面、连接状态、屏幕点击/滑动、返回、主屏幕、重连和将当前画面直接复制为剪贴板 PNG 图片。认证 pause 会清除前端画面和内存缓存，停止手机端 screenrecord；resume 后重新采集。关闭/隐藏预览后 5 秒无人续租即停流；手机锁屏时停止采集，设备重连后尝试恢复。
+本项目的本地市场与插件结构遵循 [OpenAI 插件文档](https://developers.openai.com/plugins/build/plugins)；上面的 CLI 安装命令也已在本项目验证。
 
-CLI 返回相同预览服务的本机 URL，可直接在 Codex 右侧浏览器面板打开：
+可以直接对 agent 说：
 
-```sh
+> 连接我的 Android，检查 READY，然后打开实时手机屏幕。
+
+> 打开系统设置，找到显示与亮度页面，读取当前设置，不修改它。
+
+> 在当前已聚焦的搜索框中输入“中文测试 🐻”，核对文本，不提交。
+
+`aua_ready()` 会关联本聊天的实时屏幕；单独打开或重新打开面板用 `aua_screen()`。原生侧边栏需要客户端支持 MCP Apps，普通 stdio MCP 客户端仍可使用控制工具和下面的本机浏览器预览。
+
+## 实时屏幕与图片复制
+
+也可以直接从终端打开预览服务：
+
+```bash
 uv run android-use screen
 ```
 
-该 URL 只监听 127.0.0.1，带随机令牌，不要分享。MCP 原生面板通过 App 专属工具读取缓存，视频 base64 不进入模型消息；`aua_screen_frame` / `aua_screen_action` 仅供 UI 调用。UI 默认已编译随包分发，修改前端才需要在 ui 目录运行 `npm ci && npm run build`。
+把返回的 `url` 在本机浏览器或 Codex 右侧浏览器面板中打开。预览地址只监听 `127.0.0.1`，包含随机访问令牌，请勿公开分享该地址。
 
-## 手工配置 MCP
+工具栏从左到右：
 
-也可以手工将以下 MCP 配置加入支持 stdio 的客户端，将路径改为你的绝对仓库路径：
+| 控件 | 行为 |
+| --- | --- |
+| 返回 | 发送一次 Android 返回操作 |
+| 主屏幕 | 回到手机 Home |
+| 复制画面 | 将当前显示帧转为 PNG，直接写入系统剪贴板 |
+| 重新连接 | 重建视频连接 |
+
+复制成功会提示“画面已复制”，随后可在支持图片粘贴的聊天、文档或编辑器中按 **⌘V / Ctrl+V**。这不是复制文件路径，也不会通过工具栏生成截图文件；若浏览器阻止剪贴板写入，界面会提示失败。
+
+点击画面可定位，拖动可发出滑动操作；坐标由当前画面映射到 Android 显示像素。
+
+视频使用独立的 `screenrecord → H.264 → ffmpeg` 通道，前端读取内存中的视频帧缓存，不循环请求手机截图或控件树。关闭 / 隐藏面板后，5 秒无人续租即停止采集；认证暂停时也会清除画面并停止采集。
+
+## CLI 使用
+
+### 读取界面与截图
+
+```bash
+uv run android-use observe '{"mode":"tree"}'
+uv run android-use observe '{"mode":"both"}'
+```
+
+`tree` 返回控件树，`screenshot` 返回图片，`both` 同时返回两者。CLI 截图文件的绝对路径在 `image_paths` 中；MCP 则直接返回图片块。
+
+截图像素乘 `image.pixel_to_device` 得到动作需要的 **Android 显示像素**，不能直接使用 dp 或宿主窗口坐标。
+
+### 启动 App、定位与点击
+
+```bash
+uv run android-use launch_app '{"package":"com.android.settings","observe":"tree"}'
+uv run android-use find '{"selector":{"text":"显示与亮度"}}'
+uv run android-use tap '{"selector":{"text":"显示与亮度"},"observe":"tree"}'
+```
+
+`text`、`description`、`resource_id`、`class_name` 等选择器值应照当前控件树填写；上面的中文文字仅为示例，不同系统可能不同。同名目标会返回候选项，用 `index` 明确选择。
+
+已知坐标时也可以点击：
+
+```bash
+uv run android-use tap '{"x":200,"y":400,"observe":"tree"}'
+```
+
+`apps` 只查询已安装的第三方**包名**，不按 App 显示名称查找；启动 App 时请使用已确认的包名。
+
+### 输入中文、emoji 或追加文本
+
+先通过手机界面或 `tap` 聚焦一个可编辑、非密码输入框，再执行：
+
+```bash
+uv run android-use type_text '{"text":"中文测试 🐻","verify":true}'
+uv run android-use type_text '{"text":"，继续追加","replace":false,"verify":true}'
+```
+
+默认 `replace=true`，只输入、不提交。`verify=true` 使用原生 `getText` 回读完整内容；追加会保留已有 Unicode 文本。空字符串加默认替换可清空输入框。
+
+换行需要明确设置 `allow_newlines=true`，但部分聊天 App 会把换行当作发送；密码、PIN、验证码和生物认证由用户本人完成。
+
+### 滑动、返回与已知短路径
+
+```bash
+uv run android-use swipe '{"direction":"up","observe":"tree"}'
+uv run android-use press_button '{"name":"back"}'
+uv run android-use press_button '{"name":"home"}'
+```
+
+`direction` 是手指移动方向，`up` 通常查看列表后续内容。每次只滑一次；列表不再移动不等于已证明全量或到底。
+
+已知短路径可合并为批处理：
+
+```bash
+uv run android-use batch '{"steps":[{"op":"launch_app","args":{"package":"com.android.settings"}},{"op":"observe","args":{"mode":"tree"}}]}'
+```
+
+批处理最多 20 步，先校验整批参数，遇错误、等待超时、Enter 提交或单次时间预算即停止。按 `completed_steps` / `stopped_at` 继续，不能重放整批已执行或结果不确定的动作。
+
+### 认证接管
+
+```bash
+uv run android-use pause
+# 用户在手机上完成认证，并明确通知完成后：
+uv run android-use resume
+uv run android-use observe '{"mode":"tree"}'
+```
+
+`pause` 在该物理设备的 CLI、MCP 和视频预览之间共享。暂停期间不进行屏幕读取或手机控制；恢复后读取新状态，不使用接管前的坐标继续操作。
+
+### 查看全部参数
+
+```bash
+uv run android-use tools
+```
+
+MCP 工具以 `aua_` 为前缀：
+
+| 工具 | 用途 |
+| --- | --- |
+| `aua_doctor / aua_setup / aua_ready` | 设备发现、配置、启动与就绪检查 |
+| `aua_observe / aua_find / aua_wait` | 控件树、截图、目标查询与有界等待 |
+| `aua_tap / aua_swipe / aua_type_text` | 点击、滑动与 Unicode 输入 |
+| `aua_apps / aua_launch_app / aua_press_button` | 包名查询、启动与系统按钮 |
+| `aua_batch` | 有界批处理 |
+| `aua_pause / aua_resume` | 用户认证接管 |
+| `aua_screen` | 打开 / 复用实时屏幕侧边栏 |
+| `aua_screen_frame / aua_screen_action` | App 专属视频缓存和工具栏接口，供 UI 使用 |
+
+## 其他 MCP 客户端
+
+无需安装 Codex 插件，也可以手工配置本地 stdio MCP。支持 `mcpServers` JSON 配置的客户端可参考：
 
 ```json
 {
   "mcpServers": {
     "android_use": {
       "command": "uv",
-      "args": ["run", "--frozen", "--directory", "/absolute/path/android-use", "android-use-mcp"]
+      "args": [
+        "run",
+        "--frozen",
+        "--directory",
+        "/absolute/path/android-use",
+        "android-use-mcp"
+      ]
     }
   }
 }
 ```
 
-工具前缀为 `aua_`（Android Use Agent）：
+将路径改为仓库的绝对路径，并确保客户端进程能在 `PATH` 中找到 `uv`、`adb` 和 `ffmpeg`。如果已按上文安装 Codex 插件，就不要再重复注册同一个 MCP 服务。
 
-| 工具 | 用途 |
-| --- | --- |
-| doctor / setup / ready | 设备发现、配置、复用/启动和实际就绪检查 |
-| observe / find / wait | 控件树、图片、选择器查询与有界等待 |
-| tap / swipe / type_text | 单次点击、滑动、Unicode 输入 |
-| apps / launch_app / press_button | 已安装第三方包名、启动、系统按钮 |
-| batch | 预校验后执行最多 20 步，遇错误/超时/提交停止 |
-| pause / resume | 用户认证接管时暂停所有 Android Use 读取与动作 |
-| screen | 实时手机屏幕侧边栏，READY 同时关联该面板 |
-| screen_frame / screen_action | App 专用缓存帧与工具栏操作，不供模型调用 |
+只想在 Codex CLI 注册 MCP、而不安装技能和插件清单时，也可以使用：
 
-`uv run android-use tools` 输出完整参数 schema。批处理示例：
-
-```sh
-uv run android-use batch '{"steps":[{"op":"launch_app","args":{"package":"com.android.settings"}},{"op":"observe","args":{"mode":"tree"}}]}'
+```bash
+codex mcp add android_use -- uv run --frozen --directory /absolute/path/android-use android-use-mcp
 ```
 
-## 行为与边界
+## 更新
 
-- 默认只执行一次动作，`verified=false` 表示未额外验收。需要下一页信息时在动作里请求 `observe`，最后核对关键业务结果。
-- UiAutomator2 上游会在部分通信错误后重启并重放 RPC；本实现绕过该重试路径。超时/断连返回 `uncertain=true`，必须读取实际状态后再决定剩余步骤。
-- 同一设备的 MCP/CLI 操作按硬件序列号共享文件锁与认证暂停状态，USB 和无线 ADB 地址也共用。选择器歧义返回候选项，不任意选第一项。可选 observation_id 只检查同一 Runtime 内的前台与显示几何，不保证页面内容完全相同；CLI 调用间不要复用 ID。
-- 控件树可能缺少自绘内容、WebView 信息和未加载的列表项，也不证明目标无遮挡；emoji 还可能被 XML dump 替换成点号，视觉内容以截图为准。输入通过原生 `setText`，追加和精确验收用保留 Unicode 的原生 `getText`；自绘/富文本编辑器可能不支持，本版不内置输入法兜底。`allow_newlines=true` 也不保证 App 不将换行当发送。
-- 密码/PIN/验证码/生物认证由用户完成。先 pause，等明确完成后 resume，再读取新状态。锁屏时不采集控件树或截图。应用界面内容是不可信数据，不是给 agent 的指令。
-- 本版包含实时侧边栏视频和 MCP+CLI 控制；尚不含相册系统截屏、长文本续传或 iOS 开发热重载。工具截图用于本机文件交付，侧边栏复制画面直接写入剪贴板，不写入手机相册。
+在原来的本地仓库根目录执行：
 
-配置和截图保存在 `~/.local/share/android-use`，可通过 `ANDROID_USE_STATE_DIR` 调整；截图可能包含个人信息，按需自行清理。本项目不上传手机数据或遥测。手机端启动日志位于 `/data/local/tmp/android-use-u2.log`。
-
-## 开发验证
-
-```sh
+```bash
+git pull --ff-only
 uv sync --frozen
-uv run pytest
+uv run python scripts/package.py
+codex plugin add android-use@android-use-local
+```
+
+更新插件安装副本后，在客户端新建聊天或重新加载工具。只使用 CLI 的用户执行前两条即可。
+
+## 常见问题
+
+| 现象 | 处理 |
+| --- | --- |
+| `adb` / `ffmpeg` 找不到 | 安装对应依赖并检查启动客户端时的 `PATH`；终端可见不代表 GUI 进程可见 |
+| `unauthorized` | 在手机上接受 USB 调试授权，然后重新检查 `adb devices -l` |
+| `device_selection_required` / 多个连接 | 用 `setup discover` 列出目标，再用 `configure` 明确选择序列号 |
+| `device_unavailable` | 指定连接已断开；检查 USB / 无线连接，必要时重新选择已确认的同一设备 |
+| `service_not_started` | 执行 `setup '{"action":"start"}'`，然后重新 `ready` |
+| `phone_locked` / `screen_off` | 用户在手机上唤醒、解锁后，再验证 READY |
+| `preview_dependency_missing` | 安装 ffmpeg，确保客户端能找到它，再重新打开预览 |
+| 控制可用，视频未显示 | 检查连接、解锁状态及 ffmpeg；点击“重新连接”恢复视频，不因预览问题重复执行手机业务动作 |
+| 复制失败 | 在支持图片剪贴板的浏览器 / MCP App 宿主中使用，允许剪贴板写入，再点击“复制画面” |
+| `ambiguous_target` / 找不到控件 | 检查候选项或当前截图，处理遮挡；不要连续猜标签或盲点第一项 |
+| 输入 / 提交超时，结果不确定 | 先读取实际状态，确认已完成部分后继续，不自动重发输入、消息或订单 |
+
+## 原理、数据与边界
+
+控制通道：`Agent → MCP stdio → Android Use → ADB / UiAutomator2 → 前台 App`。
+
+视频通道：`Android screenrecord → H.264 / ADB → ffmpeg → 内存帧缓存 → 侧边栏`。
+
+服务启动时将依赖包中的 JAR 推送到 `/data/local/tmp/android-use-u2.jar`；它与普通 UI 动作分离，动作超时不会自动重启并重放 RPC。详细实现见[架构说明](docs/architecture.md)。
+
+- 默认 `verified=false` 表示未额外验收，不等于动作失败；最终业务结果仍需要实际界面证据。
+- 控件树可能缺少自绘内容、WebView 信息和未加载列表项，也不证明目标无遮挡；emoji 在 XML 中还可能被替换为点，视觉内容以截图为准。
+- `setText` 需要 App 支持原生可编辑控件，自绘 / 富文本编辑器可能不支持；本版不内置输入法兜底。
+- `observation_id` 只检查同一 Runtime 内的前台与视口上下文，不能跨 CLI 进程复用。
+- 配置与 CLI 截图保存在 `~/.local/share/android-use`，可用 `ANDROID_USE_STATE_DIR` 调整；手机端启动日志在 `/data/local/tmp/android-use-u2.log`。
+- 手机数据与视频保留在本机，本项目不上传遥测。工具截图和侧边栏复制不会写入手机相册。
+- 本版尚不包含相册系统截屏、长文本续传或 iOS 开发热重载。
+
+## 开发与验证
+
+Python 检查：
+
+```bash
+uv sync --frozen
 uv run ruff check src tests scripts
+uv run pytest
+```
+
+只有修改前端时才需要 Node.js。重建 UI 和运行浏览器测试：
+
+```bash
 cd ui
 npm ci
 npm run build
-npm test
+npx playwright install --with-deps chromium
+PLAYWRIGHT_CHANNEL=chromium npm test
 ```
 
-自动化测试覆盖设备选择、动作不重放、批处理停止点、歧义、锁屏/认证暂停、坐标缩放和真实 MCP stdio 往返。实机验收流程及本次结果见 [设备验证](docs/validation.md)。
+前端产物写入 `src/android_use/assets/phone-screen.html`，构建同时更新第三方许可声明。设备实测范围、已知差异和验收证据见[验证记录](docs/validation.md)。
+
+文档示例页可在仓库根目录启动，不连接真实手机：
+
+```bash
+node ui/scripts/readme-preview.mjs
+```
+
+它复用当前前端和 `docs/images/demo-screen.svg`，用于重新截取本 README 的明暗界面图。
 
 ## 许可证
 
-项目原创代码使用 [MIT](LICENSE) 许可证。浏览器 SDK 等第三方代码保留原有许可，详见 [第三方声明](THIRD_PARTY_NOTICES.md)。
+项目原创代码使用 [MIT](LICENSE) 许可证。浏览器 SDK 等第三方代码保留原有许可，详见[第三方声明](THIRD_PARTY_NOTICES.md)。

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="540" height="1200" viewBox="0 0 540 1200">
+  <!-- Synthetic documentation fixture, not a screenshot from a user's phone. -->
+  <rect width="540" height="1200" fill="#f7f8fa"/>
+  <g font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif" fill="#202124">
+    <text x="32" y="44" font-size="23" font-weight="600">9:41</text>
+    <g transform="translate(430 23)" fill="none" stroke="#30343b" stroke-width="3" stroke-linecap="round">
+      <path d="M0 10q12-12 24 0m-19 5q7-7 14 0"/>
+      <rect x="36" width="30" height="17" rx="4"/><path d="M69 6v6"/>
+      <rect x="40" y="4" width="20" height="9" rx="1" fill="#30343b" stroke="none"/>
+    </g>
+    <text x="32" y="142" font-size="43" font-weight="600">设置</text>
+    <rect x="28" y="176" width="484" height="67" rx="23" fill="#e9ecf1"/>
+    <g fill="none" stroke="#818994" stroke-width="2.6"><circle cx="60" cy="207" r="10"/><path d="m68 215 8 8"/></g>
+    <text x="94" y="217" font-size="23" fill="#7a828e">搜索设置</text>
+    <rect x="24" y="272" width="492" height="781" rx="25" fill="white"/>
+    <g font-size="25">
+      <g transform="translate(48 316)">
+        <rect width="50" height="50" rx="15" fill="#e7efff"/>
+        <g fill="none" stroke="#5e83c5" stroke-width="3" stroke-linecap="round"><path d="M12 22q13-13 26 0m-20 5q7-7 14 0"/><circle cx="25" cy="33" r="1.5" fill="#5e83c5"/></g>
+        <text x="74" y="14">网络和互联网</text><text x="74" y="44" font-size="18" fill="#8c929b">Wi-Fi · 移动网络</text>
+      </g>
+      <g transform="translate(48 422)">
+        <rect width="50" height="50" rx="15" fill="#edf1fb"/>
+        <path d="m20 13 14 12-14 13V13l14 12-14 13M13 16l24 20" fill="none" stroke="#6d83b4" stroke-width="2.5" stroke-linejoin="round"/>
+        <text x="74" y="14">已连接的设备</text><text x="74" y="44" font-size="18" fill="#8c929b">蓝牙 · 连接偏好设置</text>
+      </g>
+      <g transform="translate(48 528)">
+        <rect width="50" height="50" rx="15" fill="#f5eeff"/>
+        <g fill="none" stroke="#9a7cc2" stroke-width="2.4"><rect x="12" y="12" width="10" height="10" rx="2"/><rect x="28" y="12" width="10" height="10" rx="2"/><rect x="12" y="28" width="10" height="10" rx="2"/><rect x="28" y="28" width="10" height="10" rx="2"/></g>
+        <text x="74" y="14">应用</text><text x="74" y="44" font-size="18" fill="#8c929b">最近使用 · 默认应用</text>
+      </g>
+      <g transform="translate(48 634)">
+        <rect width="50" height="50" rx="15" fill="#e9f4ec"/>
+        <g fill="none" stroke="#709b7a" stroke-width="2.5"><rect x="11" y="17" width="27" height="17" rx="3"/><path d="M40 22v7M16 22h15m-15 6h15"/></g>
+        <text x="74" y="14">电池</text><text x="74" y="44" font-size="18" fill="#8c929b">80% · 电池使用情况</text>
+      </g>
+      <g transform="translate(48 740)">
+        <rect width="50" height="50" rx="15" fill="#fff0e5"/>
+        <g fill="none" stroke="#bf9571" stroke-width="2.5"><circle cx="25" cy="25" r="8"/><path d="M25 9v4m0 24v4M9 25h4m24 0h4M14 14l3 3m16 16 3 3M14 36l3-3m16-16 3-3"/></g>
+        <text x="74" y="14">显示</text><text x="74" y="44" font-size="18" fill="#8c929b">亮度 · 深色主题</text>
+      </g>
+      <g transform="translate(48 846)">
+        <rect width="50" height="50" rx="15" fill="#faeaee"/>
+        <path d="M13 21h7l9-8v25l-9-8h-7zm22-3q9 8 0 16" fill="none" stroke="#bd8191" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <text x="74" y="14">声音和振动</text><text x="74" y="44" font-size="18" fill="#8c929b">音量 · 勿扰模式</text>
+      </g>
+      <g transform="translate(48 952)">
+        <rect width="50" height="50" rx="15" fill="#e8f2f4"/>
+        <g fill="none" stroke="#739ca5" stroke-width="2.5"><rect x="13" y="13" width="24" height="25" rx="4"/><path d="M18 20h14m-14 6h14m-14 6h8"/></g>
+        <text x="74" y="14">存储空间</text><text x="74" y="44" font-size="18" fill="#8c929b">查看设备存储空间</text>
+      </g>
+    </g>
+    <g fill="none" stroke="#c7ccd3" stroke-width="2.4" stroke-linecap="round"><path d="m475 330 7 8-7 8m0 90 7 8-7 8m0 90 7 8-7 8m0 90 7 8-7 8m0 90 7 8-7 8m0 90 7 8-7 8m0 90 7 8-7 8"/></g>
+    <text x="270" y="1109" font-size="16" fill="#b4b9c2" text-anchor="middle">文档示例画面</text>
+    <rect x="188" y="1174" width="164" height="6" rx="3" fill="#292d34"/>
+  </g>
+</svg>
