@@ -75,6 +75,15 @@ class FakeBackend:
     def swipe(self, start, end, duration):
         self.actions.append(("swipe", start, end))
 
+    def long_press(self, x, y, duration):
+        self.actions.append(("long_press", x, y, duration))
+
+    def double_tap(self, x, y, interval):
+        self.actions.append(("double_tap", x, y, interval))
+
+    def drag(self, start, end, duration):
+        self.actions.append(("drag", start, end, duration))
+
     def launch(self, package):
         self.actions.append(("launch", package))
 

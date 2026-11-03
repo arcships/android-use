@@ -222,6 +222,19 @@ class Backend:
     def tap(self, x, y):
         return self.d.jsonrpc.click(x, y)
 
+    def long_press(self, x, y, duration):
+        return self.d.jsonrpc.click(x, y, int(duration * 1000))
+
+    def double_tap(self, x, y, interval):
+        # One intentional pair. If either call fails, never replay the first click.
+        if self.d.jsonrpc.click(x, y) is False:
+            return False
+        time.sleep(interval)
+        return self.d.jsonrpc.click(x, y)
+
+    def drag(self, start, end, duration):
+        return self.d.jsonrpc.drag(*start, *end, max(1, int(duration * 200)))
+
     def swipe(self, start, end, duration):
         return self.d.jsonrpc.swipe(*start, *end, max(1, int(duration * 200)))
 

@@ -37,6 +37,8 @@ Android Use 的核心是使用[官方 Python MCP SDK](https://github.com/modelco
 | --- | --- |
 | 实时屏幕 | 独立 H.264 视频通道，支持 MCP App 侧边栏和本机浏览器预览 |
 | 直接操作 | 按控件文字、描述、资源 ID 或屏幕坐标点击，支持单次滑动、Home、返回 |
+| 更多手势 | 长按、双击、按明确起终点拖拽；支持动作后的条件等待 |
+| 减少往返 | 一次调用完成动作、等待目标出现 / 消失和返回观察；有界自动滚动查找 |
 | 中文与 emoji | 输入、替换、追加和完整文本回读，默认不提交 |
 | 读取界面 | 控件树、截图、目标查询和有界等待 |
 | 图片复制 | 点击“复制画面”，将当前显示帧直接写入系统剪贴板，供聊天或文档粘贴 |
@@ -287,6 +289,59 @@ uv run android-use tap '{"x":200,"y":400,"observe":"tree"}'
 
 `apps` 只查询已安装的第三方**包名**，不按 App 显示名称查找；启动 App 时请使用已确认的包名。
 
+### 动作、条件等待与观察合并
+
+从 0.3.0 起，`tap`、`long_press`、`double_tap`、`drag`、`swipe`、`type_text`、`press_button` 和 `launch_app` 都支持可选的 `wait_for`。无需分别调用动作、等待和读树三个工具：
+
+```bash
+uv run android-use tap '{"selector":{"text":"显示与亮度"},"wait_for":{"selector":{"text_contains":"亮度"},"state":"visible","timeout_seconds":5},"observe":"tree"}'
+```
+
+上例先点击，再等待目标出现在当前可见控件树中，最后返回该次观察。选择器需要按实际页面填写。`state` 为 `visible`（默认）或 `gone`，`timeout_seconds` 为 0–20 秒，默认 5 秒；0 表示只检查一次。`gone` 表示当前可见树中不再有匹配，不代表对象已从 App 数据中删除；空树也不作为消失证据。
+
+查看 `wait.condition_met` 判断条件是否满足。超时时返回 `ok=false`、`error.code=postcondition_timeout`、`action_executed=true` 和 `replay_action=false`：动作已经得到执行确认，只是期望的 UI 条件未在时间内出现，**不要再次点击或重放整批动作**。条件满足也不自动证明消息已送达、订单已完成等业务结果。
+
+不传 `wait_for` 时保持原有行为，不增加等待；`observe` 仍默认 `none`。树观察会复用等待结束时的快照，避免再 dump 一遍。等待并不保证动画已完全结束。需要独立等待时也支持相同的出现 / 消失条件：
+
+```bash
+uv run android-use wait '{"selector":{"text":"加载中"},"state":"gone","timeout_seconds":5}'
+```
+
+独立 `wait` 的 `found` 表示当前是否有可见匹配，`condition_met` 表示请求的条件是否满足；等待消失成功时两者分别为 `false`、`true`。
+
+### 自动滚动查找
+
+```bash
+uv run android-use scroll_until '{"selector":{"text":"显示与亮度"},"direction":"up","max_swipes":8,"timeout_seconds":20,"observe":"tree"}'
+```
+
+`scroll_until` 先检查目标是否可见，已可见时零滑动返回；未找到时逐次滑动、观察，找到后停止，**不自动点击结果**。多处匹配会返回候选项，后续点击仍需消歧。嵌套列表或横向列表可传 `region={x,y,width,height}`，坐标为 Android 显示像素；区域应位于当前可滚动容器内。
+
+| 参数 / 返回值 | 含义 |
+| --- | --- |
+| `max_swipes` | 0–20，默认 8；0 表示仅查询当前页 |
+| `timeout_seconds` | 0–20，默认 20；限制查找时间 |
+| `duration` / `settle_seconds` | 单次手势时长 / 手势后等待，均默认 0.4 秒 |
+| `observe` | 默认 `tree`，返回最终观察；也可选 `none`、`screenshot`、`both` |
+| `found` / `matches` / `swipes` | 是否找到、可见候选项、实际完成的滑动次数 |
+| `stop_reason` | `found`、`max_swipes`、`timeout`、`no_progress` 或 `empty_tree` |
+
+连续两次滑动后的区域快照不变时，以 `no_progress` 停止；这只是无进展保护，不证明列表到底或已遍历全量。前台 App、Activity 或屏幕尺寸变化会报 `scroll_context_changed`，锁屏、用户接管或不确定错误也会中止，不自动换页面继续。`ok=true, found=false` 表示查找已结束但未找到，不能当作目标存在。
+
+### 长按、双击与拖拽
+
+```bash
+uv run android-use long_press '{"selector":{"text":"测试项目"},"duration":0.8,"observe":"tree"}'
+uv run android-use double_tap '{"x":300,"y":600,"interval":0.08,"observe":"tree"}'
+uv run android-use drag '{"start":{"x":200,"y":600},"end":{"x":700,"y":600},"duration":0.6,"observe":"tree"}'
+```
+
+这些坐标与控件文字仅为示例，执行前按当前观察确定目标。长按和双击接受与 `tap` 相同的选择器 / 坐标参数，拖拽接受明确的 `start` / `end` 坐标；都支持 `observation_id`、`wait_for` 和 `observe`，也可放入 `batch`。
+
+长按 `duration` 为 0.5–3 秒（默认 0.8），拖拽为 0.1–3 秒（默认 0.6）。双击 `interval` 为 0.04–0.25 秒（默认 0.08），它不含两次 RPC 的传输耗时；高延迟连接或 App 自身手势策略可能使其被识别为两次单击。双击是一个有意的点击对，若中途失败可能已完成第一击，不能自动重试整对。
+
+新手势提供于 MCP / CLI；实时预览的手动交互仍为点击和方向滑动。多指缩放、任意轨迹、键盘选区和自绘编辑器输入兜底尚未实现，不能视作覆盖所有 Android 交互。
+
 ### 输入中文、emoji 或追加文本
 
 先通过手机界面或 `tap` 聚焦一个可编辑、非密码输入框，再执行：
@@ -316,7 +371,9 @@ uv run android-use press_button '{"name":"home"}'
 uv run android-use batch '{"steps":[{"op":"launch_app","args":{"package":"com.android.settings"}},{"op":"observe","args":{"mode":"tree"}}]}'
 ```
 
-批处理最多 20 步，先校验整批参数，遇错误、等待超时、Enter 提交或单次时间预算即停止。按 `completed_steps` / `stopped_at` 继续，不能重放整批已执行或结果不确定的动作。
+批处理最多 20 步，先校验整批参数，支持上述新手势、动作等待和 `scroll_until`；遇错误、未满足等待条件、滚动未找到、Enter 提交或 25 秒时间预算即停止。等待和滚动共享批处理剩余预算；时间限制在操作之间检查，已经发出的 ADB / RPC 可能超出预算。
+
+动作后的等待超时以 `postcondition_timeout` 停止，滚动未找到以 `scroll_not_found` 停止。已经返回结果的步骤会计入 `completed_steps`，`stopped_at` 指向下一步；因此计数不代表每步的业务条件都成功。动作发生不确定错误时，`stopped_at` 指向报错步骤，先观察实际结果。检查 `ok`、`stop_reason` 和 `results` 后续接，不能重放整批。
 
 ### 认证接管
 
@@ -342,6 +399,8 @@ MCP 工具以 `aua_` 为前缀：
 | `aua_doctor / aua_setup / aua_ready` | 设备发现、配置、启动与就绪检查 |
 | `aua_observe / aua_find / aua_wait` | 控件树、截图、目标查询与有界等待 |
 | `aua_tap / aua_swipe / aua_type_text` | 点击、滑动与 Unicode 输入 |
+| `aua_long_press / aua_double_tap / aua_drag` | 长按、双击与明确起终点拖拽 |
+| `aua_scroll_until` | 有界滚动查找可见目标，不自动点击 |
 | `aua_apps / aua_launch_app / aua_press_button` | 包名查询、启动与系统按钮 |
 | `aua_batch` | 有界批处理 |
 | `aua_pause / aua_resume` | 用户认证接管 |
@@ -504,6 +563,8 @@ codex plugin add android-use@android-use-local
 | 复制失败 | 在支持图片剪贴板的浏览器 / MCP App 宿主中使用，允许剪贴板写入，再点击“复制画面” |
 | `ambiguous_target` / 找不到控件 | 检查候选项或当前截图，处理遮挡；不要连续猜标签或盲点第一项 |
 | 输入 / 提交超时，结果不确定 | 先读取实际状态，确认已完成部分后继续，不自动重发输入、消息或订单 |
+| `postcondition_timeout` | 动作已执行，但后续 UI 条件未满足；观察当前页面并处理原因，不重放动作 |
+| `scroll_until` 未找到 | 检查 `stop_reason`、最终观察与滚动区域；`no_progress` 不等于列表到底 |
 
 ## 原理、数据与边界
 
@@ -530,6 +591,14 @@ uv sync --frozen
 uv run ruff check src tests scripts
 uv run pytest
 ```
+
+真机手势验收需要已授权、解锁的 Android、JDK 和 Android SDK（至少一个 API 28+ 稳定平台及包含 aapt、d8、zipalign、apksigner 的 Build Tools），先完成控制服务启动与 READY，然后运行：
+
+```bash
+uv run python scripts/accept_device.py --serial SERIAL --sdk /absolute/path/android-sdk
+```
+
+替换为实际设备和 SDK 路径。脚本临时构建并安装无权限测试 App，通过真实 MCP stdio 调用验收延迟控件出现 / 消失、原生长按 / 双击 / 拖拽事件、滚动查找及批处理停止；结束后卸载测试 App 并尝试恢复原前台 Activity。若设备已有同名验收包，脚本拒绝覆盖；运行期间请让测试独占手机。它不需要 Gradle，也不把手机数据或构建产物提交到仓库。
 
 只有修改前端时才需要 Node.js。重建 UI 和运行浏览器测试：
 

@@ -19,7 +19,7 @@ from .backend import (
     state_dir,
     write_config,
 )
-from .models import ARG_MODELS, BatchStep, Selector
+from .models import ARG_MODELS, BatchStep, Selector, WaitCondition
 from .tree import compact, in_viewport, matches, parse_tree, tap_point
 
 
@@ -34,6 +34,7 @@ class Runtime:
         self._mutex = threading.Lock()
         self._device_locked = False
         self._screen_client = None
+        self._deadline = None
 
     def screen_client(self):
         from .screen import ScreenClient
@@ -91,9 +92,12 @@ class Runtime:
         key = hashlib.sha256(self.device_key.encode()).hexdigest()[:24]
         return state_dir() / (key + ".paused")
 
-    def _usable(self):
+    def _check_paused(self):
         if self._pause_path().exists():
             raise UseError("user_takeover", "Device is paused. Resume only after user confirmation")
+
+    def _usable(self):
+        self._check_paused()
         if self.backend.locked():
             raise UseError("phone_locked", "Unlock the device on the phone, then call ready")
         if not self.backend.d.info.get("screenOn", False):
@@ -102,6 +106,29 @@ class Runtime:
     def call(self, op, **args):
         if op in {"screen", "screen_frame", "screen_action"}:
             return self.screen_call(op, **args)
+        if op == "pause":
+            # Cancellation must bypass both locks without changing a running
+            # operation's mutation/uncertainty bookkeeping.
+            try:
+                if self.backend is None:
+                    self._connect()
+                self._pause_path().touch(mode=0o600)
+                from .screen import ScreenClient
+
+                ScreenClient(self.serial, self.device_key).stop_capture_if_running()
+                return {"ok": True, "paused": True}
+            except Exception as exc:
+                return {
+                    "ok": False,
+                    "error": exc.as_dict()
+                    if isinstance(exc, UseError)
+                    else {
+                        "code": "pause_failed",
+                        "uncertain": False,
+                        "message": "Inspect pause state before continuing",
+                        "cause": type(exc).__name__,
+                    },
+                }
         if not self._mutex.acquire(blocking=False):
             return {
                 "ok": False,
@@ -114,6 +141,7 @@ class Runtime:
         try:
             return self._call(op, **args)
         finally:
+            self._deadline = None
             self._mutex.release()
 
     def _call(self, op, **args):
@@ -143,19 +171,15 @@ class Runtime:
                 }
             self._connect()
             with self._guard():
-                if op == "pause":
-                    self._pause_path().touch(mode=0o600)
-                    from .screen import ScreenClient
-
-                    ScreenClient(self.serial, self.device_key).stop_capture_if_running()
-                    return {"ok": True, "paused": True}
                 if op == "resume":
                     self._pause_path().unlink(missing_ok=True)
                     return {"ok": True, "paused": False}
                 self._usable()
                 if op == "batch":
                     return self._batch(**args)
-                return self._dispatch(op, args)
+                result = self._dispatch(op, args)
+                self._check_paused()
+                return result
         except (ValidationError, ValueError, TypeError) as exc:
             # Validation errors may contain requested text; do not echo input payloads.
             return self._error(
@@ -285,14 +309,8 @@ class Runtime:
                 "total": len(nodes),
             }
         if op == "wait":
-            deadline = time.monotonic() + args["timeout_seconds"]
-            while True:
-                found = matches(self._nodes(), Selector.model_validate(args["selector"]))
-                if found:
-                    return {"ok": True, "found": True, "matches": found[:20]}
-                if time.monotonic() >= deadline:
-                    return {"ok": True, "found": False, "timed_out": True}
-                time.sleep(min(0.25, max(0, deadline - time.monotonic())))
+            result, _ = self._wait_condition(args)
+            return {"ok": True, **result}
         if op == "apps":
             packages = self.backend.apps(args.get("query", ""))
             limit = args.get("limit", 100)
@@ -306,18 +324,22 @@ class Runtime:
                 "installed_verified": True,
                 "scope": "Third-party packages; query matches package ID",
             }
-        if op == "tap":
-            return self._tap(**args)
+        if op in {"tap", "long_press", "double_tap"}:
+            return self._tap(kind=op, **args)
+        if op == "drag":
+            return self._drag(**args)
+        if op == "scroll_until":
+            return self._scroll_until(**args)
         if op == "swipe":
             return self._swipe(**args)
         if op == "type_text":
             return self._type(**args)
         if op == "press_button":
             self._write(self.backend.press, args["name"])
-            return self._after(args["observe"])
+            return self._after(args["observe"], args["wait_for"])
         if op == "launch_app":
             self._write(self.backend.launch, args["package"])
-            return self._after(args["observe"])
+            return self._after(args["observe"], args["wait_for"])
         raise ValueError("Unknown operation")
 
     def _nodes(self):
@@ -332,7 +354,7 @@ class Runtime:
             "size": list(self.backend.size()),
         }
 
-    def _observe(self, mode="tree", max_nodes=200):
+    def _observe(self, mode="tree", max_nodes=200, *, nodes=None):
         context = self._context()
         token = uuid.uuid4().hex
         self.observations[token] = context
@@ -346,8 +368,11 @@ class Runtime:
             "coordinate_system": "Android display pixels",
         }
         if mode in {"tree", "both"}:
-            result["tree"] = compact(self._nodes(), context["size"], max_nodes)
+            result["tree"] = compact(
+                self._nodes() if nodes is None else nodes, context["size"], max_nodes
+            )
         if mode in {"screenshot", "both"}:
+            self._usable()
             picture = self.backend.screenshot()
             original = picture.size
             if tuple(context["size"]) != original:
@@ -363,6 +388,7 @@ class Runtime:
             }
             # Internal payload removed from JSON and emitted as an MCP ImageContent block.
             result["_image_data"] = base64.b64encode(buffer.getvalue()).decode()
+        self._check_paused()
         return result
 
     def _check_observation(self, token):
@@ -403,23 +429,107 @@ class Runtime:
             raise UseError("action_uncertain", "Device did not acknowledge action", uncertain=True)
         return result
 
-    def _after(self, observe):
+    def _limit_deadline(self, timeout):
+        deadline = time.monotonic() + timeout
+        return min(deadline, self._deadline) if self._deadline is not None else deadline
+
+    def _wait_condition(self, condition):
+        condition = WaitCondition.model_validate(condition)
+        selector = condition.selector
+        deadline = self._limit_deadline(condition.timeout_seconds)
+        start = time.monotonic()
+        while True:
+            self._usable()
+            nodes = self._nodes()
+            self._usable()
+            size = self.backend.size()
+            found = matches([n for n in nodes if in_viewport(n, size)], selector)
+            # An empty/failed hierarchy is not evidence that a target disappeared.
+            met = bool(found) if condition.state == "visible" else bool(nodes) and not found
+            timed_out = not met and time.monotonic() >= deadline
+            if met or timed_out:
+                return {
+                    "condition_met": met,
+                    "state": condition.state,
+                    "found": bool(found),
+                    "matches": found[:20],
+                    "timed_out": timed_out,
+                    "elapsed_seconds": round(time.monotonic() - start, 3),
+                }, nodes
+            time.sleep(min(0.2, max(0, deadline - time.monotonic())))
+            if time.monotonic() >= deadline:
+                return {
+                    "condition_met": False,
+                    "state": condition.state,
+                    "found": bool(found),
+                    "matches": found[:20],
+                    "timed_out": True,
+                    "elapsed_seconds": round(time.monotonic() - start, 3),
+                }, nodes
+
+    def _after(self, observe, wait_for=None):
         result = {"ok": True, "action_executed": True, "verified": False}
+        nodes = None
+        if wait_for is not None:
+            waited, nodes = self._wait_condition(wait_for)
+            result["wait"] = waited
+            if not waited["condition_met"]:
+                result.update(
+                    ok=False,
+                    error={
+                        "code": "postcondition_timeout",
+                        "message": "Action acknowledged; requested UI condition did not arrive",
+                        "uncertain": False,
+                    },
+                    replay_action=False,
+                )
         if observe != "none":
-            result["observation"] = self._observe(observe)
+            self._usable()
+            result["observation"] = self._observe(observe, nodes=nodes)
         return result
 
-    def _tap(self, selector, x, y, observation_id, observe):
-        self._check_observation(observation_id)
+    def _target_point(self, selector, x, y):
         if selector:
             x, y = tap_point(self._resolve(selector), self.backend.size())
-        w, h = self.backend.size()
-        if not (0 <= x < w and 0 <= y < h):
-            raise ValueError("Coordinates outside display")
-        self._write(self.backend.tap, x, y)
-        return self._after(observe)
+        self._validate_point((x, y))
+        return x, y
 
-    def _swipe(self, direction, region, duration, observation_id, observe):
+    def _validate_point(self, point):
+        w, h = self.backend.size()
+        if not (0 <= point[0] < w and 0 <= point[1] < h):
+            raise ValueError("Coordinates outside display")
+
+    def _tap(
+        self,
+        selector,
+        x,
+        y,
+        observation_id,
+        observe,
+        wait_for=None,
+        kind="tap",
+        duration=None,
+        interval=None,
+    ):
+        self._check_observation(observation_id)
+        x, y = self._target_point(selector, x, y)
+        if kind == "long_press":
+            self._write(self.backend.long_press, x, y, duration)
+        elif kind == "double_tap":
+            self._write(self.backend.double_tap, x, y, interval)
+        else:
+            self._write(self.backend.tap, x, y)
+        return self._after(observe, wait_for)
+
+    def _drag(self, start, end, duration, observation_id, observe, wait_for=None):
+        self._check_observation(observation_id)
+        start, end = (start["x"], start["y"]), (end["x"], end["y"])
+        self._validate_point(start)
+        self._validate_point(end)
+        self._write(self.backend.drag, start, end, duration)
+        return self._after(observe, wait_for)
+
+    def _swipe(self, direction, region, duration, observation_id, observe, wait_for=None):
         self._check_observation(observation_id)
         w, h = self.backend.size()
         r = region or {
@@ -439,10 +549,104 @@ class Runtime:
             "left": (right, left),
             "right": (left, right),
         }[direction]
+        if start == end:
+            raise ValueError("Swipe region is too small for this direction")
         self._write(self.backend.swipe, start, end, duration)
-        return self._after(observe)
+        return self._after(observe, wait_for)
 
-    def _type(self, text, selector, replace, allow_newlines, verify, observe):
+    def _scroll_until(
+        self,
+        selector,
+        direction,
+        region,
+        duration,
+        max_swipes,
+        timeout_seconds,
+        settle_seconds,
+        observe,
+    ):
+        deadline = self._limit_deadline(timeout_seconds)
+        context = self._context()
+        w, h = context["size"]
+        region = region or {
+            "x": int(w * 0.1),
+            "y": int(h * 0.2),
+            "width": int(w * 0.8),
+            "height": int(h * 0.6),
+        }
+        if region["x"] + region["width"] > w or region["y"] + region["height"] > h:
+            raise ValueError("Region outside display")
+        selector = Selector.model_validate(selector)
+        previous = None
+        unchanged = 0
+        swipes = 0
+        while True:
+            self._usable()
+            if context != self._context():
+                raise UseError("scroll_context_changed", "App/activity/display changed; inspect UI")
+            nodes = self._nodes()
+            self._usable()
+            if context != self._context():
+                raise UseError("scroll_context_changed", "App/activity/display changed; inspect UI")
+            visible = [n for n in nodes if in_viewport(n, (w, h))]
+            found = matches(visible, selector)
+            fingerprint = self._scroll_fingerprint(visible, region)
+            if previous is not None:
+                unchanged = unchanged + 1 if fingerprint == previous else 0
+            previous = fingerprint
+            if found:
+                reason = "found"
+            elif not nodes:
+                reason = "empty_tree"
+            elif time.monotonic() >= deadline:
+                reason = "timeout"
+            elif unchanged >= 2:
+                reason = "no_progress"
+            elif swipes >= max_swipes:
+                reason = "max_swipes"
+            else:
+                # Recheck after the read and before each individual intentional swipe.
+                self._usable()
+                if context != self._context():
+                    raise UseError(
+                        "scroll_context_changed", "App/activity/display changed; inspect UI"
+                    )
+                if time.monotonic() >= deadline:
+                    reason = "timeout"
+                else:
+                    self._swipe(direction, region, duration, None, "none")
+                    swipes += 1
+                    time.sleep(min(settle_seconds, max(0, deadline - time.monotonic())))
+                    continue
+            result = {
+                "ok": True,
+                "found": bool(found),
+                "matches": found[:20],
+                "swipes": swipes,
+                "stop_reason": reason,
+                "action_executed": swipes > 0,
+                "verified": False,
+                "replay_action": False,
+            }
+            if observe != "none":
+                self._usable()
+                result["observation"] = self._observe(observe, nodes=nodes)
+            return result
+
+    @staticmethod
+    def _scroll_fingerprint(nodes, region):
+        # Exclude clocks/status bars outside the requested scroll region.
+        x, y, w, h = (region[k] for k in ("x", "y", "width", "height"))
+        return tuple(
+            (n["class_name"], n["resource_id"], n["text"], n["description"], tuple(n["rect"]))
+            for n in nodes
+            if n["rect"][0] < x + w
+            and n["rect"][1] < y + h
+            and n["rect"][0] + n["rect"][2] > x
+            and n["rect"][1] + n["rect"][3] > y
+        )
+
+    def _type(self, text, selector, replace, allow_newlines, verify, observe, wait_for=None):
         node = self._resolve(
             selector or {"focused": True, "class_name": "android.widget.EditText"}, editable=True
         )
@@ -469,7 +673,7 @@ class Runtime:
                     characters_expected=len(expected),
                     characters_observed=len(readback),
                 )
-        result = self._after(observe)
+        result = self._after(observe, wait_for)
         result.update(input_complete=True, verified=verify, characters=len(expected))
         if verify:
             result["verification_source"] = "native_getText"
@@ -477,9 +681,9 @@ class Runtime:
 
     def _batch(self, steps):
         results = []
-        start = time.monotonic()
+        self._deadline = time.monotonic() + 25
         for i, (op, args) in enumerate(steps):
-            if time.monotonic() - start > 25:
+            if time.monotonic() >= self._deadline:
                 return {
                     "ok": True,
                     "completed_steps": i,
@@ -490,7 +694,16 @@ class Runtime:
             self.mutation_attempted = False
             try:
                 self._usable()
+                if time.monotonic() >= self._deadline:
+                    return {
+                        "ok": True,
+                        "completed_steps": i,
+                        "stopped_at": i,
+                        "stop_reason": "time_budget",
+                        "results": results,
+                    }
                 result = self._dispatch(op, args)
+                self._check_paused()
             except Exception as exc:
                 if not isinstance(exc, UseError):
                     exc = UseError(
@@ -509,13 +722,24 @@ class Runtime:
                     "replay_action": False,
                 }
             results.append(result)
-            if op == "wait" and not result["found"]:
+            if (
+                not result["ok"]
+                or (op == "wait" and not result["condition_met"])
+                or (op == "scroll_until" and not result["found"])
+            ):
                 return {
                     "ok": False,
                     "completed_steps": i + 1,
                     "stopped_at": i + 1,
-                    "stop_reason": "wait_timeout",
+                    "stop_reason": (
+                        "postcondition_timeout"
+                        if not result["ok"]
+                        else "scroll_not_found"
+                        if op == "scroll_until"
+                        else "wait_timeout"
+                    ),
                     "results": results,
+                    "replay_action": False,
                 }
             if op == "press_button" and args["name"] == "enter" and i + 1 < len(steps):
                 return {

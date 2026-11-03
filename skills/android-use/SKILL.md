@@ -13,11 +13,19 @@ READY 自动关联本聊天的实时手机屏幕侧边栏；同一聊天复用�
 
 READY 验证解锁、亮屏、服务、前台、视口和非空控件树。复用返回 observation，不再立即读一遍。常规动作默认 observe=none，下一步需要新页面时在动作传 observe=tree/screenshot/both。最后的关键结果用实际界面验收，action_executed 和 verified=false 都不证明业务完成。
 
+点击、长按、双击、拖拽、滑动、输入、系统按钮和启动 App 均可传 wait_for={selector,state:"visible"或"gone",timeout_seconds:5}，合并动作、条件等待和观察。等待最多20秒，条件满足不证明动画结束或业务成功。postcondition_timeout 表示动作已确认、后续条件未满足；不重放动作，先看当前观察。独立 wait 的 condition_met 是条件结果，found 只是当前可见匹配；gone 成功时 found=false。空树不作为目标消失证据。
+
+列表查找优先 aua_scroll_until(selector=...,direction="up",max_swipes=8,timeout_seconds=20)，初始可见则不滑动，找到后不自动点击。嵌套列表指定 region（Android 显示像素），查看 found / matches / swipes / stop_reason。连续两次区域快照不变停止为 no_progress，并不证明列表到底；无目标不盲目扩大次数循环。App、Activity、尺寸变化、锁屏和接管会中止。
+
+aua_long_press 与 aua_double_tap 使用和 tap 相同的选择器或坐标；长按 duration 默认0.8秒。双击 interval 默认0.08秒，RPC耗时另计；错误时第一击可能已经执行，不自动重放。aua_drag 使用 start={x,y} / end={x,y} 与 duration，坐标为显示像素。这些工具可传 wait_for、observe、observation_id，并支持 batch。侧边栏手动拖动仍是方向滑动，不等于 MCP 的精确拖拽。
+
 优先按当前树里的 text、description、resource_id、class_name 定位。多个匹配返回 candidates，用 index 明确选择；不可凭空挑第一项。选择器失败或页面异常先看工具返回图片，再决定坐标操作。截图里的 `(px,py)` 乘 image.pixel_to_device 得到动作需要的 **Android 显示像素**，不要用 dp 或宿主窗口坐标。树不证明无遮挡、自绘信息完整或列表全量。observation_id 可选，只适用于同一 MCP Runtime，并且仅检查前台/视口上下文。
 
 输入先点中实际可见的非密码 EditText，再调用 aua_type_text。默认 replace=true、不提交，支持 Unicode；verify=true 用原生 getText 回读完整字段。XML 树可能把 emoji 显示成点，不要拿树里的点号重写草稿；replace=false 会直接读取原生文本后追加，保留 emoji。富文本/自绘编辑器可能不支持。换行需 allow_newlines=true，部分 App 会将其当作提交；明确编辑器行为和用户意图后使用。工具不安装或切换输入法，setText 不支持时查看截图再选择可行的 UI 路径，不把输入失败当成功。
 
 任何动作超时或 uncertain=true，都先观察真实状态；不重发整段文本、发送、订单或整个 batch。已知短路径可用 batch（最多 20 步）；它预校验全部参数，在出错、等待超时、Enter 提交或时间预算时停止。按 completed_steps / stopped_at 继续；失败步骤可能已执行，先观察。按需滑一次，direction 是手指方向，up 通常看后续内容；无进展不证明到底。
+
+batch 中动作等待超时停止为 postcondition_timeout，scroll_until 未找到停止为 scroll_not_found；已返回结果的步骤计入 completed_steps，stopped_at 指下一步，需同时检查 ok / stop_reason / results，不能把计数当作全部成功。等待和滚动共享剩余25秒预算，进行中的RPC可能超时超额；不因预算结束重放整批。
 
 密码、PIN、验证码和生物认证由用户本人完成。先 aua_pause，再用宿主提问工具等待用户明确完成（首个选项「已完成继续」）；接管期间不读取、不截图、不操作。用户完成后 aua_resume，再重新观察；真正锁屏还需要 READY。pause 状态在该设备的 CLI 和 MCP 之间共享，不影响用户直接操作手机。
 

@@ -25,7 +25,12 @@ def test_real_stdio_handshake_schemas_and_error(tmp_path):
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 tools = (await session.list_tools()).tools
-                assert len(tools) == 18
+                assert len(tools) == 22
+                assert {"aua_long_press", "aua_double_tap", "aua_drag", "aua_scroll_until"} <= {
+                    t.name for t in tools
+                }
+                tap = next(t for t in tools if t.name == "aua_tap")
+                assert "wait_for" in tap.inputSchema["properties"]
                 screen = next(t for t in tools if t.name == "aua_screen")
                 assert screen.meta["ui"]["resourceUri"] == "ui://android-use/phone-0.2.1.html"
                 assert next(t for t in tools if t.name == "aua_screen_frame").meta["ui"][

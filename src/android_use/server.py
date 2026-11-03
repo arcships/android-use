@@ -9,6 +9,7 @@ from mcp.server.lowlevel.helper_types import ReadResourceContents
 from mcp.server.stdio import stdio_server
 from mcp.types import CallToolResult, ImageContent, Resource, TextContent, Tool, ToolAnnotations
 
+from . import __version__
 from .models import ARG_MODELS, BatchStep
 from .runtime import Runtime, extract_images
 
@@ -88,7 +89,18 @@ DESCRIPTIONS = {
     "find": "Find exact text/description/resource_id/class_name/package or substring text/description. "
     "Multiple targets require an explicit 0-based index; bounds don't prove unobstructed access.",
     "tap": "Tap once by selector OR x/y display pixels. Ambiguity returns candidates and a screenshot. "
+    "Optional wait_for waits for visible/gone selector after action; timeout never replays it. "
     "Optional observation_id checks same runtime/app/display context. No automatic replay.",
+    "long_press": "Long press once by selector OR x/y display pixels for duration seconds (0.5..3). "
+    "Supports wait_for and observe. Inspect uncertain results; no replay.",
+    "double_tap": "Perform one intentional pair at selector OR x/y display pixels. "
+    "interval is seconds between clicks, excluding RPC latency. Supports wait_for and observe. "
+    "A failed pair may have executed its first click; never replay automatically.",
+    "drag": "Drag once from start {x,y} to end {x,y}, in Android display pixels. "
+    "Supports duration, observation_id, wait_for and observe. No automatic replay.",
+    "scroll_until": "Find a visible selector, swiping only if absent. Bounded by max_swipes and "
+    "timeout_seconds; stops after two unchanged regional snapshots, or app/display change. "
+    "Does not click the result. no_progress does not prove list end. Use region for nested lists.",
     "type_text": "Set Unicode text on a focused, editable, non-password field. Focus it with tap first. "
     "Default replace=true, no submit. verify checks exact readback. App must support setText. "
     "Newlines need allow_newlines=true. Never blindly retry uncertain input.",
@@ -97,9 +109,11 @@ DESCRIPTIONS = {
     "press_button": "Press home/back/recent/enter/volume once. Enter may submit; user must authorize it.",
     "launch_app": "Launch an installed package's launcher activity once; no force-stop or data reset.",
     "apps": "List installed third-party package IDs; query matches package ID, not human app name.",
-    "wait": "Wait at most 20 seconds for a selector. found=false means timeout, not business failure.",
+    "wait": "Wait at most 20 seconds for a selector to be visible or gone. "
+    "condition_met reports the requested condition; found reports current visible matches.",
     "batch": "Execute up to 20 known steps, using each operation's normal args. Entire plan is "
-    "validated before actions. Stops on error, wait timeout, Enter submission or 25s budget. "
+    "validated before actions. Stops on error, unmet condition, scroll miss, Enter submission "
+    "or 25s budget (in-flight RPCs may overrun). "
     "Resume from stopped_at; never replay completed/uncertain steps.",
     "pause": "Pause Android Use reads/actions for user authentication takeover across CLI/MCP processes.",
     "resume": "Resume only after user confirms authentication is finished; then get a fresh observation.",
@@ -114,9 +128,11 @@ def create_server(runtime=None):
     runtime = runtime or Runtime()
     server = Server(
         "android-use",
-        version="0.2.1",
+        version=__version__,
         instructions="First call aua_setup(status), start if absent, then aua_ready. "
         "Use trees first, screenshots for visual content/failures. "
+        "Actions accept wait_for={selector,state:visible|gone,timeout_seconds}; "
+        "use scroll_until for bounded list search. An unmet condition never replays the action. "
         "Execute actions once; do not replay uncertain mutations. "
         "Password/PIN/OTP authentication belongs to the user: pause, ask, await confirmation, "
         "resume and observe. Verify final business outcomes from actual device state.",
