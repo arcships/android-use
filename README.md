@@ -6,7 +6,7 @@
 
 Local Android control for coding agents: MCP tools, a CLI, a live screen sidebar, and image clipboard capture. Connect your own device through USB or an already-authorized wireless ADB connection; no root required.
 
-**快速导航：** [安装](#安装) · [首次连接手机](#首次连接手机) · [Codex 插件](#安装-codex-插件) · [实时屏幕与图片复制](#实时屏幕与图片复制) · [CLI 使用](#cli-使用) · [常见问题](#常见问题)
+**快速导航：** [让 Agent 自动安装](#让-agent-自动安装) · [手动安装](#安装) · [首次连接手机](#首次连接手机) · [Codex 插件](#安装-codex-插件) · [实时屏幕与图片复制](#实时屏幕与图片复制) · [CLI 使用](#cli-使用) · [常见问题](#常见问题)
 
 ## 界面预览
 
@@ -29,6 +29,47 @@ Local Android control for coding agents: MCP tools, a CLI, a live screen sidebar
 | 认证接管 | 暂停读屏、控制与视频采集，用户完成认证后再恢复 |
 
 不需要 root、Appium、手机端签名或键盘 APK。普通使用不需要 Node.js；仓库已包含编译好的侧边栏 UI。
+
+## 让 Agent 自动安装
+
+推荐把下面整段指令发给**能够使用本机终端的 Codex agent**。依赖检查、下载、打包、插件注册和设备配置由 agent 完成；你只需配合连接手机、接受 USB 调试授权，以及在需要时亲自解锁。
+
+```text
+请在我的电脑上安装并配置 Android Use：
+https://github.com/JackCaow/android-use
+
+先阅读仓库 README 和 skills/android-use/SKILL.md，然后实际完成安装与验收。
+检查当前系统、已有仓库、插件和依赖；复用现有安装，只补齐缺项，不覆盖未提交修改。
+从官方来源安装缺失的 Git、uv、Python 3.11+、ADB、ffmpeg 和所需的 Codex CLI。
+克隆或复用仓库，安装锁定依赖，生成 dist/android-use，再注册本地市场并安装插件。
+检查 ADB 设备，只有一个明确目标时直接配置；目标不明确时让我选择。
+复用健康控制服务，缺少服务时启动一次，完成 READY 验证并打开实时手机屏幕。
+如果当前聊天还没加载新工具，先用仓库 CLI 完成可执行的配置和验收，并说明如何在新聊天使用插件。
+不要只返回一份让我手动操作的教程；请完成你能执行的步骤。
+只有 USB 授权、解锁、系统权限或确实缺少必要信息时再让我接管。
+最后报告安装目录、插件版本、选定设备、READY 结果、实时画面是否已验证，以及仍需我完成的步骤。
+```
+
+### Agent 的执行顺序
+
+1. **检查并复用环境。** 检查 `git`、`uv`、`adb`、`ffmpeg` 和 `codex`，按本机系统补齐缺失依赖。Python 推荐使用下方已验证的 3.13；普通安装无需 Node.js。仓库已存在时先检查状态，保留用户未提交内容。
+2. **在仓库根目录安装并打包。** 执行 `uv sync --frozen --python 3.13`，再执行 `uv run python scripts/package.py`。确认 `dist/android-use/.codex-plugin/plugin.json` 和 `.mcp.json` 已生成；市场指向此目录，不能省略打包步骤。
+3. **安装并核对插件。** 检查现有市场后，在该仓库根目录执行 `codex plugin marketplace add .` 和 `codex plugin add android-use@android-use-local`；用下面的命令核对本地市场来源、已安装插件版本及路径。若已有同名市场指向另一个目录，先核对已有安装，避免重复克隆或覆盖无关配置。
+
+   ```bash
+   codex plugin marketplace list
+   codex plugin list --json
+   ```
+
+4. **发现并选择设备。** 执行 `adb devices -l` 和 `uv run android-use setup '{"action":"discover"}'`。复用用户已指定的目标；没有明确目标时，仅在唯一可用设备可确认的情况下直接选择。多台手机需要用户选择，`unauthorized` 需要用户在手机上授权；不要猜序列号或将设备信息提交到仓库。
+5. **保存设备配置。** 确定实际目标后执行 `uv run android-use setup '{"action":"configure","serial":"SERIAL"}'`，将 `SERIAL` 替换为真实设备标识，再执行 `uv run android-use setup '{"action":"status"}'`。配置只保存在用户本机。
+6. **启动并验证控制通道。** 复用健康服务；确认服务未启动时调用一次 `setup '{"action":"start"}'`，随后执行 `uv run android-use ready`。必须实际得到 `ready=true`，不能把“插件已安装”当作“手机已就绪”。启动报错时按日志处理缺项，不循环重装或盲目重启。
+7. **打开并核对实时画面。** 已加载 MCP 工具时调用 `aua_screen()`；尚未加载时执行 `uv run android-use screen`，在可用的浏览器 / Codex 右侧面板中打开返回的本机 URL，并检查实际画面与 Live 状态。不能只凭拿到 URL 宣称视频已验证；预览问题按下方故障排查处理。
+8. **报告实际验收状态。** 分别说明依赖、插件安装、设备配置、控制 READY、视频画面的结果；没有手机连接时，仍可完成插件安装，并准确列出待连接 / 授权的步骤。当前聊天未热加载插件时，说明新聊天需启用 Android Use，不把 CLI 成功当作原生 MCP 工具已经加载。
+
+自动配置只完成安装、连接与读屏验收；完成后等待用户给出具体手机任务。密码、PIN、验证码和生物认证始终由用户本人完成，不索取这些凭据。
+
+如果你希望亲自操作，可以继续阅读下面的手动安装与使用步骤。
 
 ## 安装
 
