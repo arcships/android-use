@@ -93,11 +93,17 @@ SCHEMAS.update(
 SCHEMAS["batch"]["required"] = ["steps"]
 SCHEMAS["screen_action"]["required"] = ["action"]
 DESCRIPTIONS = {
-    "read_fields": "Read-only Jev field judgments on current app text. Extract code-owned money/text "
+    "read_fields": "Read-only Jev field judgments on current app text. source=auto uses the tree "
+    "when text/expected_labels and money candidates suffice; otherwise captures a device ROI "
+    "and runs local macOS Vision OCR (requires Xcode Command Line Tools). source=tree disables "
+    "OCR; screen_ocr forces it. OCR pixels are checked again after inference. No visual clicks. "
+    "Extract code-owned money/text "
     "spans or classify supplied options, all fields in one request. Requires Jev enabled. "
     "evidence_text optionally supplies Agent OCR text, explicitly marked caller_provided_text, "
     "not verified as a phone read. Missing/ambiguous values return NONE. Decimal parsing is local. "
-    "region limits phone text in display pixels. Optional sum_check validates Decimal sums in code; "
+    "region limits evidence in display pixels; ocr_masks exclude non-evidence from OCR and hashing. "
+    "min_ocr_confidence is optional uncalibrated provider telemetry, not accuracy. Declare currency "
+    "for ambiguous symbols. Optional sum_check validates same-currency Decimal sums in code; "
     "no device actions. verified=false always requires Agent business verification.",
     "execute_goal": "Agent plans, Jev selects candidate IDs, Android Use executes. Optional local "
     "decision loop; enable with a TypeSafe key in screen settings, or through "
@@ -107,6 +113,8 @@ DESCRIPTIONS = {
     "input_macros=true can combine stable-field focus and exact input with native readback; "
     "max_steps counts candidate selections, with at most two native writes per input macro. "
     "Bounded candidate-only actions; no automatic replay. status=handoff is not success. "
+    "effect_timeout_seconds bounds observation after acknowledged mutations; unresolved effects "
+    "hand off without another mutation. Geometry-only changes do not prove an effect. "
     "Keep existing tools for planning, unsupported controls and recovery. Password screens hand off.",
     "doctor": "Read local ADB device inventory and configuration. Does not start a phone service.",
     "setup": "First use: status/discover, start once if needed, then ready. configure selects a serial. "
