@@ -1,6 +1,6 @@
-# Continuous live preview (source update after v0.5.0)
+# Continuous live preview (v0.5.1)
 
-The source removes the unconditional 170-second reconnect. This change is not in the already published v0.5.0 ZIP.
+Included in v0.5.1: remove the unconditional 170-second reconnect. The older v0.5.0 ZIP does not contain this fix.
 
 ## Capture and display
 
@@ -61,7 +61,7 @@ The source passes **289 Python tests and 19 browser tests**, including authentic
 
 A separate 15-second fault-injection run passed: three display-query failures preserved one ADB/decoder/encoder, delivered 20 pictures with controls blocked, then restored controls; its maximum sampled gap was 0.684 seconds. This targeted recovery result does not replace the failed long-run motion target.
 
-Both paths reported zero lock-state, metadata and stream failures in the long uninstrumented run. The uninterrupted encoder crossed the former 170-second cutoff, and legacy encoder changes did not rebuild the ADB connection or decoder. Nevertheless, one native capture pause still exceeded the motion-gap target after the metadata fix, so the full continuity acceptance command returned a failure. Earlier failures are retained too. These results verify removal of the routine reconnect and the bounded display behavior, not universally imperceptible motion. This change has not been released or installed over v0.5.0.
+Both paths reported zero lock-state, metadata and stream failures in the long uninstrumented run. The uninterrupted encoder crossed the former 170-second cutoff, and legacy encoder changes did not rebuild the ADB connection or decoder. Nevertheless, one native capture pause still exceeded the motion-gap target after the metadata fix, so the full continuity acceptance command returned a failure. Earlier failures are retained too. These results verify removal of the routine reconnect and the bounded display behavior, not universally imperceptible motion. This fix ships in v0.5.1. The acceptance temporarily used source without replacing the installed v0.5.0 plugin.
 
 ## Authorized physical-device trial (2026-11-04)
 
@@ -76,12 +76,12 @@ The native phase had zero health/metadata/stream failures and zero offline respo
 
 Before the compatibility phase the local controller deliberately assigned `video_stream_ended` while replacing the unlimited pipeline with the forced-segment pipeline. The harness counted that initial seeded state as an error. The phase itself observed zero stream failures/offline responses and one ADB/decoder across 12 encoders, but its original failed result is retained rather than relabeled as a clean full-suite pass. [Sanitized physical records and interpretation](benchmarks/preview-continuity-physical.json).
 
-The fixture was uninstalled, the original foreground restored and the installed v0.5.0 preview service restored afterward. No plugin release or installed-file replacement occurred. The earlier 4.147-second emulator failure remains unresolved; the physical native success does not establish universal latency or justify deleting earlier failures.
+The fixture was uninstalled, the original foreground restored and the installed v0.5.0 preview service restored afterward. The acceptance did not replace installed plugin files; the fix is distributed in v0.5.1. The earlier 4.147-second emulator failure remains unresolved; the physical native success does not establish universal latency or justify deleting earlier failures.
 
 ## 中文
 
 支持取消时限的系统不再每 170 秒重启录屏；旧系统分段仍共用一条 ADB 管道与一个解码器。短暂恢复时保留画面，不弹遮罩，期间禁用旧画面上的操作；长故障、连接状态未知、锁屏或认证接管继续清屏。旧编码器换段可能短暂停顿，不能承诺所有设备和断网情形都毫无停顿。
 
-当前为 v0.5.0 之后的源码修复。模拟器验收与真机覆盖分开报告；随后获准的真机结果见上节。官方目录提交的身份认证与本地 MCP 准入材料属于另一个工作项，不包含在本次修复提交中。
+本修复纳入 v0.5.1。模拟器验收与真机覆盖分开报告；随后获准的真机结果见上节。官方目录提交的身份认证与本地 MCP 准入材料属于另一个工作项，不包含在本次修复提交中。
 
 源码通过 289 项 Python 测试、19 项界面测试。原生连续录屏长测跨过 170 秒边界，始终只有一个编码器、一条连接与一个解码器；旧系统强制换段观察到 11 个编码进程，连接和解码器各保持一个。但原生长测出现一次约 4.1 秒的画面停顿，未通过小于 2 秒的画面间隔目标，不能宣称所有场景均已完全无感。该模拟器停顿仍待进一步定位。随后 Android 16 真机连续 190 秒测试通过，始终一个编码器/连接/解码器，最长采样间隔 1.422 秒；兼容路径的原始失败记录包含人为注入的换模式恢复状态，已单独说明。测试页已卸载、原页面和 v0.5.0 预览服务已恢复，未替换本机插件。

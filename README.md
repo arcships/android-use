@@ -8,7 +8,7 @@
     <a href="#mcp-client-support"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="Standard stdio MCP" /></a>
   </p>
   <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
-  <p><a href="#quick-start"><strong>Get started →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.5.0">Download v0.5.0</a> · <a href="#enable-jev-from-the-screen">Set up Jev</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/JackCaow/android-use/issues">Report an issue</a></p>
+  <p><a href="#quick-start"><strong>Get started →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.5.1">Download v0.5.1</a> · <a href="#enable-jev-from-the-screen">Set up Jev</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/JackCaow/android-use/issues">Report an issue</a></p>
 </div>
 
 ## Bring Android into your agent workflow
@@ -171,7 +171,7 @@ Look for **`ready=true`**. With multiple devices, [select the target explicitly]
 
 The preview URL is a private local video endpoint, **not a remote MCP endpoint**. Remote-only MCP clients cannot connect to this stdio service. Client configuration examples are documented; full end-to-end acceptance has not been completed for every client/version.
 
-In v0.5.0, live preview now recovers automatically across encoder renewal and transient frame-request failures. [Recovery behavior and troubleshooting →](docs/guide.md#live-screen).
+In v0.5.1, supported devices record continuously; legacy segments reuse one connection and decoder. Brief known-health recovery keeps the picture visible. [Recovery behavior and troubleshooting →](docs/guide.md#live-screen).
 
 ## A smaller loop, with explicit outcomes
 
@@ -185,6 +185,12 @@ uv run android-use scroll_until '{"selector":{"text":"Display"},"direction":"up"
 ```
 
 Actions support optional postconditions. A timeout reports what happened and stops the batch; it does not repeat the action. Auto-scroll stops on a match, its limits, or repeated lack of progress. [Gestures, waits, batches, and the original tools →](docs/guide.md#cli-reference) · [Optional Jev setup and benchmarks →](docs/jev.md)
+
+## New in v0.5.1: continuous live preview
+
+Supported devices no longer restart recording every 170 seconds. Older devices reuse one ADB pipe and decoder across bounded segments. Brief known-health recovery retains the picture; display-metadata failures pause controls without dropping healthy video. Authentication and real disconnection still clear the image.
+
+Android 16 physical capture passed a **190-second native run** with one encoder/connection/decoder and a 1.422-second maximum sampled gap. The earlier emulator motion stall remains unresolved; compatibility records retain a harness-seeded recovery error. [Results, retained failures and limits →](docs/preview-continuity.md)
 
 ## New in v0.5.0: safer actions and automatic OCR
 
@@ -200,11 +206,10 @@ v0.5.0 passes **277 Python tests and 17 UI tests**. Built-in OCR currently requi
 
 Development comparisons include **18 source-level trials** and **12 live Agent / Agent + Jev trials**. Both live arms completed 6/6 tasks. Dynamic workflows needed fewer host replies with Jev; familiar batch paths did not improve. Sampling reduced repeated state queries, while input macros reduced decisions without an additional timing win in that sample. [Methodology, raw records and retained failures →](docs/benchmarks/optimizations-v4.md)
 
-Source preview improvement: remove the forced 170-second restart on supported devices, keep legacy segments on one decoder, and retain the picture during bounded recovery. [Implementation and emulator acceptance](docs/preview-continuity.md). Android 16 physical capture passed a 190-second native run; emulator motion stalls remain under investigation; this source change is not in the v0.5.0 ZIP.
 
 ## Project status
 
-**v0.5.0 · MIT · 277 Python tests · 17 browser tests.** Emulator acceptance covers 15 real stdio MCP scenarios. Earlier physical-device acceptance covers Android 16 / Xiaomi 15 Ultra. New Jev setup and frame changes have local/emulator validation; other manufacturers, host versions and operating systems have different coverage. [Validation evidence →](docs/validation.md)
+**v0.5.1 · MIT · 289 Python tests · 19 browser tests.** Emulator acceptance covers 15 real stdio MCP scenarios. Earlier physical-device acceptance covers Android 16 / Xiaomi 15 Ultra. New Jev setup and frame changes have local/emulator validation; other manufacturers, host versions and operating systems have different coverage. [Validation evidence →](docs/validation.md)
 
 Multi-touch, arbitrary gesture paths, fine-grained text selection and custom-editor input fallbacks are not implemented. A matched UI condition proves that condition; the Agent must verify business outcomes. Control and preview run locally, and tool results are handled by your chosen client/model.
 

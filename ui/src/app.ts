@@ -17,7 +17,7 @@ const notice=document.querySelector<HTMLElement>('#notice')!;
 const pointer=document.querySelector<HTMLElement>('#pointer')!;
 const buttons=Object.fromEntries(['refresh','back','home','copy'].map(id=>[id,document.getElementById(id) as HTMLButtonElement]));
 const standalone=window.__ANDROID_USE_STANDALONE__===true;
-const app=standalone?undefined:new App({name:'Android Use Screen',version:'0.5.0'},
+const app=standalone?undefined:new App({name:'Android Use Screen',version:'0.5.1'},
   {availableDisplayModes:['fullscreen']},{autoResize:false});
 let preview:Preview|undefined,seq=0,stream='',disposed=false,inFlight=false,acting=false;
 let suspended=false,timer:ReturnType<typeof setTimeout>|undefined;

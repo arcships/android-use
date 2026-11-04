@@ -2,7 +2,7 @@
 
 v0.4.0 可选功能：[可选 Jev 决策集成与对比测试](jev.zh-CN.md)。默认关闭，原有工具兼容保留；v0.4.0 Release ZIP 已包含。
 
-v0.5.0 已包含[只读自动 OCR 与执行守卫](jev.zh-CN.md#自动只读-ocr)，并修复预览自动恢复；内置 OCR 需要 macOS 与 Xcode Command Line Tools。
+v0.5.1 已包含[只读自动 OCR 与执行守卫](jev.zh-CN.md#自动只读-ocr)，并修复预览自动恢复；内置 OCR 需要 macOS 与 Xcode Command Line Tools。
 
 [English](guide.md) · **简体中文** · [返回项目首页](../README.zh-CN.md)
 
@@ -185,15 +185,15 @@ uv run android-use --serial SERIAL ready
 
 ### 安装发行包 ZIP
 
-从 [GitHub Release v0.5.0](https://github.com/JackCaow/android-use/releases/tag/v0.5.0) 下载 `android-use-0.5.0-plugin.zip` 和 `SHA256SUMS`。ZIP 已含编译好的界面、Python 源码与锁文件、技能、双语文档和可注册的本地市场；不包含 Python、ADB、ffmpeg，先按上文准备依赖。首次安装需要联网下载 Python 依赖。
+从 [GitHub Release v0.5.1](https://github.com/JackCaow/android-use/releases/tag/v0.5.1) 下载 `android-use-0.5.1-plugin.zip` 和 `SHA256SUMS`。ZIP 已含编译好的界面、Python 源码与锁文件、技能、双语文档和可注册的本地市场；不包含 Python、ADB、ffmpeg，先按上文准备依赖。首次安装需要联网下载 Python 依赖。
 
 macOS / Linux 下载后执行：
 
 ```bash
 # 先校验下载文件；Linux 也可使用 sha256sum -c SHA256SUMS。
 shasum -a 256 -c SHA256SUMS
-unzip android-use-0.5.0-plugin.zip -d android-use-v0.5.0
-cd android-use-v0.5.0
+unzip android-use-0.5.1-plugin.zip -d android-use-v0.5.1
+cd android-use-v0.5.1
 uv sync --frozen --python 3.13
 codex plugin marketplace add .
 codex plugin add android-use@android-use-release
@@ -256,9 +256,9 @@ uv run android-use screen
 
 视频使用独立的 `screenrecord → H.264 → ffmpeg` 通道，前端读取内存中的视频帧缓存，不循环请求手机截图或控件树。关闭 / 隐藏面板后，5 秒无人续租即停止采集；认证暂停时也会清除画面并停止采集。
 
-**v0.5.0 已包含：** `screenrecord` 约每 170 秒接续一次；接续或画面请求短暂失败时，面板显示自动恢复，不再立即提示手动重连。收到有效画面后恢复 Live，视频接续还必须看到更高的帧序号；5 秒未恢复则显示视频暂不可用，并继续自动重试。设备掉线或认证暂停仍会清空画面、禁用手机控制。更新界面后重新打开画面即可，无需重启整个客户端。
+**v0.5.1 已包含：** 支持取消时限的设备连续录屏；旧系统分段共用一条 ADB 管道与一个解码器。短暂恢复保留画面、不弹遮罩，收到新帧和可靠坐标前禁用手机控制；显示信息读取失败不再被当成手机掉线。5 秒仍未恢复则显示暂不可用并重试；锁屏状态未知、认证接管或真正断连仍清屏。更新后重新加载 MCP 进程，再打开预览即可升级已认证的视频服务。
 
-v0.5.0 之后的源码改进：[连续采集与短暂恢复保留画面](preview-continuity.md)，去掉固定周期的重连，并说明模拟器验收与设备限制。
+[连续预览实现、真机/模拟器验收与保留边界](preview-continuity.md)：真机连续 190 秒通过；此前模拟器的画面间隔失败仍待定位。
 
 ## CLI 使用
 
