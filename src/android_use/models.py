@@ -165,6 +165,7 @@ class ExecuteGoalArgs(StrictModel):
     min_margin: Annotated[float, Field(ge=0, le=1)] = 0.1
     observe: Literal["none", "tree"] = "tree"
     input_macros: bool = True
+    effect_timeout_seconds: Annotated[float, Field(ge=0.1, le=3)] = 1.0
 
 
 class FieldQuestion(StrictModel):
