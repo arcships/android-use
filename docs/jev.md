@@ -39,6 +39,9 @@ Each action cycle asks an **operation Choice plus compatible target Choices in o
 ```json
 {
   "package": "com.example.shop",
+  "currency": "CNY",
+  "source": "auto",
+  "expected_labels": ["合计", "打包费"],
   "fields": [
     {"name": "items", "instructions": "Select the purchased item subtotal before coupons."},
     {"name": "packing", "instructions": "Select the charged packaging fee."},
@@ -53,11 +56,29 @@ Use the actual foreground package and include every applicable charge/discount i
 
 Optional `region={x,y,width,height}` selects text nodes by their centers in **Android display pixels**, reducing irrelevant banners/address text. Text is grouped by visual rows before judgment. Read-only validation compares current context and the same region's text rows after inference; it ignores empty-layout animation but rejects changed evidence. Authentication/lock/pause checks still cover the full page. Actions retain their stricter tree/geometry checks.
 
-For an AX-poor page, the Agent can provide current, visually inspected OCR as `evidence_text`. Its source is always `caller_provided_text` with `source_verified_on_device=false`: matching the app context cannot establish that the supplied OCR is fresh or correct. The Agent owns that verification. OCR extraction, image/Box grounding and automatic visual clicks are **not built in**. Routing depends on each page's exposed semantics, not whether the app is called native or cross-platform. [Complete page-routing design — 中文](visual-routing.zh-CN.md)
+AX-poor pages can now use automatic local OCR of the current device ROI. Agent-supplied `evidence_text` remains supported, always marked `caller_provided_text`, `source_verified_on_device=false`, and `freshness=unchecked`; the Agent owns its freshness and correctness. Automatic visual grounding and clicks are not implemented.
 
 Check `fields.*.accepted`, `checks`, and provenance. `status=judged`, `all_fields_accepted=true` and `source_verified_on_device=true` **never mean business success**; `verified` remains false. Missing/low-probability answers return no value. A sum conflict preserves selected values with `review_reason=sum_check_failed`. Error telemetry is retained under `error.metrics` when inference had started.
 
-[Physical Meituan / Taobao acceptance, including failed attempts](benchmarks/real-app-jev-v5.md): final observed totals were 22.9 and 21.8 yuan. These were resumed known-store checkout flows with Agent recovery, not a matched whole-task speed or success-rate benchmark. The released v0.4.0 ZIP predates this source update; use an updated source checkout, then reload the MCP connection to discover the new tool.
+[Automatic OCR acceptance and failures](benchmarks/real-app-ocr-v6.md) · [Earlier Agent-supplied OCR records](benchmarks/real-app-jev-v5.md). Development checkout totals were 22.9 / 21.8 yuan for different drinks; these are not a cheapest-price or whole-task performance comparison. The released v0.4.0 ZIP predates these source updates.
+
+## Automatic read-only OCR (source update, unreleased)
+
+`aua_read_fields` / CLI `read_fields` defaults to `source=auto`: the selected region uses AX when it has text, every requested `expected_labels` substring, and at least one amount candidate for money questions. Otherwise it switches to local OCR **before the first Jev request**. This deterministic filter does not establish that all task evidence exists. Use `source=tree` to disable OCR or `source=screen_ocr` to force it. Up to 12 expected labels are supported. Choose a bill `region` from the actual screen and supply precise field roles.
+
+The built-in provider currently requires **macOS Vision and Xcode Command Line Tools** (`xcode-select --install` if missing). Dependencies are not installed automatically. On Linux/Windows, AX and existing tools remain usable; OCR returns `ocr_unavailable` for Agent recovery or checked caller text. Those OCR platforms are not implemented.
+
+The screenshot is cropped locally. OCR returns text, block boxes and scores; visual rows become closed-set field candidates. Images are not uploaded to TypeSafe; **recognized text and field questions are sent**. ROI and optional `ocr_masks` use Android display pixels. Up to 8 masks must fit entirely inside the ROI and their summed area cannot exceed 20%. Masks are whitened before recognition and hashing; masked content cannot supply evidence. Exclude irrelevant private data with a narrow ROI. Never mask prices, dialogs or business outcomes.
+
+After inference, another capture must have exactly the same ROI pixels outside explicit masks. Changes discard all fields; no uncalibrated fuzzy matching is used. Foreground, Activity, viewport, pause, lock and detectable authentication are rechecked. This cannot prove every custom overlay/authentication prompt was detected. Results include `source=device_screen_ocr`, `freshness=roi_pixels_checked`, and a `frame` ROI, digest, timestamp, masks and diagnostic ID. That ID is **not** an action `observation_id`. `source_verified_on_device=true` establishes origin, not OCR accuracy or business success; `verified` remains false.
+
+`min_ocr_confidence` defaults to 0, retaining the provider score as uncalibrated telemetry. Callers may set a validated floor for money/text candidates. Choice classifications have no individual amount-candidate OCR score. Jev probability/margin, OCR scores, arithmetic and Agent verification are separate checks. OCR does not establish strikethrough styling (`style=unknown`); position alone is not proof of the current price.
+
+The overall deadline defaults to 20 seconds, maximum 60. Cold helper compilation gets at most 15 remaining seconds, recognition 5, and Jev 8. Expired judgments are discarded. In-flight device RPCs retain their existing timeout limits and may overrun the remaining budget. Timings are returned separately and failed inference keeps usage telemetry.
+
+**Compatibility changes:** sum checks require a resolved, shared currency for every amount. Declare `currency` for ambiguous `¥` / `$`; supported declarations are CNY, JPY, USD, HKD, EUR, GBP, CAD and AUD. Original spans are preserved; Unicode signs, comma grouping and dot decimals (including fullwidth equivalents) normalize into Decimal. Other locale formats are not supported. Put signed negative discounts in `add`; `subtract` only accepts positive discount magnitudes (`negative_subtrahend` otherwise). Caller `evidence_text` cannot also specify a device `source`, `region`, or `ocr_masks`, preventing false provenance claims.
+
+`aua_execute_goal` adds `effect_timeout_seconds` (default 1; 0.1–3 seconds). After an acknowledged tap/input it only observes until nonempty semantic evidence changes or the completion condition is met. No effect hands off as `uncertain_effect`; revisiting the same consumed state/action within this call hands off as `duplicate_action`. Geometry animation and transient empty trees do not count as effects. ACK stays recorded as executed, not business success. Wait/list-swipe no-progress limits remain. This is not cross-call idempotency: inspect the returned ledger rather than resubmitting a whole goal.
 
 ## Configure
 
