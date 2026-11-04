@@ -43,6 +43,7 @@ public class MainActivity extends Activity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         if (getIntent().getBooleanExtra("video", false)) {
+            getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             LinearLayout root = benchmarkRoot("Android Use / preview continuity fixture");
             TextView counter = label("");
             counter.setTextSize(28);

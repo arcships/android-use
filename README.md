@@ -200,7 +200,7 @@ v0.5.0 passes **277 Python tests and 17 UI tests**. Built-in OCR currently requi
 
 Development comparisons include **18 source-level trials** and **12 live Agent / Agent + Jev trials**. Both live arms completed 6/6 tasks. Dynamic workflows needed fewer host replies with Jev; familiar batch paths did not improve. Sampling reduced repeated state queries, while input macros reduced decisions without an additional timing win in that sample. [Methodology, raw records and retained failures →](docs/benchmarks/optimizations-v4.md)
 
-Source preview improvement: remove the forced 170-second restart on supported devices, keep legacy segments on one decoder, and retain the picture during bounded recovery. [Implementation and emulator acceptance](docs/preview-continuity.md). Long-run motion stalls remain under investigation; this source change is not in the v0.5.0 ZIP.
+Source preview improvement: remove the forced 170-second restart on supported devices, keep legacy segments on one decoder, and retain the picture during bounded recovery. [Implementation and emulator acceptance](docs/preview-continuity.md). Android 16 physical capture passed a 190-second native run; emulator motion stalls remain under investigation; this source change is not in the v0.5.0 ZIP.
 
 ## Project status
 
