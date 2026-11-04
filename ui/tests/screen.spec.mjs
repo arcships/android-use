@@ -34,19 +34,34 @@ async function standalone(page,initial=sample()){
   return {set:value=>{state=value},calls,failSettings:value=>{settingsFailure=value},failFrames:value=>{frameFailure=value}};
 }
 
-test('video rollover waits for a new frame and recovers without manual reconnect',async({page})=>{
+test('short video recovery preserves the picture without a blocking overlay',async({page})=>{
   const api=await standalone(page);
+  const source=await page.locator('#frame').getAttribute('src');
   api.set({...sample(),error:'video_stream_ended',capturing:false,frame:null});
-  await expect(page.locator('#app')).toHaveAttribute('data-state','connecting');
-  await expect(page.locator('#overlay-text')).toHaveText('视频接续中…');
-  await expect(page.locator('#frame')).not.toHaveAttribute('src',/.+/);
+  await expect(page.locator('#app')).toHaveAttribute('data-state','buffering');
+  await expect(page.locator('#overlay')).toBeHidden();
+  await expect(page.locator('#frame')).toHaveAttribute('src',source);
   await expect(page.locator('#home')).toBeDisabled();
-  // An encoder starting with the same cached frame does not prove recovery.
+  // A replacement encoder starting with the old cache is still buffering.
   api.set(sample());
-  await expect(page.locator('#overlay-text')).toHaveText('正在等待新画面…');
+  await expect.poll(()=>api.calls.filter(c=>c.url.endsWith('/frame')).length).toBeGreaterThan(3);
+  await expect(page.locator('#app')).toHaveAttribute('data-state','buffering');
   api.set({...sample(),seq:2,frame:{...sample().frame,seq:2}});
   await expect(page.locator('#app')).toHaveAttribute('data-state','live');
+  await expect(page.locator('#home')).toBeEnabled();
   expect(api.calls.some(c=>c.url.endsWith('/refresh'))).toBeFalsy();
+});
+test('encoder restart or rotation holds the picture until fresh geometry arrives',async({page})=>{
+  const api=await standalone(page);
+  const source=await page.locator('#frame').getAttribute('src');
+  api.set({...sample(),frame_available:false,frame:null,viewport:[2400,1080]});
+  await expect(page.locator('#app')).toHaveAttribute('data-state','buffering');
+  await expect(page.locator('#overlay')).toBeHidden();
+  await expect(page.locator('#frame')).toHaveAttribute('src',source);
+  await expect(page.locator('#copy')).toBeDisabled();
+  api.set({...sample(),seq:2,viewport:[2400,1080],frame:{...sample().frame,seq:2,width:1200,height:540}});
+  await expect(page.locator('#app')).toHaveAttribute('data-state','live');
+  await expect(page.locator('#app')).toHaveAttribute('data-orientation','landscape');
 });
 test('a transient frame request failure clears the frame and automatically recovers',async({page})=>{
   const api=await standalone(page);
@@ -71,7 +86,7 @@ test('persistent transport failure becomes offline but keeps retrying',async({pa
 test('a stalled encoder cannot keep the cached frame live indefinitely',async({page})=>{
   const api=await standalone(page);
   api.set({...sample(),error:'video_stream_ended',frame:null});
-  await expect(page.locator('#app')).toHaveAttribute('data-state','connecting');
+  await expect(page.locator('#app')).toHaveAttribute('data-state','buffering');
   // Clearing the error without a higher sequence still does not prove recovery.
   api.set(sample());
   await expect(page.locator('#app')).toHaveAttribute('data-state','offline',{timeout:8000});
@@ -82,7 +97,7 @@ test('a stalled encoder cannot keep the cached frame live indefinitely',async({p
 test('authentication during video recovery keeps the frame cleared',async({page})=>{
   const api=await standalone(page);
   api.set({...sample(),error:'video_stream_ended',frame:null});
-  await expect(page.locator('#app')).toHaveAttribute('data-state','connecting');
+  await expect(page.locator('#app')).toHaveAttribute('data-state','buffering');
   api.set({...sample(),paused:true,pause_reason:'authentication',frame:null,frame_available:false});
   await expect(page.locator('#app')).toHaveAttribute('data-state','paused');
   await expect(page.locator('#frame')).not.toHaveAttribute('src',/.+/);
