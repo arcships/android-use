@@ -2,8 +2,10 @@ import base64
 import io
 import time
 
+import pytest
 from PIL import Image
 
+from android_use.backend import UseError
 from android_use.screen import JPEGParser, ScreenHub, unlimited_recording
 
 
@@ -39,6 +41,7 @@ class Metadata:
     offline = False
     orientation = 0
     recording_help = "Set to 0\nto remove the time limit."
+    display_failed = False
 
     def locked(self):
         if self.offline:
@@ -46,6 +49,8 @@ class Metadata:
         return self.is_locked
 
     def shell(self, args, **kwargs):
+        if self.display_failed and args[0] in ("wm", "dumpsys"):
+            raise TimeoutError("Display metadata timed out")
         if args == ["sh", "-c", "screenrecord --help 2>&1"]:
             return self.recording_help
         assert args in (["wm", "size"], ["getprop", "ro.product.model"], ["dumpsys", "display"])
@@ -296,3 +301,49 @@ def test_pipeline_keeps_one_decoder_and_samples_real_arrival_time(monkeypatch):
     pipeline.close()
     assert pipeline.pid_path + ".owner" in cleanup[0][-1]
     assert "/proc/$p/stat" in cleanup[0][-1]
+
+
+def test_geometry_failure_keeps_video_but_blocks_controls_until_metadata_recovers(
+    monkeypatch, tmp_path
+):
+    hub, metadata = make_hub(monkeypatch, tmp_path)
+    hub.start()
+    try:
+        hub.frame()
+        until(lambda: hub.frame()["frame"])
+        pipeline = hub.pipeline
+        metadata.display_failed = True
+        hub._health()
+        result = hub.frame()
+        assert result["connected"] and result["frame_available"]
+        assert not result["interaction_ready"]
+        with pytest.raises(UseError, match="Wait for current video"):
+            hub.require_interaction_ready()
+        assert hub.pipeline is pipeline and not pipeline.closed
+        assert result["video"]["metadata_failures"] == 1
+        assert result["video"]["health_failures"] == 0
+        metadata.display_failed = False
+        hub._health()
+        assert hub.frame()["interaction_ready"]
+        hub.require_interaction_ready()
+        assert hub.pipeline is pipeline
+        metadata.offline = True
+        hub._health()
+        assert not hub.frame()["frame_available"]
+        assert pipeline.closed
+        assert hub.frame()["video"]["last_health_failure"] == "lock_state"
+    finally:
+        hub.close()
+
+
+def test_initial_unknown_geometry_cannot_start_capture(monkeypatch, tmp_path):
+    hub, metadata = make_hub(monkeypatch, tmp_path)
+    metadata.display_failed = True
+    hub.start()
+    try:
+        hub.frame()
+        until(lambda: hub.metadata_failures > 0)
+        assert not hub.frame()["interaction_ready"]
+        assert not Video.instances
+    finally:
+        hub.close()

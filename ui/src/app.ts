@@ -4,7 +4,7 @@ declare global { interface Window { __ANDROID_USE_STANDALONE__?: boolean } }
 type Size = [number, number];
 type Frame = {seq:number; data:string; mimeType:string; width:number; height:number};
 type Preview = {ok:boolean; stream_id:string; seq:number; frame:Frame|null; frame_available:boolean;
-  connected:boolean; capturing:boolean; paused:boolean; pause_reason:string|null;
+  connected:boolean; capturing:boolean; paused:boolean; pause_reason:string|null; interaction_ready?:boolean;
   device:{model:string}; viewport:Size|null; error:string|null};
 const root=document.querySelector<HTMLElement>('#app')!;
 const frame=document.querySelector<HTMLImageElement>('#frame')!;
@@ -144,9 +144,10 @@ function apply(data:Preview){
       currentSource=source;frame.src=source;device.style.aspectRatio=`${picture.width}/${picture.height}`;
       root.style.setProperty('--screen-ratio',String(picture.width/picture.height));
       root.dataset.orientation=picture.width>picture.height?'landscape':'portrait';
-      root.dataset.frameSeq=String(seq);interruptedAt=undefined;waitingAfterSeq=undefined;setState('live');
+      root.dataset.frameSeq=String(seq);interruptedAt=undefined;waitingAfterSeq=undefined;
+      setState(preview?.interaction_ready===false?'buffering':'live');
     };image.onerror=()=>setState('offline','画面解码失败','点击「重连」重试');image.src=source;
-  }else if(data.frame_available&&currentSource){interruptedAt=undefined;setState('live');}
+  }else if(data.frame_available&&currentSource){interruptedAt=undefined;setState(data.interaction_ready===false?'buffering':'live');}
   else if(currentSource){
     // Rotation, a refreshed encoder or returning to a hidden viewer may need a
     // first frame. Keep the last picture visible, with interactions disabled.

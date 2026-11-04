@@ -274,10 +274,13 @@ class ScreenHub:
         self.error = None
         self.model = "Android"
         self.viewport = None
+        self.geometry_ready = False
         self.recording_time_limit = recording_time_limit
         self.failures = 0
         self.pipeline_starts = 0
         self.health_failures = 0
+        self.metadata_failures = 0
+        self.last_health_failure = None
         self.stream_failures = 0
 
     def start(self):
@@ -319,6 +322,23 @@ class ScreenHub:
     def _health(self):
         try:
             locked = self.backend.locked()
+        except Exception:
+            with self.lock:
+                self.health_failures += 1
+                self.last_health_failure = "lock_state"
+                self.connected = False
+                self.geometry_ready = False
+                self.last_health = time.monotonic()
+            return
+        if locked:
+            with self.lock:
+                self.locked, self.connected = True, True
+                self.geometry_ready = False
+                self._stop_video()
+                self.last_health = time.monotonic()
+            return
+        size = None
+        try:
             # These are display/device metadata reads, never UiAutomator snapshots.
             raw = self.backend.shell(["wm", "size"], timeout=2)
             sizes = re.findall(r"(\d+)x(\d+)", raw)
@@ -328,32 +348,37 @@ class ScreenHub:
             )
             if size and rotation and int(rotation[1]) % 2:
                 size.reverse()
-            model = (
-                self.model
-                if self.model != "Android"
-                else self.backend.shell(["getprop", "ro.product.model"], timeout=2)
-            )
-            if self.recording_time_limit is None:
-                try:
-                    # AOSP prints usage on stderr; adb's shell-v2 transport keeps
-                    # it separate unless explicitly redirected on the device.
-                    help_text = self.backend.shell(
-                        ["sh", "-c", "screenrecord --help 2>&1"], timeout=2
-                    )
-                except Exception:
-                    help_text = ""  # Legacy fallback, not loss of device health.
-                self.recording_time_limit = 0 if unlimited_recording(help_text) else 170
-            with self.lock:
-                if size != self.viewport:
-                    self._stop_video()
-                self.locked, self.connected, self.viewport = locked, True, size
-                self.model = model or "Android"
-                self.last_health = time.monotonic()
+            if not size or not rotation or int(rotation[1]) not in range(4):
+                raise ValueError("Unknown display geometry")
         except Exception:
             with self.lock:
-                self.health_failures += 1
-                self.connected = False
-                self.last_health = time.monotonic()
+                self.metadata_failures += 1
+                self.last_health_failure = "display_metadata"
+            size = None
+        if self.model == "Android":
+            try:
+                self.model = (
+                    self.backend.shell(["getprop", "ro.product.model"], timeout=2) or self.model
+                )
+            except Exception:
+                pass  # A missing label cannot disconnect a healthy video stream.
+        if self.recording_time_limit is None:
+            try:
+                # AOSP prints usage on stderr; redirect it on the device.
+                help_text = self.backend.shell(["sh", "-c", "screenrecord --help 2>&1"], timeout=2)
+            except Exception:
+                help_text = ""
+            self.recording_time_limit = 0 if unlimited_recording(help_text) else 170
+        with self.lock:
+            if size is not None and size != self.viewport:
+                self._stop_video()
+            if size is not None:
+                self.viewport = size
+                self.last_health_failure = None
+            # A geometry timeout does not mean USB disconnected. Preserve the
+            # video, but disable pixel-based controls until metadata recovers.
+            self.locked, self.connected, self.geometry_ready = False, True, size is not None
+            self.last_health = time.monotonic()
 
     def _watch(self):
         while not self.closed.is_set():
@@ -374,7 +399,7 @@ class ScreenHub:
                 paused = self.pause_path.exists()
                 if paused or not active or self.locked or not self.connected:
                     self._stop_video()
-                elif self.pipeline is None and now >= self.retry_at:
+                elif self.pipeline is None and self.geometry_ready and now >= self.retry_at:
                     try:
                         pipeline = self.pipeline_factory(
                             self.serial,
@@ -424,6 +449,10 @@ class ScreenHub:
                 if self.locked and self.connected
                 else None,
                 "connected": self.connected,
+                "interaction_ready": self.geometry_ready
+                and self.connected
+                and not self.locked
+                and not paused,
                 "capturing": self.pipeline is not None,
                 "device": {"model": self.model},
                 "viewport": self.viewport,
@@ -432,6 +461,8 @@ class ScreenHub:
                 "video": {
                     "pipeline_starts": self.pipeline_starts,
                     "health_failures": self.health_failures,
+                    "metadata_failures": self.metadata_failures,
+                    "last_health_failure": self.last_health_failure,
                     "stream_failures": self.stream_failures,
                     "recording_time_limit_seconds": self.recording_time_limit,
                     "recording_mode": "unlimited"
@@ -445,6 +476,19 @@ class ScreenHub:
     def stop_capture(self):
         with self.lock:
             self._stop_video()
+
+    def require_interaction_ready(self):
+        with self.lock:
+            if (
+                not self.geometry_ready
+                or not self.connected
+                or self.locked
+                or self.pause_path.exists()
+                or self.pipeline is None
+                or self.frame_data is None
+                or self.error
+            ):
+                raise UseError("preview_buffering", "Wait for current video and display geometry")
 
     def save_frame(self):
         with self.lock:

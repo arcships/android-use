@@ -74,6 +74,19 @@ test('a transient frame request failure clears the frame and automatically recov
   await expect(page.locator('#app')).toHaveAttribute('data-state','live');
   await expect(page.locator('#frame')).toHaveAttribute('src',/^data:/);
 });
+test('display metadata failure keeps updating pictures without enabling stale coordinates',async({page})=>{
+  const api=await standalone(page);
+  api.set({...sample(),interaction_ready:false,seq:2,frame:{...sample().frame,seq:2}});
+  await expect(page.locator('#app')).toHaveAttribute('data-frame-seq','2');
+  await expect(page.locator('#app')).toHaveAttribute('data-state','buffering');
+  await expect(page.locator('#overlay')).toBeHidden();
+  await expect(page.locator('#home')).toBeDisabled();
+  await page.locator('#frame').click();
+  expect(api.calls.some(c=>c.args.action==='tap')).toBeFalsy();
+  api.set({...sample(),interaction_ready:true,seq:2,frame:null});
+  await expect(page.locator('#app')).toHaveAttribute('data-state','live');
+  await expect(page.locator('#home')).toBeEnabled();
+});
 test('persistent transport failure becomes offline but keeps retrying',async({page})=>{
   const api=await standalone(page);
   api.failFrames(true);

@@ -146,8 +146,10 @@ def serve(serial, key):
                     elif action == "save" and not args:
                         result = hub.save_frame()
                     elif action == "tap":
+                        hub.require_interaction_ready()
                         result = runtime.call("tap", **args)
                     elif action == "swipe":
+                        hub.require_interaction_ready()
                         result = runtime.call("swipe", **args)
                     else:
                         raise ValueError("Unknown preview action")
