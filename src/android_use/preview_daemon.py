@@ -14,7 +14,8 @@ from importlib.resources import files
 
 from .backend import Backend, UseError
 from .runtime import Runtime, save_images
-from .screen import ScreenHub, device_paths
+from .screen import PREVIEW_PROTOCOL_VERSION, ScreenHub, device_paths
+from .settings import JEV_ACTIONS, settings_action
 
 
 def serve(serial, key):
@@ -97,7 +98,12 @@ def serve(serial, key):
                         raise ValueError("Invalid sequence")
                     result = hub.frame(after)
                 elif endpoint == "status":
-                    result = {"ok": True, "pid": os.getpid(), "device_key": key}
+                    result = {
+                        "ok": True,
+                        "pid": os.getpid(),
+                        "device_key": key,
+                        "protocol_version": PREVIEW_PROTOCOL_VERSION,
+                    }
                 elif endpoint == "switch_serial":
                     new_serial = args.get("serial")
                     if not isinstance(new_serial, str) or not new_serial or len(new_serial) > 200:
@@ -127,7 +133,9 @@ def serve(serial, key):
                 elif endpoint == "action":
                     # App-only toolbar/gestures still go through normal validation and device locking.
                     action = args.pop("action", None)
-                    if action in {"home", "back"} and not args:
+                    if action in JEV_ACTIONS:
+                        result = settings_action(action, args)
+                    elif action in {"home", "back"} and not args:
                         result = runtime.call("press_button", name=action)
                     elif action == "save" and not args:
                         result = hub.save_frame()
@@ -144,14 +152,15 @@ def serve(serial, key):
             except (ValueError, TypeError):
                 self._send(400, json.dumps({"ok": False, "error": {"code": "invalid_arguments"}}))
             except Exception as exc:
+                error = {"code": exc.code if isinstance(exc, UseError) else "preview_error"}
+                if isinstance(exc, UseError) and type(exc.details.get("status")) is int:
+                    error["status"] = exc.details["status"]
                 self._send(
                     503,
                     json.dumps(
                         {
                             "ok": False,
-                            "error": {
-                                "code": exc.code if isinstance(exc, UseError) else "preview_error"
-                            },
+                            "error": error,
                         }
                     ),
                 )
@@ -169,6 +178,7 @@ def serve(serial, key):
         "token": token,
         "serial": serial,
         "device_key": key,
+        "protocol_version": PREVIEW_PROTOCOL_VERSION,
     }
     temporary = info_path.with_suffix(".tmp")
     temporary.write_text(json.dumps(info))

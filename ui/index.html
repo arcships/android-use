@@ -3,8 +3,8 @@
 <title>Android Use · 手机屏幕</title><style>/*__STYLE__*/</style></head>
 <body><!--__MODE__--><main id="app" data-state="connecting">
 <header><div class="device-label"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10 5h4m-3 13.5h2"/></svg><span id="model">Android</span></div>
-<span id="status"><i></i><span id="status-text">连接中</span></span></header>
-<section id="stage"><div id="device"><img id="frame" alt="Android 实时屏幕" draggable="false"><div id="overlay"><span id="overlay-text">正在连接手机…</span><small id="overlay-detail">实时视频将在这里显示</small></div><div id="pointer"></div></div></section>
+<div class="header-actions"><span id="status"><i></i><span id="status-text">连接中</span></span><button id="settings" title="Jev 设置" aria-label="Jev 设置"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 3-1 3-3 1-2 3 2 2-1 3 3 2 3-1 2 2 3-1 1-3 3-1 1-3-2-2 1-3-3-2-3 1-2-2Z"/><circle cx="11" cy="11" r="3"/></svg></button></div></header>
+<section id="stage"><div id="phone-shell"><span class="side-key volume-key" aria-hidden="true"></span><span class="side-key power-key" aria-hidden="true"></span><span class="earpiece" aria-hidden="true"></span><div id="device"><img id="frame" alt="Android 实时屏幕" draggable="false"><div id="overlay"><span id="overlay-text">正在连接手机…</span><small id="overlay-detail">实时视频将在这里显示</small></div><div id="pointer"></div></div></div></section>
 <div id="notice" role="status" aria-live="polite"></div>
 <footer aria-label="设备控制">
 <button id="back" title="返回" aria-label="返回"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
@@ -13,4 +13,20 @@
 <button id="copy" title="复制画面" aria-label="复制画面"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="8" y="8" width="11" height="12" rx="2"/><path d="M15 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg></button>
 <button id="refresh" title="重新连接" aria-label="重新连接"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 8a7.5 7.5 0 1 0 .5 7M19 3v5h-5"/></svg></button>
 </footer>
-</main><script type="module">/*__SCRIPT__*/</script></body></html>
+</main>
+<dialog id="jev-settings" aria-labelledby="settings-title">
+<form id="jev-form">
+<div class="settings-heading"><h2 id="settings-title">Jev 决策设置</h2><button id="settings-close" type="button" aria-label="关闭设置"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+<p class="settings-intro">让 Agent 委托 Jev 处理连续的界面决策。</p>
+<div id="jev-state" class="settings-state" role="status">正在读取设置…</div>
+<label for="jev-key">TypeSafe API Key</label>
+<input id="jev-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="4096" placeholder="粘贴你的 API Key">
+<p class="settings-hint">Key 保存在此电脑，保存后不再回显。</p>
+<p id="jev-provider" class="settings-hint"></p>
+<p class="settings-disclosure">启用后，任务目标与界面文字会发送给 TypeSafe。设置对新任务生效。</p>
+<p id="jev-message" role="status" aria-live="polite"></p>
+<button id="jev-enable" class="primary" type="submit" disabled>验证并启用</button>
+<div class="settings-secondary"><button id="jev-test" type="button" disabled>测试连接</button><button id="jev-disable" type="button" hidden>停用</button><button id="jev-clear" type="button" hidden>移除本机 Key</button></div>
+</form>
+</dialog>
+<script type="module">/*__SCRIPT__*/</script></body></html>

@@ -1,0 +1,53 @@
+{
+  "ui_save_verified": true,
+  "credential_input_cleared": true,
+  "server_version": "0.4.0",
+  "no_environment_key_or_enable_flag": true,
+  "same_mcp_session_after_ui_save": true,
+  "verified_goal": true,
+  "metrics": {
+    "provider": "typesafe",
+    "requested_model": "jev-1.14.0",
+    "models": [
+      "jev-1.14.0"
+    ],
+    "model_calls": 3,
+    "model_seconds": 0.8254391659866087,
+    "input_tokens": 5186,
+    "output_tokens": 190,
+    "unpriced_calls": 0,
+    "estimated_cost_usd_lower_bound": 0.000217812,
+    "estimated_cost_usd": 0.000217812,
+    "cost_basis": "published input-token price; not a billing receipt",
+    "elapsed_seconds": 4.306821541977115,
+    "device_read_seconds": 2.2656531259417534,
+    "device_action_seconds": 0.566060833982192,
+    "stale_decisions": 1
+  },
+  "steps": [
+    {
+      "op": "tap",
+      "candidate": "a2",
+      "state": "executed"
+    },
+    {
+      "op": "tap",
+      "candidate": "a0",
+      "state": "executed"
+    }
+  ],
+  "tool_count": 23,
+  "environment": "macOS, local Chrome, Android API 35 ARM64 emulator; permission-free synthetic fixture",
+  "date": "2026-11-04",
+  "prior_attempts": [
+    {
+      "result": "infrastructure_blocked",
+      "reason": "emulator initially unavailable; no goal run"
+    },
+    {
+      "result": "fixture_wait_timeout",
+      "count": 2,
+      "reason": "System UI not responding dialog after cold boot; UI key save succeeded, goal not started; dialog dismissed explicitly before fresh complete run"
+    }
+  ]
+}

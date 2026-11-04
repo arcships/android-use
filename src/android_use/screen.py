@@ -7,6 +7,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import threading
@@ -21,6 +22,7 @@ from .backend import Backend, UseError, device_lock, state_dir
 
 LEASE_SECONDS = 5
 MAX_FRAME_BYTES = 3 * 1024 * 1024
+PREVIEW_PROTOCOL_VERSION = 2
 
 
 def device_paths(key):
@@ -409,20 +411,38 @@ class ScreenClient:
         with device_lock(self.key + "-preview-start"):
             if self._load():
                 try:
-                    self.request("status")
-                    if self.info["serial"] != self.serial:
-                        changed = self.request("switch_serial", {"serial": self.serial})
-                        if not changed.get("ok"):
-                            raise UseError(
-                                "preview_transport_changed", "Could not switch preview transport"
-                            )
-                        self._load()
-                    return self.url
-                except UseError:
-                    pass
+                    status = self.request("status")
+                    if (
+                        status.get("pid") != self.info.get("pid")
+                        or status.get("device_key") != self.key
+                    ):
+                        raise UseError("preview_identity_mismatch", "Preview identity changed")
+                    if status.get("protocol_version") == PREVIEW_PROTOCOL_VERSION:
+                        if self.info["serial"] != self.serial:
+                            changed = self.request("switch_serial", {"serial": self.serial})
+                            if not changed.get("ok"):
+                                raise UseError(
+                                    "preview_transport_changed",
+                                    "Could not switch preview transport",
+                                )
+                            self._load()
+                        return self.url
+                    # Upgrade only our authenticated preview daemon, not the phone service.
+                    pid = self.info["pid"]
+                    if type(pid) is not int or pid <= 1 or pid == os.getpid():
+                        raise UseError("preview_identity_mismatch", "Invalid preview owner")
+                    self.request("stop_capture")
+                    try:
+                        os.kill(pid, signal.SIGTERM)
+                    except ProcessLookupError:
+                        pass
+                    self.info = None
+                except UseError as exc:
+                    if exc.code == "preview_identity_mismatch":
+                        raise
             if not (os.environ.get("ANDROID_USE_FFMPEG") or shutil.which("ffmpeg")):
                 raise UseError("preview_dependency_missing", "Install ffmpeg for live preview")
-            subprocess.Popen(
+            process = subprocess.Popen(
                 [
                     sys.executable,
                     "-m",
@@ -439,10 +459,11 @@ class ScreenClient:
             )
             deadline = time.monotonic() + 8
             while time.monotonic() < deadline:
-                if self._load():
+                if self._load() and self.info.get("pid") == process.pid:
                     try:
-                        self.request("status")
-                        return self.url
+                        status = self.request("status")
+                        if status.get("protocol_version") == PREVIEW_PROTOCOL_VERSION:
+                            return self.url
                     except UseError:
                         pass
                 time.sleep(0.1)

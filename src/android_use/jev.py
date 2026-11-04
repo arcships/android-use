@@ -1,7 +1,6 @@
 """Opt-in TypeSafe Choice transport. Never retry a paid decision implicitly."""
 
 import math
-import os
 import time
 from dataclasses import dataclass, field
 from urllib.parse import urlsplit
@@ -48,15 +47,20 @@ class JevConfig:
 
     @classmethod
     def from_env(cls):
-        if os.environ.get("ANDROID_USE_JEV_ENABLED") != "1":
-            raise UseError("jev_disabled", "Set ANDROID_USE_JEV_ENABLED=1 to opt in")
-        key = os.environ.get("TYPESAFE_API_KEY", "").strip()
+        from .settings import effective_jev_settings
+
+        settings = effective_jev_settings()
+        if not settings["enabled"]:
+            raise UseError(
+                "jev_disabled", "Enable Jev in screen settings or the server environment"
+            )
+        key = settings["key"]
         if not key:
-            raise UseError("jev_configuration", "Set TYPESAFE_API_KEY in the server environment")
+            raise UseError("jev_configuration", "Configure a TypeSafe API key in screen settings")
         return cls(
             key,
-            os.environ.get("TYPESAFE_MODEL", "jev-1.14.0"),
-            endpoint_url(os.environ.get("TYPESAFE_BASE_URL", "https://api.typesafe.ai/v1")),
+            settings["model"],
+            endpoint_url(settings["base_url"]),
         )
 
 

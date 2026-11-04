@@ -19,6 +19,10 @@ const server=createServer((req,res)=>{
   if(req.method==='POST'&&req.url==='/api/frame'){
     res.setHeader('Content-Type','application/json');return res.end(JSON.stringify(sample));
   }
+  if(req.method==='POST'&&req.url==='/api/action'){
+    res.setHeader('Content-Type','application/json');
+    return res.end(JSON.stringify({ok:true,enabled:false,configured:false,has_saved_key:false,key_source:'none',model:'jev-1.14.0',base_url:'https://api.typesafe.ai/v1',demo:true}));
+  }
   res.writeHead(404);res.end();
 });
 server.listen(0,'127.0.0.1',()=>console.log('http://127.0.0.1:'+server.address().port+'/'));
