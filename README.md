@@ -8,7 +8,7 @@
     <a href="#mcp-client-support"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="Standard stdio MCP" /></a>
   </p>
   <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
-  <p><a href="#quick-start"><strong>Get started →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.4.0">Download v0.4.0</a> · <a href="#enable-jev-from-the-screen">Set up Jev</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/JackCaow/android-use/issues">Report an issue</a></p>
+  <p><a href="#quick-start"><strong>Get started →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.5.0">Download v0.5.0</a> · <a href="#enable-jev-from-the-screen">Set up Jev</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/JackCaow/android-use/issues">Report an issue</a></p>
 </div>
 
 ## Bring Android into your agent workflow
@@ -171,7 +171,7 @@ Look for **`ready=true`**. With multiple devices, [select the target explicitly]
 
 The preview URL is a private local video endpoint, **not a remote MCP endpoint**. Remote-only MCP clients cannot connect to this stdio service. Client configuration examples are documented; full end-to-end acceptance has not been completed for every client/version.
 
-Source fix: live preview now recovers automatically across encoder renewal and transient frame-request failures. [Recovery behavior and troubleshooting →](docs/guide.md#live-screen) (not yet in the v0.4.0 ZIP).
+In v0.5.0, live preview now recovers automatically across encoder renewal and transient frame-request failures. [Recovery behavior and troubleshooting →](docs/guide.md#live-screen).
 
 ## A smaller loop, with explicit outcomes
 
@@ -186,15 +186,15 @@ uv run android-use scroll_until '{"selector":{"text":"Display"},"direction":"up"
 
 Actions support optional postconditions. A timeout reports what happened and stops the batch; it does not repeat the action. Auto-scroll stops on a match, its limits, or repeated lack of progress. [Gestures, waits, batches, and the original tools →](docs/guide.md#cli-reference) · [Optional Jev setup and benchmarks →](docs/jev.md)
 
-## Source update: safer actions and automatic OCR
+## New in v0.5.0: safer actions and automatic OCR
 
-**Not in the released v0.4.0 ZIP yet.** Source retains every MCP tool and adds page-based AX / local OCR routing to read-only `aua_read_fields`. Healthy text stays on the tree path; missing text or requested labels triggers a device ROI capture and local recognition, then one Jev request judges multiple fields. Acknowledged actions wait for an effect without repeating writes. Money keeps printed signs, grouping and currency.
+**Included in the v0.5.0 plugin ZIP.** Android Use retains every MCP tool and adds page-based AX / local OCR routing to read-only `aua_read_fields`. Healthy text stays on the tree path; missing text or requested labels triggers a device ROI capture and local recognition, then one Jev request judges multiple fields. Acknowledged actions wait for an effect without repeating writes. Money keeps printed signs, grouping and currency.
 
 During development acceptance, Meituan AX and OCR both produced **19 + 1.5 + 2.4 = ¥22.9**; Taobao automatically routed its empty semantic tree to OCR and produced **24 + 1.5 + 2.3 − 6 = ¥21.8**. The Agent independently inspected checkout and emptied temporary carts; no order or payment was made. Failed ROI, animation and missing-field attempts are retained. This is neither a whole-task speed benchmark nor an exhaustive cheapest-price result. Subsequent guard refinements were tested offline; phone testing stopped at the user's request.
 
-Source passes **276 Python tests and 17 UI tests**. Built-in OCR currently requires macOS and Xcode Command Line Tools. Automatic visual grounding/clicking remains future work. Reconnect MCP after updating source.
+v0.5.0 passes **277 Python tests and 17 UI tests**. Built-in OCR currently requires macOS and Xcode Command Line Tools. Automatic visual grounding/clicking remains future work. Reload your MCP connection after updating.
 
-[Field tool and parameters](docs/jev.md#automatic-read-only-ocr-source-update-unreleased) · [Live acceptance and retained failures](docs/benchmarks/real-app-ocr-v6.md) · [Implementation boundaries and roadmap — 中文](docs/visual-routing.zh-CN.md)
+[Field tool and parameters](docs/jev.md#automatic-read-only-ocr) · [Live acceptance and retained failures](docs/benchmarks/real-app-ocr-v6.md) · [Implementation boundaries and roadmap — 中文](docs/visual-routing.zh-CN.md)
 
 ## Measured, with clear limits
 
@@ -202,7 +202,7 @@ Development comparisons include **18 source-level trials** and **12 live Agent /
 
 ## Project status
 
-**v0.4.0 · MIT · 175 Python tests · 12 browser tests.** Emulator acceptance covers 15 real stdio MCP scenarios. Earlier physical-device acceptance covers Android 16 / Xiaomi 15 Ultra. New Jev setup and frame changes have local/emulator validation; other manufacturers, host versions and operating systems have different coverage. [Validation evidence →](docs/validation.md)
+**v0.5.0 · MIT · 277 Python tests · 17 browser tests.** Emulator acceptance covers 15 real stdio MCP scenarios. Earlier physical-device acceptance covers Android 16 / Xiaomi 15 Ultra. New Jev setup and frame changes have local/emulator validation; other manufacturers, host versions and operating systems have different coverage. [Validation evidence →](docs/validation.md)
 
 Multi-touch, arbitrary gesture paths, fine-grained text selection and custom-editor input fallbacks are not implemented. A matched UI condition proves that condition; the Agent must verify business outcomes. Control and preview run locally, and tool results are handled by your chosen client/model.
 

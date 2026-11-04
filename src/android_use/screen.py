@@ -22,7 +22,8 @@ from .backend import Backend, UseError, device_lock, state_dir
 
 LEASE_SECONDS = 5
 MAX_FRAME_BYTES = 3 * 1024 * 1024
-PREVIEW_PROTOCOL_VERSION = 2
+# Replace older daemons so their browser UI/recovery behavior is upgraded too.
+PREVIEW_PROTOCOL_VERSION = 3
 
 
 def device_paths(key):

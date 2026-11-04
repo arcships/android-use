@@ -1,6 +1,6 @@
 # Read-only automatic OCR acceptance · 2026-11-04
 
-[Sanitized attempts](real-app-ocr-v6.json) · [Parameters and limits](../jev.md#automatic-read-only-ocr-source-update-unreleased) · [Page-routing plan — 中文](../visual-routing.zh-CN.md)
+[Sanitized attempts](real-app-ocr-v6.json) · [Parameters and limits](../jev.md#automatic-read-only-ocr) · [Page-routing plan — 中文](../visual-routing.zh-CN.md)
 
 This is iterative acceptance on an authorized physical Android phone, using source CLI / a separate **standard stdio MCP** process, local macOS Vision and live Jev 1.14.0. It is not an Agent-only comparison, a measured production success rate, or an exhaustive cheapest-drink search. Code, ROI and confidence handling changed during development. Every recorded field/goal attempt, including diagnostic failures, remains in the JSON; navigation actions are outside this field report.
 

@@ -16,7 +16,9 @@
 
 [最新性能对比与原始记录 →](benchmarks/optimizations-v4.md)。`scripts/benchmark_agent.py` 用实时 JSONL 让当前 Agent 选择普通工具或委托 Jev 决策，并负责恢复、最终验收；驱动单独记录宿主等待，宿主没有提供逐任务 token 账单时，Agent 费用保持未知。
 
-## 结构化决策与字段判断（源码更新，尚未发布）
+<a id="结构化决策与字段判断源码更新尚未发布"></a>
+
+## 结构化决策与字段判断（v0.5.0）
 
 新版源码不再取前 120 个原始节点直接发送，而是构造精简语义表、保留候选目标信息，并逐级压缩非目标内容。重复的无标签父容器不再与其可操作子控件竞争；精确输入文本不截断。完整界面树仍留在本机校验动作。每轮一次 Jev 请求，并行判断操作和各操作的目标，只消费选中操作对应的目标头，按所需头中最低的概率与 margin 检查。
 
@@ -46,9 +48,11 @@
 
 检查 `fields.*.accepted`、`checks` 和来源。`status=judged`、字段全部接受或数字相符均不证明业务成功，`verified` 始终为 false，最终由 Agent 对照结算画面验收。缺失/低概率值返回 null；金额冲突保留已选原文并标记 `review_reason=sum_check_failed`。推理后出错时仍在 `error.metrics` 保留用量与耗时。
 
-[最新自动 OCR 验收及失败](benchmarks/real-app-ocr-v6.md) · [此前 Agent 提供 OCR 的历史记录](benchmarks/real-app-jev-v5.md)。开发验收最终为 22.9 / 21.8 元，饮品不同；不是最低价或整体性能对照。v0.4.0 ZIP 不含这批源码更新。
+[最新自动 OCR 验收及失败](benchmarks/real-app-ocr-v6.md) · [此前 Agent 提供 OCR 的历史记录](benchmarks/real-app-jev-v5.md)。开发验收最终为 22.9 / 21.8 元，饮品不同；不是最低价或整体性能对照。上述更新已包含在 v0.5.0 ZIP 中。
 
-## 自动只读 OCR（源码更新，尚未发布）
+<a id="自动只读-ocr源码更新尚未发布"></a>
+
+## 自动只读 OCR
 
 `aua_read_fields` / CLI `read_fields` 的 `source` 默认 `auto`：所选区域有文本、包含全部 `expected_labels`，且 money 问题有金额候选时走 AX；否则在首次 Jev 请求前切换本机 OCR。这只是确定性的充分性筛选，不证明目标信息完整。`source=tree` 禁用 OCR；`source=screen_ocr` 强制 OCR。`expected_labels` 最多 12 个，按原文子串匹配。可先用宽泛字段判断，但比价应明确费用角色，并根据当前画面指定账单 `region`。
 

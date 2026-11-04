@@ -2,6 +2,8 @@
 
 Optional feature in v0.4.0: [optional Jev decision integration and comparison](jev.md). Default off; original tools remain compatible. Included in the v0.4.0 release ZIP.
 
+v0.5.0 includes [read-only automatic OCR and execution guards](jev.md#automatic-read-only-ocr), plus automatic preview recovery. Built-in OCR requires macOS and Xcode Command Line Tools.
+
 **English** · [简体中文](guide.zh-CN.md) · [Project home](../README.md)
 
 [Install](#installation) · [Connect a device](#connect-a-device) · [Codex](#codex-plugin) · [Other clients](#other-mcp-clients) · [CLI](#cli-reference) · [Troubleshooting](#troubleshooting)
@@ -140,15 +142,15 @@ Choose a release ZIP or a source checkout. If you already use `android-use-local
 
 ### Install the release ZIP
 
-Download `android-use-0.4.0-plugin.zip` and `SHA256SUMS` from [GitHub Release v0.4.0](https://github.com/JackCaow/android-use/releases/tag/v0.4.0). The ZIP includes the compiled UI, Python source/lockfile, skills, bilingual docs, and a ready-to-register local marketplace. It does not bundle Python, ADB, or ffmpeg; prepare the dependencies above. First installation needs network access to install Python dependencies.
+Download `android-use-0.5.0-plugin.zip` and `SHA256SUMS` from [GitHub Release v0.5.0](https://github.com/JackCaow/android-use/releases/tag/v0.5.0). The ZIP includes the compiled UI, Python source/lockfile, skills, bilingual docs, and a ready-to-register local marketplace. It does not bundle Python, ADB, or ffmpeg; prepare the dependencies above. First installation needs network access to install Python dependencies.
 
 On macOS/Linux, extract it and run:
 
 ```bash
 # Check the downloaded archive first (Linux can use sha256sum -c SHA256SUMS).
 shasum -a 256 -c SHA256SUMS
-unzip android-use-0.4.0-plugin.zip -d android-use-v0.4.0
-cd android-use-v0.4.0
+unzip android-use-0.5.0-plugin.zip -d android-use-v0.5.0
+cd android-use-v0.5.0
 uv sync --frozen --python 3.13
 codex plugin marketplace add .
 codex plugin add android-use@android-use-release
@@ -291,7 +293,7 @@ Manual preview gestures remain tap and directional swipe. Precision drag, long p
 
 Video uses `screenrecord → H.264 → ffmpeg → in-memory frames`, independent of screenshot/XML polling. After the last visible viewer stops renewing its lease for 5 seconds, capture stops. Authentication pause clears the frames and stops capture. A live sidebar is not a substitute for the agent explicitly observing the screen when needed.
 
-**Source update (not in the v0.4.0 ZIP):** `screenrecord` is renewed about every 170 seconds. The panel now reports automatic recovery during that transition or a transient frame-request failure, rather than asking you to reconnect immediately. It resumes Live only after a valid frame; stream rollover requires a new sequence. After 5 seconds without recovery it shows video unavailable and continues retrying. Device disconnection and authentication pause still clear the image and disable phone controls. Reload the screen after updating its UI; restarting the whole client is unnecessary.
+**Included in v0.5.0:** `screenrecord` is renewed about every 170 seconds. The panel now reports automatic recovery during that transition or a transient frame-request failure, rather than asking you to reconnect immediately. It resumes Live only after a valid frame; stream rollover requires a new sequence. After 5 seconds without recovery it shows video unavailable and continues retrying. Device disconnection and authentication pause still clear the image and disable phone controls. Reload the screen after updating its UI; restarting the whole client is unnecessary.
 
 ## CLI reference
 

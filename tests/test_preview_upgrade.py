@@ -48,8 +48,9 @@ def test_healthy_preview_is_reused_without_restart(monkeypatch):
     assert not started and not killed
 
 
-def test_legacy_authenticated_preview_is_replaced_and_new_process_confirmed(monkeypatch):
-    preview, started, killed, calls = client(monkeypatch, None)
+@pytest.mark.parametrize("protocol", [None, 2])
+def test_legacy_authenticated_preview_is_replaced_and_new_process_confirmed(monkeypatch, protocol):
+    preview, started, killed, calls = client(monkeypatch, protocol)
     preview.ensure()
     assert killed == [900001] and len(started) == 1
     assert calls == ["status", "stop_capture", "status"]

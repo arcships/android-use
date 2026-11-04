@@ -2,6 +2,8 @@
 
 v0.4.0 可选功能：[可选 Jev 决策集成与对比测试](jev.zh-CN.md)。默认关闭，原有工具兼容保留；v0.4.0 Release ZIP 已包含。
 
+v0.5.0 已包含[只读自动 OCR 与执行守卫](jev.zh-CN.md#自动只读-ocr)，并修复预览自动恢复；内置 OCR 需要 macOS 与 Xcode Command Line Tools。
+
 [English](guide.md) · **简体中文** · [返回项目首页](../README.zh-CN.md)
 
 [安装](#安装) · [首次连接手机](#首次连接手机) · [Codex 插件](#安装-codex-插件) · [其他客户端](#其他-mcp-客户端) · [CLI](#cli-使用) · [故障排查](#常见问题)
@@ -183,15 +185,15 @@ uv run android-use --serial SERIAL ready
 
 ### 安装发行包 ZIP
 
-从 [GitHub Release v0.4.0](https://github.com/JackCaow/android-use/releases/tag/v0.4.0) 下载 `android-use-0.4.0-plugin.zip` 和 `SHA256SUMS`。ZIP 已含编译好的界面、Python 源码与锁文件、技能、双语文档和可注册的本地市场；不包含 Python、ADB、ffmpeg，先按上文准备依赖。首次安装需要联网下载 Python 依赖。
+从 [GitHub Release v0.5.0](https://github.com/JackCaow/android-use/releases/tag/v0.5.0) 下载 `android-use-0.5.0-plugin.zip` 和 `SHA256SUMS`。ZIP 已含编译好的界面、Python 源码与锁文件、技能、双语文档和可注册的本地市场；不包含 Python、ADB、ffmpeg，先按上文准备依赖。首次安装需要联网下载 Python 依赖。
 
 macOS / Linux 下载后执行：
 
 ```bash
 # 先校验下载文件；Linux 也可使用 sha256sum -c SHA256SUMS。
 shasum -a 256 -c SHA256SUMS
-unzip android-use-0.4.0-plugin.zip -d android-use-v0.4.0
-cd android-use-v0.4.0
+unzip android-use-0.5.0-plugin.zip -d android-use-v0.5.0
+cd android-use-v0.5.0
 uv sync --frozen --python 3.13
 codex plugin marketplace add .
 codex plugin add android-use@android-use-release
@@ -254,7 +256,7 @@ uv run android-use screen
 
 视频使用独立的 `screenrecord → H.264 → ffmpeg` 通道，前端读取内存中的视频帧缓存，不循环请求手机截图或控件树。关闭 / 隐藏面板后，5 秒无人续租即停止采集；认证暂停时也会清除画面并停止采集。
 
-**源码修复，尚未纳入 v0.4.0 ZIP：** `screenrecord` 约每 170 秒接续一次；接续或画面请求短暂失败时，面板显示自动恢复，不再立即提示手动重连。收到有效画面后恢复 Live，视频接续还必须看到更高的帧序号；5 秒未恢复则显示视频暂不可用，并继续自动重试。设备掉线或认证暂停仍会清空画面、禁用手机控制。更新界面后重新打开画面即可，无需重启整个客户端。
+**v0.5.0 已包含：** `screenrecord` 约每 170 秒接续一次；接续或画面请求短暂失败时，面板显示自动恢复，不再立即提示手动重连。收到有效画面后恢复 Live，视频接续还必须看到更高的帧序号；5 秒未恢复则显示视频暂不可用，并继续自动重试。设备掉线或认证暂停仍会清空画面、禁用手机控制。更新界面后重新打开画面即可，无需重启整个客户端。
 
 ## CLI 使用
 

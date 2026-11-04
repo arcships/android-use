@@ -8,7 +8,7 @@
     <a href="#mcp-客户端支持"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="标准 stdio MCP" /></a>
   </p>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
-  <p><a href="#快速开始"><strong>开始使用 →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.4.0">下载 v0.4.0</a> · <a href="#在屏幕中启用-jev">配置 Jev</a> · <a href="docs/guide.zh-CN.md">使用指南</a> · <a href="https://github.com/JackCaow/android-use/issues">反馈问题</a></p>
+  <p><a href="#快速开始"><strong>开始使用 →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.5.0">下载 v0.5.0</a> · <a href="#在屏幕中启用-jev">配置 Jev</a> · <a href="docs/guide.zh-CN.md">使用指南</a> · <a href="https://github.com/JackCaow/android-use/issues">反馈问题</a></p>
 </div>
 
 ## 把 Android 接入你的 Agent 工作流
@@ -170,7 +170,7 @@ uv run android-use ready
 
 视频预览 URL 是私有的本机画面地址，**不是远程 MCP 端点**；仅支持远程 URL 的客户端不能直接接入本版。各客户端已有配置示例，但尚未对所有客户端 / 版本完成端到端验收。
 
-源码修复：视频接续和画面请求短暂失败时自动恢复，不再立即要求手动重连。[恢复行为与排查说明 →](docs/guide.zh-CN.md#实时屏幕与图片复制)（尚未纳入 v0.4.0 ZIP）。
+v0.5.0 修复：视频接续和画面请求短暂失败时自动恢复，不再立即要求手动重连。[恢复行为与排查说明 →](docs/guide.zh-CN.md#实时屏幕与图片复制)。
 
 ## 更短的操作循环，明确的执行结果
 
@@ -187,15 +187,15 @@ uv run android-use scroll_until '{"selector":{"text":"显示与亮度"},"directi
 
 可选决策集成与原有工具配合使用：[Agent + Jev 配置、分工和对比测试 →](docs/jev.zh-CN.md)。
 
-## 源码新进展：动作防重放与自动 OCR
+## v0.5.0：动作防重放与自动 OCR
 
-**尚未纳入已发布的 v0.4.0 ZIP。** 源码保留全部 MCP 工具，新增按当前页面自动选择 AX / 本地 OCR 的只读 `aua_read_fields`。树有目标文字就直接用树，缺少文字或指定标签时才截取 ROI，在本机识别，再由 Jev 一次判断多项字段。动作执行增加效果等待和重复动作拦截；金额保留负号、千位分隔及币种。
+**已纳入 v0.5.0 插件 ZIP。** 保留全部 MCP 工具，新增按当前页面自动选择 AX / 本地 OCR 的只读 `aua_read_fields`。树有目标文字就直接用树，缺少文字或指定标签时才截取 ROI，在本机识别，再由 Jev 一次判断多项字段。动作执行增加效果等待和重复动作拦截；金额保留负号、千位分隔及币种。
 
 开发真机验收中，美团 AX 与 OCR 均得到 **19 + 1.5 + 2.4 = 22.9 元**；淘宝从空语义树自动走 OCR，得到 **24 + 1.5 + 2.3 − 6 = 21.8 元**。Agent 独立核对画面，临时商品已清空，未下单付款。保留了 ROI 不合适、动画干扰和字段缺失等失败；这不是整体速度对照或最低价证明。后续守卫修正仅做离线回归，按用户要求未再操作手机。
 
-当前源码通过 **276 项 Python 测试、17 项界面测试**。内置 OCR 目前需要 macOS 与 Xcode Command Line Tools；视觉自动定位和点击仍未实现。更新源码后重新连接 MCP。
+v0.5.0 通过 **277 项 Python 测试、17 项界面测试**。内置 OCR 目前需要 macOS 与 Xcode Command Line Tools；视觉自动定位和点击仍未实现。更新后重新连接 MCP。
 
-[字段工具与参数](docs/jev.zh-CN.md#自动只读-ocr源码更新尚未发布) · [本轮验收与保留失败](docs/benchmarks/real-app-ocr-v6.md) · [已实现边界与后续方案](docs/visual-routing.zh-CN.md)
+[字段工具与参数](docs/jev.zh-CN.md#自动只读-ocr) · [本轮验收与保留失败](docs/benchmarks/real-app-ocr-v6.md) · [已实现边界与后续方案](docs/visual-routing.zh-CN.md)
 
 ## 有数据，也说明边界
 
@@ -203,7 +203,7 @@ uv run android-use scroll_until '{"selector":{"text":"显示与亮度"},"directi
 
 ## 项目状态
 
-**v0.4.0 · MIT · 175 项 Python 测试 · 12 项浏览器测试。** 模拟器验收覆盖 15 项真实 stdio MCP 场景；已有 Android 16 / Xiaomi 15 Ultra 真机验收。新增 Jev 设置和机身界面在本机/模拟器验证，其他厂商、宿主版本及系统的覆盖范围另见[验证记录](docs/validation.md)。
+**v0.5.0 · MIT · 277 项 Python 测试 · 17 项浏览器测试。** 模拟器验收覆盖 15 项真实 stdio MCP 场景；已有 Android 16 / Xiaomi 15 Ultra 真机验收。新增 Jev 设置和机身界面在本机/模拟器验证，其他厂商、宿主版本及系统的覆盖范围另见[验证记录](docs/validation.md)。
 
 多指手势、任意轨迹、精细文本选区及自绘编辑器输入兜底尚未实现。UI 条件满足仅证明该条件，Agent 仍需验收业务结果。控制和预览运行于本机，工具结果由你选择的客户端与模型处理。
 

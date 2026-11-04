@@ -28,7 +28,9 @@ Use ordinary tools for a known path; use Jev where the Agent would otherwise rea
 
 [Latest performance comparison and raw records →](benchmarks/optimizations-v4.md). Run `scripts/benchmark_agent.py` with the same `uv run --env-file .env --frozen python` prefix, `--serial <device>` and `--repeats 3`: the current Agent chooses ordinary tools or Jev decisions, handles recovery and verifies results. The driver measures host waiting separately. Host token charges remain unknown when the host does not expose per-task billing.
 
-## Structured decisions and field judgments (source update, unreleased)
+<a id="structured-decisions-and-field-judgments-source-update-unreleased"></a>
+
+## Structured decisions and field judgments (v0.5.0)
 
 The source checkout now sends a compact semantic UI table instead of the first 120 raw nodes. Candidate targets remain represented even when they occur later in the tree. Empty layout properties and repeated labels are removed; unlabeled wrappers with actionable children no longer compete with those children. If needed, text summaries and non-target context shrink further. Exact supplied input values are never truncated. The full local tree still validates actions.
 
@@ -60,9 +62,11 @@ AX-poor pages can now use automatic local OCR of the current device ROI. Agent-s
 
 Check `fields.*.accepted`, `checks`, and provenance. `status=judged`, `all_fields_accepted=true` and `source_verified_on_device=true` **never mean business success**; `verified` remains false. Missing/low-probability answers return no value. A sum conflict preserves selected values with `review_reason=sum_check_failed`. Error telemetry is retained under `error.metrics` when inference had started.
 
-[Automatic OCR acceptance and failures](benchmarks/real-app-ocr-v6.md) · [Earlier Agent-supplied OCR records](benchmarks/real-app-jev-v5.md). Development checkout totals were 22.9 / 21.8 yuan for different drinks; these are not a cheapest-price or whole-task performance comparison. The released v0.4.0 ZIP predates these source updates.
+[Automatic OCR acceptance and failures](benchmarks/real-app-ocr-v6.md) · [Earlier Agent-supplied OCR records](benchmarks/real-app-jev-v5.md). Development checkout totals were 22.9 / 21.8 yuan for different drinks; these are not a cheapest-price or whole-task performance comparison. These updates are included in the v0.5.0 ZIP.
 
-## Automatic read-only OCR (source update, unreleased)
+<a id="automatic-read-only-ocr-source-update-unreleased"></a>
+
+## Automatic read-only OCR
 
 `aua_read_fields` / CLI `read_fields` defaults to `source=auto`: the selected region uses AX when it has text, every requested `expected_labels` substring, and at least one amount candidate for money questions. Otherwise it switches to local OCR **before the first Jev request**. This deterministic filter does not establish that all task evidence exists. Use `source=tree` to disable OCR or `source=screen_ocr` to force it. Up to 12 expected labels are supported. Choose a bill `region` from the actual screen and supply precise field roles.
 
