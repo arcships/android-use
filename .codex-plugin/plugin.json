@@ -1,6 +1,6 @@
 {
   "name": "android-use",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "通过 ADB 和 UiAutomator2 操作 Android，支持实时屏幕侧边栏、控件树、截图、中文输入和批处理。",
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",

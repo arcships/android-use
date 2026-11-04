@@ -17,12 +17,22 @@ const notice=document.querySelector<HTMLElement>('#notice')!;
 const pointer=document.querySelector<HTMLElement>('#pointer')!;
 const buttons=Object.fromEntries(['refresh','back','home','copy'].map(id=>[id,document.getElementById(id) as HTMLButtonElement]));
 const standalone=window.__ANDROID_USE_STANDALONE__===true;
-const app=standalone?undefined:new App({name:'Android Use Screen',version:'0.2.1'},
+const app=standalone?undefined:new App({name:'Android Use Screen',version:'0.4.0'},
   {availableDisplayModes:['fullscreen']},{autoResize:false});
 let preview:Preview|undefined,seq=0,stream='',disposed=false,inFlight=false,acting=false;
 let suspended=false,timer:ReturnType<typeof setTimeout>|undefined;
 let currentSource='',generation=0,initialized=false;
 let noticeTimer:ReturnType<typeof setTimeout>|undefined;
+type JevStatus={ok:boolean;enabled:boolean;configured:boolean;has_saved_key:boolean;key_source:string;model:string;base_url:string;tested?:boolean;latency_ms?:number;demo?:boolean;error?:{code:string;status?:number}};
+const settingsButton=document.querySelector<HTMLButtonElement>('#settings')!;
+const settingsDialog=document.querySelector<HTMLDialogElement>('#jev-settings')!;
+const keyInput=document.querySelector<HTMLInputElement>('#jev-key')!;
+const settingsMessage=document.querySelector<HTMLElement>('#jev-message')!;
+const enableJev=document.querySelector<HTMLButtonElement>('#jev-enable')!;
+const testJev=document.querySelector<HTMLButtonElement>('#jev-test')!;
+const disableJev=document.querySelector<HTMLButtonElement>('#jev-disable')!;
+const clearJev=document.querySelector<HTMLButtonElement>('#jev-clear')!;
+let jevStatus:JevStatus|undefined,settingsBusy=false;
 const labels:Record<string,string>={connecting:'连接中',live:'Live',paused:'已暂停',offline:'未连接'};
 
 function showNotice(message:string,detail=''){
@@ -42,7 +52,12 @@ async function call(endpoint:string,args:Record<string,unknown>={}):Promise<any>
   if(standalone){
     const response=await fetch(`api/${endpoint}`,{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify(args),signal:AbortSignal.timeout(endpoint==='action'?20000:8000)});
-    if(!response.ok)throw new Error('preview_unreachable');
+    if(!response.ok){
+      if(endpoint==='action'&&String(args.action).startsWith('jev_')){
+        try{const data=await response.json();if(data?.error?.code)return data;}catch{}
+      }
+      throw new Error('preview_unreachable');
+    }
     return response.json();
   }
   const result=await app!.callServerTool({name:endpoint==='frame'?'aua_screen_frame':'aua_screen_action',
@@ -50,6 +65,45 @@ async function call(endpoint:string,args:Record<string,unknown>={}):Promise<any>
     {timeout:endpoint==='action'?20000:8000});
   return result.structuredContent;
 }
+function renderJev(data:JevStatus){
+  jevStatus=data;settingsButton.dataset.enabled=String(data.enabled);
+  document.querySelector('#jev-state')!.textContent=data.demo?'文档示例，请在实际手机屏幕中配置':data.enabled?'Jev 已启用':data.configured?'已配置 Key，Jev 未启用':'尚未配置，填入 Key 即可开始';
+  document.querySelector('#jev-provider')!.textContent=`${data.model} · ${data.base_url}`;
+  keyInput.placeholder=data.configured?'已有 Key，留空继续使用':'粘贴你的 API Key';
+  keyInput.disabled=!!data.demo||settingsBusy;enableJev.disabled=!!data.demo||settingsBusy||(!data.configured&&!keyInput.value.trim());testJev.disabled=!data.configured||!!data.demo||settingsBusy;
+  disableJev.hidden=!data.enabled;clearJev.hidden=!data.has_saved_key;disableJev.disabled=settingsBusy;clearJev.disabled=settingsBusy;
+}
+function jevError(data?:JevStatus):string{
+  if(data?.error?.code==='jev_http_error')return data.error.status===401?'Key 无效或已失效':data.error.status===429?'请求过于频繁，请稍后重试':'服务拒绝请求，请检查 Key 权限和账户状态';
+  const errors:Record<string,string>={jev_configuration:'请填写有效的 TypeSafe API Key',jev_transport_error:'无法连接 TypeSafe，请检查网络后重试',jev_settings_unavailable:'无法读取或保存本机设置，请检查文件权限',jev_validation_failed:'连接测试未通过，设置尚未更改',device_busy:'另一项设置操作正在进行，请稍后重试'};
+  return errors[data?.error?.code||'']||'设置操作未完成，请重新打开设置后重试';
+}
+async function configureJev(action:string){
+  if(settingsBusy||!jevStatus||jevStatus.demo)return;
+  settingsBusy=true;settingsMessage.textContent=action==='jev_save'?'正在验证 Key…':action==='jev_test'?'正在测试连接…':'正在更新设置…';settingsMessage.dataset.error='false';
+  keyInput.disabled=true;settingsButton.disabled=true;document.querySelector<HTMLButtonElement>('#settings-close')!.disabled=true;for(const b of [enableJev,testJev,disableJev,clearJev])b.disabled=true;
+  try{
+    const data:JevStatus=await call('action',{action,...(action==='jev_save'?{api_key:keyInput.value}:{})});
+    if(!data?.ok){settingsMessage.textContent=jevError(data);settingsMessage.dataset.error='true';return;}
+    keyInput.value='';renderJev(data);
+    settingsMessage.textContent=data.tested?`${action==='jev_save'?'已保存并启用':'连接正常'} · ${data.latency_ms} ms`:action==='jev_clear'?'本机 Key 已移除，Jev 已停用':'Jev 已停用';
+  }catch{settingsMessage.textContent='无法连接本机设置服务，请重新打开手机屏幕';settingsMessage.dataset.error='true';}
+  finally{settingsBusy=false;settingsButton.disabled=false;document.querySelector<HTMLButtonElement>('#settings-close')!.disabled=false;if(jevStatus)renderJev(jevStatus);}
+}
+settingsButton.onclick=()=>{
+  if(settingsBusy)return;
+  jevStatus=undefined;keyInput.value='';keyInput.disabled=true;settingsMessage.textContent='';settingsDialog.showModal();
+  enableJev.disabled=true;testJev.disabled=true;disableJev.hidden=true;clearJev.hidden=true;
+  void call('action',{action:'jev_status'}).then((data:JevStatus)=>{
+    if(!data?.ok)throw new Error('settings_unavailable');renderJev(data);
+  }).catch(()=>{document.querySelector('#jev-state')!.textContent='无法读取设置，请重新打开手机屏幕';});
+};
+document.querySelector<HTMLFormElement>('#jev-form')!.onsubmit=event=>{event.preventDefault();void configureJev('jev_save');};
+testJev.onclick=()=>void configureJev('jev_test');disableJev.onclick=()=>void configureJev('jev_disable');clearJev.onclick=()=>void configureJev('jev_clear');
+document.querySelector<HTMLButtonElement>('#settings-close')!.onclick=()=>settingsDialog.close();
+settingsDialog.addEventListener('close',()=>{keyInput.value='';});
+settingsDialog.addEventListener('cancel',event=>{if(settingsBusy)event.preventDefault();});
+keyInput.oninput=()=>{if(jevStatus)renderJev(jevStatus);};
 function apply(data:Preview){
   preview=data;document.querySelector('#model')!.textContent=data.device?.model||'Android';
   if(stream!==data.stream_id){stream=data.stream_id;seq=0;generation++;}
@@ -68,6 +122,7 @@ function apply(data:Preview){
       if(disposed||suspended||expected!==generation||preview?.paused)return;
       currentSource=source;frame.src=source;device.style.aspectRatio=`${picture.width}/${picture.height}`;
       root.style.setProperty('--screen-ratio',String(picture.width/picture.height));
+      root.dataset.orientation=picture.width>picture.height?'landscape':'portrait';
       root.dataset.frameSeq=String(seq);setState('live');
     };image.onerror=()=>setState('offline','画面解码失败','点击「重连」重试');image.src=source;
   }else if(data.frame_available&&currentSource){setState('live');}
@@ -145,6 +200,7 @@ async function start(){
   try{if(app){await app.connect(undefined,{timeout:8000});
     try{await app.requestDisplayMode({mode:'fullscreen'},{timeout:3000});}catch{/* Host may already be fullscreen. */}}
     initialized=true;schedule(0);
+    void call('action',{action:'jev_status'}).then((data:JevStatus)=>{if(data?.ok)renderJev(data);}).catch(()=>{});
   }catch{setState('offline','无法连接宿主','请重新打开 Android 手机屏幕');}
 }
 void start();

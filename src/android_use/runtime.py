@@ -49,6 +49,13 @@ class Runtime:
     def screen_call(self, op, **args):
         # Cached video access is independent of the phone action mutex and operation lock.
         try:
+            if op == "screen_action":
+                from .settings import JEV_ACTIONS, settings_action
+
+                if args.get("action") in JEV_ACTIONS:
+                    return settings_action(
+                        args["action"], {k: v for k, v in args.items() if k != "action"}
+                    )
             client = self.screen_client()
             if op == "screen":
                 url = client.ensure()

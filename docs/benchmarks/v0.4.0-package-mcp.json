@@ -1,0 +1,65 @@
+{
+  "passed": [
+    "tap_wait_visible",
+    "tap_wait_gone",
+    "long_press_event",
+    "double_tap_event",
+    "drag_event",
+    "scroll_find_offscreen_target",
+    "scroll_visible_target_zero_swipes",
+    "scroll_no_progress_stop",
+    "gesture_batch_with_waits",
+    "timeout_no_replay_and_batch_stop",
+    "pause_cancels_active_wait",
+    "jev_goal_over_real_stdio_mcp",
+    "jev_handoff_then_host_continues_without_replay",
+    "jev_focus_type_unicode_macro_native_readback",
+    "portrait_landscape_geometry_matches_legacy_and_screenshot"
+  ],
+  "tool_count": 23,
+  "scroll_swipes": 5,
+  "no_progress_swipes": 2,
+  "elapsed_seconds": 68.63,
+  "jev_metrics": {
+    "provider": "typesafe",
+    "requested_model": "jev-1.14.0",
+    "models": [
+      "jev-1.14.0"
+    ],
+    "model_calls": 2,
+    "model_seconds": 0.5401319169905037,
+    "input_tokens": 5659,
+    "output_tokens": 132,
+    "unpriced_calls": 0,
+    "estimated_cost_usd_lower_bound": 0.000237678,
+    "estimated_cost_usd": 0.000237678,
+    "cost_basis": "published input-token price; not a billing receipt",
+    "elapsed_seconds": 2.161754291970283,
+    "device_read_seconds": 1.0234060019720346,
+    "device_action_seconds": 0.23734487500041723,
+    "stale_decisions": 1
+  },
+  "handoff_metrics": {
+    "provider": "typesafe",
+    "requested_model": "jev-1.14.0",
+    "models": [
+      "jev-1.14.0"
+    ],
+    "model_calls": 1,
+    "model_seconds": 0.34040020796237513,
+    "input_tokens": 1823,
+    "output_tokens": 74,
+    "unpriced_calls": 0,
+    "estimated_cost_usd_lower_bound": 7.6566e-05,
+    "estimated_cost_usd": 7.6566e-05,
+    "cost_basis": "published input-token price; not a billing receipt",
+    "elapsed_seconds": 1.5754832089878619,
+    "device_read_seconds": 0.7903864999534562,
+    "device_action_seconds": 0.19434254203224555,
+    "stale_decisions": 0
+  },
+  "date": "2026-11-04",
+  "version": "0.4.0",
+  "source": "extracted plugin ZIP; path contains spaces; uv sync --frozen --python 3.13",
+  "environment": "macOS; Android API 35 ARM64 emulator; synthetic fixture"
+}

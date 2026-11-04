@@ -1,6 +1,8 @@
 import asyncio
+import json
 import os
 import sys
+from pathlib import Path
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
@@ -8,7 +10,8 @@ from mcp.client.stdio import stdio_client
 
 def test_real_stdio_handshake_schemas_and_error(tmp_path):
     fake = tmp_path / "adb"
-    fake.write_text(f'#!{sys.executable}\nprint("List of devices attached\\n")\n')
+    # Resolve a venv symlink: the kernel cannot parse spaces in a shebang path.
+    fake.write_text(f'#!{Path(sys.executable).resolve()}\nprint("List of devices attached\\n")\n')
     fake.chmod(0o700)
 
     async def exercise():
@@ -46,6 +49,20 @@ def test_real_stdio_handshake_schemas_and_error(tmp_path):
                 assert "Android Use" in html.text and "__SCRIPT__" not in html.text
                 assert html.meta["openai/ui"]["preferredDisplayMode"] == "fullscreen"
                 assert html.meta["ui"]["permissions"]["clipboardWrite"] == {}
+                settings = await session.call_tool("aua_screen_action", {"action": "jev_status"})
+                assert not settings.isError and not settings.structuredContent["enabled"]
+                for secret in (
+                    "private-key-fragment-" + "x" * 5000,
+                    {"private-key-fragment": True},
+                ):
+                    rejected = await session.call_tool(
+                        "aua_screen_action", {"action": "jev_save", "api_key": secret}
+                    )
+                    assert rejected.isError
+                    assert "private-key-fragment" not in json.dumps(
+                        rejected.model_dump(), default=str
+                    )
+                assert not (tmp_path / "state/jev.json").exists()
                 missing_frame = await session.call_tool("aua_screen_frame", {})
                 assert missing_frame.isError and missing_frame.content == []
                 assert next(t for t in tools if t.name == "aua_observe").annotations.readOnlyHint

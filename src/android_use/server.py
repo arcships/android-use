@@ -57,8 +57,22 @@ SCHEMAS.update(
             {
                 "action": {
                     "type": "string",
-                    "enum": ["refresh", "home", "back", "tap", "swipe", "save"],
+                    "enum": [
+                        "refresh",
+                        "home",
+                        "back",
+                        "tap",
+                        "swipe",
+                        "save",
+                        "jev_status",
+                        "jev_save",
+                        "jev_test",
+                        "jev_disable",
+                        "jev_clear",
+                    ],
                 },
+                # Private validation avoids SDK schema errors echoing the secret value.
+                "api_key": {"description": "Write-only key, validated privately by the server"},
                 "x": {"type": "integer", "minimum": 0},
                 "y": {"type": "integer", "minimum": 0},
                 "direction": {"type": "string", "enum": ["up", "down", "left", "right"]},
@@ -80,8 +94,8 @@ SCHEMAS["batch"]["required"] = ["steps"]
 SCHEMAS["screen_action"]["required"] = ["action"]
 DESCRIPTIONS = {
     "execute_goal": "Agent plans, Jev selects candidate IDs, Android Use executes. Optional local "
-    "decision loop; requires ANDROID_USE_JEV_ENABLED=1 and "
-    "TYPESAFE_API_KEY in server environment. Sends visible app UI text to TypeSafe. "
+    "decision loop; enable with a TypeSafe key in screen settings, or through "
+    "ANDROID_USE_JEV_ENABLED=1 / TYPESAFE_API_KEY. Sends visible app UI text to TypeSafe. "
     "Caller supplies goal, foreground package, exact input texts and optional completion selector. "
     "input_macros=true can combine stable-field focus and exact input with native readback; "
     "max_steps counts candidate selections, with at most two native writes per input macro. "
@@ -128,7 +142,9 @@ DESCRIPTIONS = {
     "screen": "Open/reuse the Android live screen sidebar. Uses an independent H.264 video stream, "
     "not screenshot/tree polling. Requires ffmpeg. READY also links the same panel.",
     "screen_frame": "App-only cached video frame. Does not query UI trees or capture screenshots.",
-    "screen_action": "App-only preview toolbar and pointer actions. Blocked during authentication takeover.",
+    "screen_action": "App-only preview controls and local Jev settings. Phone actions are blocked "
+    "during authentication takeover. Settings never return credentials; save tests a fixed "
+    "synthetic Choice before enabling. Users enter their own key in the screen UI.",
 }
 
 

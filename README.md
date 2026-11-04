@@ -1,6 +1,6 @@
 <div align="center">
-  <h1><img src="docs/images/hero.png" alt="Android Use connects an AI agent to a real Android phone through MCP." width="100%" /></h1>
-  <p>A standard MCP server for real Android interaction, with a live screen you can follow.</p>
+  <h1><img src="docs/images/hero.png" alt="Android Use: Agent plans, optional Jev decides, Android Use validates and executes." width="100%" /></h1>
+  <p><strong>Your agent. Now on Android.</strong><br/>Standard MCP control. A live screen. Optional Jev decisions.</p>
   <p>
     <a href="https://github.com/JackCaow/android-use/actions/workflows/test.yml"><img src="https://github.com/JackCaow/android-use/actions/workflows/test.yml/badge.svg" alt="Tests" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License" /></a>
@@ -8,64 +8,69 @@
     <a href="#mcp-client-support"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="Standard stdio MCP" /></a>
   </p>
   <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
-  <p><a href="#quick-start"><strong>Get started →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.3.0">Download v0.3.0</a> · <a href="docs/guide.md">Full guide</a> · <a href="docs/guide.md#other-mcp-clients">Client setup</a> · <a href="https://github.com/JackCaow/android-use/issues">Report an issue</a></p>
+  <p><a href="#quick-start"><strong>Get started →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.4.0">Download v0.4.0</a> · <a href="#enable-jev-from-the-screen">Set up Jev</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/JackCaow/android-use/issues">Report an issue</a></p>
 </div>
 
----
+## Bring Android into your agent workflow
 
-## From intent to interaction
+Android Use connects your agent to your own Android phone or emulator through **standard MCP**. Read the screen, find a control, tap, type, scroll, and check the result. Follow the process in a live phone view.
 
-Android Use gives an agent the tools to **read a screen, find a control, take an action, and check what happened** on your own Android phone or emulator. Connect through USB or an already-authorized wireless ADB connection, then work from your MCP client.
+For workflows that need repeated UI decisions, enable **Jev**. Your Agent keeps planning and final verification; Jev selects the next candidate; Android Use validates and executes it.
 
-> “Open Settings and find Display & brightness. Read the current setting without changing it.”
+> “Open Settings, find Battery, and read the current usage.”
 >
-> “Type `Hello, Android 🐻` into the focused field, verify the text, and leave it unsent.”
+> “Fill in the profile with the text I provide, verify it, and save a local draft.”
 
-**No root, Appium, signing setup, or keyboard APK required.** The compiled live-screen UI is included; Node.js is only needed for frontend development.
+**No root, Appium, signing setup, or keyboard APK.** The compiled UI is included. Use USB or already-authorized wireless ADB.
 
-## Built for agent workflows
-
-| Capability | What it gives you |
-| --- | --- |
-| **Understand the screen** | Compact accessibility trees, screenshots, semantic selectors, and bounded waits. |
-| **Act precisely** | Tap, long press, double tap, swipe, drag, launch apps, and use system buttons. |
-| **Cut tool round trips** | Combine an action, a visible/gone condition, and an observation in one call. Search lists with bounded auto-scroll. |
-| **Agent + Jev** | Your Agent plans, [Jev decides the next action](docs/jev.md#agent--jev), and Android Use validates and executes it. Existing tools stay available. Experimental source feature. |
-| **Write real text** | Unicode and emoji input, replace or append, and native text readback. No implicit submission. |
-| **Follow along live** | An independent H.264 stream in an MCP Apps view or local browser. Copy the displayed frame straight to the clipboard. |
-| **Keep a clear handoff** | Pause reads, actions, and video for user authentication. Stop batches on unmet conditions; never automatically replay uncertain actions. |
-
-## Agent plans. Jev decides. Android Use acts.
-
-An optional local loop lets your existing Agent delegate repeated UI decisions while keeping planning, recovery and final verification in the Agent. **Jev is a decision model:** it chooses from code-owned candidate IDs; Android Use performs the device operations.
-
-| Responsibility | Owner |
-| --- | --- |
-| Understand the request, plan subgoals, compose text, verify and recover | Host Agent |
-| Choose the next candidate from the current UI | Jev, when enabled |
-| Observe, validate scope/freshness, tap/type/swipe, enforce budgets and pause | Android Use |
-
-Known paths still use `batch`, action-plus-wait or `scroll_until`. Delegate when the next action depends on newly observed UI; a handoff returns the action ledger and safe context so the Agent can continue from the current position.
-
-**Routing priority: completion speed, success rate, and fewer host-model round trips.** Jev token cost is not a routing constraint. Let Jev decide through a coherent local workflow, reuse safe returned observations, and bring the Agent back for planning, uncertainty or final verification. Usage remains available as secondary diagnostics.
-
-**Emulator measurements: all 18 paired trials passed.** With phase-scoped sampling alone, deviceInfo reads fell **62 → 34 / 74 → 40**, and the two local-loop medians fell **7.38 → 5.36 s / 11.08 → 8.42 s**. The input macro reduced draft decisions **4 → 3**, but did not beat sampling-only wall time in this small sample. [Measurements, failures and limits →](docs/benchmarks/optimizations-v4.md)
-
-**New source optimizations:** state checks share a single sample within each validation phase. A stable input field can offer one **focus → exact input → native readback** decision, while each native mutation remains checked and recorded. `input_macros=false` keeps separate decisions. [How it works and paired emulator measurements →](docs/benchmarks/optimizations-v4.md)
-
-Default off. Use your existing Agent plus `TYPESAFE_API_KEY` and `ANDROID_USE_JEV_ENABLED=1`; no separate text-model API is needed. **Unreleased source feature, not included in the v0.3.0 ZIP.** [Setup and examples →](docs/jev.md)
-
-## A screen you can follow
+## A phone screen you can follow
 
 <table>
   <tr><th align="center">Light</th><th align="center">Dark</th></tr>
   <tr>
-    <td align="center"><img src="docs/images/sidebar-light.jpg" alt="Android Use live-screen interface in light mode" width="260" /></td>
-    <td align="center"><img src="docs/images/sidebar-dark.jpg" alt="Android Use live-screen interface in dark mode" width="260" /></td>
+    <td align="center"><img src="docs/images/sidebar-light.jpg" alt="Phone-frame Android Use preview in light mode" width="260" /></td>
+    <td align="center"><img src="docs/images/sidebar-dark.jpg" alt="Phone-frame Android Use preview in dark mode" width="260" /></td>
   </tr>
 </table>
 
-The actual screen UI, rendered with synthetic phone content for documentation. The theme follows your system. Tap and swipe in the preview, use Back or Home, or copy a PNG frame for a chat or document. [Live-screen guide →](docs/guide.md#live-screen)
+The actual UI, rendered with synthetic phone content for documentation. The frame adapts to theme, window size and orientation. Tap or swipe inside the screen, use Back/Home, or copy a PNG frame. [Live-screen guide →](docs/guide.md#live-screen)
+
+## Agent plans. Jev decides. Android Use acts.
+
+| Owner | Responsibility |
+| --- | --- |
+| **Your Agent** | Understand the request, plan subgoals, compose text, recover and verify outcomes. |
+| **Jev · optional** | Choose a code-owned candidate from the current UI. |
+| **Android Use** | Observe, check scope and freshness, execute native actions, enforce bounds and pause. |
+
+Known paths use `batch`, action-plus-wait or `scroll_until`. Delegate short workflows whose next action depends on new UI to `aua_execute_goal`. On uncertainty, control returns to the Agent with a step ledger and safe context. [Architecture and examples →](docs/jev.md)
+
+## Enable Jev from the screen
+
+1. Open the phone preview and click the **settings gear**.
+2. Paste your **TypeSafe API Key**.
+3. Click **验证并启用** (Verify & enable).
+
+The server checks the connection and saves the key on this computer. New tasks pick up the setting immediately. You can test the connection, disable Jev, or remove the saved key from the same panel. **Jev is off by default.** [Setup and advanced environment configuration →](docs/jev.md#configure)
+
+<details>
+<summary>See the Jev settings panel</summary>
+
+<img src="docs/images/jev-settings.jpg" alt="Jev settings with a write-only API key field and Verify and enable button" width="340" />
+
+Enabling Jev sends the subgoal, visible UI text and supplied input values to TypeSafe for decisions. The server never returns the saved key to the UI.
+
+</details>
+
+## Built for real interaction
+
+| Capability | What you get |
+| --- | --- |
+| **Understand the screen** | Accessibility trees, screenshots, selectors and bounded waits. |
+| **Act precisely** | Tap, long press, double tap, swipe, drag, launch apps and use system buttons. |
+| **Reduce round trips** | Combine action, wait and observation. Search lists with bounded auto-scroll. |
+| **Input with verification** | Unicode/emoji, replace/append and native text readback. A stable field can offer one focus → input → readback decision. |
+| **Keep control clear** | User takeover for authentication, partial/uncertain action ledgers and no automatic replay. |
 
 ## Quick start
 
@@ -179,11 +184,15 @@ uv run android-use scroll_until '{"selector":{"text":"Display"},"direction":"up"
 
 Actions support optional postconditions. A timeout reports what happened and stops the batch; it does not repeat the action. Auto-scroll stops on a match, its limits, or repeated lack of progress. [Gestures, waits, batches, and the original tools →](docs/guide.md#cli-reference) · [Optional Jev setup and benchmarks →](docs/jev.md)
 
+## Measured, with clear limits
+
+Development comparisons include **18 source-level trials** and **12 live Agent / Agent + Jev trials**. Both live arms completed 6/6 tasks. Dynamic workflows needed fewer host replies with Jev; familiar batch paths did not improve. Sampling reduced repeated state queries, while input macros reduced decisions without an additional timing win in that sample. [Methodology, raw records and retained failures →](docs/benchmarks/optimizations-v4.md)
+
 ## Project status
 
-**Published release: v0.3.0 · MIT. Current source: 151 Python tests; the six browser regressions cover the unchanged screen UI.** Existing physical-device acceptance covers Android 16 on a Xiaomi 15 Ultra. New Jev, sampling and input-macro changes have 15 stdio MCP acceptance scenarios on an Android API 35 emulator, including real portrait/landscape geometry and handoff/recovery. [Acceptance evidence and scope →](docs/validation.md)
+**v0.4.0 · MIT · 175 Python tests · 12 browser tests.** Emulator acceptance covers 15 real stdio MCP scenarios. Earlier physical-device acceptance covers Android 16 / Xiaomi 15 Ultra. New Jev setup and frame changes have local/emulator validation; other manufacturers, host versions and operating systems have different coverage. [Validation evidence →](docs/validation.md)
 
-Multi-touch, arbitrary gesture paths, fine-grained text selection, and custom-editor input fallbacks are not implemented. Device and app behavior varies; a matched UI condition is not proof of a completed business transaction. This project runs the control service and preview locally; tool results are handled by your chosen MCP client/model.
+Multi-touch, arbitrary gesture paths, fine-grained text selection and custom-editor input fallbacks are not implemented. A matched UI condition proves that condition; the Agent must verify business outcomes. Control and preview run locally, and tool results are handled by your chosen client/model.
 
 ## Explore and contribute
 

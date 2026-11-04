@@ -1,6 +1,6 @@
 <div align="center">
-  <h1><img src="docs/images/hero.png" alt="Android Use：通过 MCP 将 AI agent 与真实 Android 手机连接起来。" width="100%" /></h1>
-  <p>标准 MCP 服务，连接真实 Android；实时画面，让操作过程看得见。</p>
+  <h1><img src="docs/images/hero.png" alt="Android Use：Agent 规划，可选 Jev 决策，Android Use 校验与执行。" width="100%" /></h1>
+  <p><strong>让你的 Agent，真正操作 Android。</strong><br/>标准 MCP 接入，实时画面跟随，可选 Jev 决策。</p>
   <p>
     <a href="https://github.com/JackCaow/android-use/actions/workflows/test.yml"><img src="https://github.com/JackCaow/android-use/actions/workflows/test.yml/badge.svg" alt="自动化测试" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT 许可证" /></a>
@@ -8,63 +8,69 @@
     <a href="#mcp-客户端支持"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="标准 stdio MCP" /></a>
   </p>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
-  <p><a href="#快速开始"><strong>开始使用 →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.3.0">下载 v0.3.0</a> · <a href="docs/guide.zh-CN.md">完整指南</a> · <a href="docs/guide.zh-CN.md#其他-mcp-客户端">客户端配置</a> · <a href="https://github.com/JackCaow/android-use/issues">反馈问题</a></p>
+  <p><a href="#快速开始"><strong>开始使用 →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.4.0">下载 v0.4.0</a> · <a href="#在屏幕中启用-jev">配置 Jev</a> · <a href="docs/guide.zh-CN.md">使用指南</a> · <a href="https://github.com/JackCaow/android-use/issues">反馈问题</a></p>
 </div>
 
----
+## 把 Android 接入你的 Agent 工作流
 
-## 从一句意图，到真实操作
+Android Use 通过**标准 MCP**，让 Agent 操作你自己的 Android 手机或模拟器：读屏、定位、点击、输入、滚动，再核对结果。实时手机画面让过程看得见。
 
-Android Use 让 agent 能在你自己的 Android 手机或模拟器上完成 **读屏、定位、操作、等待与核对结果**。通过 USB 或已授权的无线 ADB 连接，在你熟悉的 MCP 客户端中使用。
+需要连续判断下一步时，可启用 **Jev**：Agent 保留规划与最终验收，Jev 选择下一步候选，Android Use 校验并执行。
 
-> “打开设置，找到显示与亮度，读取当前设置，不修改它。”
+> “打开设置，找到电池，读取当前使用情况。”
 >
-> “在当前输入框中输入 `你好，Android 🐻`，核对内容，先不要发送。”
+> “用我提供的文字填写资料，核对输入，保存本地草稿。”
 
-**不需要 root、Appium、签名配置或键盘 APK。** 仓库已包含编译好的实时屏幕界面，只有开发前端时才需要 Node.js。
+**无需 root、Appium、签名配置或键盘 APK。** 已包含编译好的界面，通过 USB 或已授权的无线 ADB 连接。
 
-## 为 Agent 的操作流程设计
-
-| 能力 | 你能得到什么 |
-| --- | --- |
-| **理解当前界面** | 紧凑控件树、截图、语义选择器和有界等待。 |
-| **执行精确操作** | 点击、长按、双击、滑动、拖拽、启动 App 与系统按钮。 |
-| **减少工具往返** | 一次调用合并动作、控件出现 / 消失条件与观察；自动滚动查找受次数和时间限制。 |
-| **输入真实文本** | 中文、emoji、替换、追加与原生回读验证，默认不提交。 |
-| **实时查看过程** | 独立 H.264 视频，在 MCP Apps 界面或本机浏览器查看；当前画面直接复制到剪贴板。 |
-| **清楚地交接控制** | 认证时暂停读屏、操作与视频；条件未满足就停止批处理，不自动重放不确定动作。 |
-
-## Agent 规划，Jev 决策，Android Use 执行
-
-可选的本地循环让现有 Agent 委托高频 UI 决策，同时保留规划、恢复和最终验收。**Jev 是决策模型**：根据当前界面选择代码生成的候选 ID，实际设备操作由 Android Use 完成。
-
-| 职责 | 负责方 |
-| --- | --- |
-| 理解需求、规划子目标、编写文本、验收和恢复 | 宿主 Agent |
-| 根据当前 UI 选择下一步候选动作 | 启用后的 Jev |
-| 读屏、校验范围与过期状态、执行点击/输入/滑动、预算和暂停控制 | Android Use |
-
-已知路径继续使用 batch、动作加等待或 scroll_until。下一步依赖新界面时再委托 Jev 决策；交回时携带动作账本和安全上下文，Agent 从当前位置继续。
-
-**路由优先级：任务完成速度、成功率、减少宿主大模型往返。** Jev token 费用不作为路由约束。将连续的局部决策交给 Jev 循环处理，复用安全返回的观察，在规划、不确定情况和最终验收时交回 Agent。usage 仅作辅助记录。
-
-**模拟器实测：18 次配对测试全部通过。**仅复用同阶段采样，deviceInfo 查询 **62 → 34 / 74 → 40 次**，两类局部循环中位数 **7.38 → 5.36 秒 / 11.08 → 8.42 秒**。输入宏把草稿决策 **4 → 3 次**，但本轮耗时未优于仅复用采样；小样本结果不作通用提速保证。[完整数据、失败与边界 →](docs/benchmarks/optimizations-v4.md)
-
-**新增源码优化：**同阶段状态检查复用一次采样；稳定输入框可提供一次“**聚焦 → 精确输入 → 原生回读**”决策，每个原生动作仍单独检查、记录。`input_macros=false` 可恢复分开决策。[实现边界与模拟器配对实测 →](docs/benchmarks/optimizations-v4.md)
-
-默认关闭，只需现有 Agent、`TYPESAFE_API_KEY` 和 `ANDROID_USE_JEV_ENABLED=1`，无需另配文本模型 API。**尚未发布的源码功能，v0.3.0 ZIP 不包含。**[配置与示例 →](docs/jev.zh-CN.md)
-
-## 看得见的实时画面
+## 像拿着手机一样，看见每一步
 
 <table>
   <tr><th align="center">浅色</th><th align="center">深色</th></tr>
   <tr>
-    <td align="center"><img src="docs/images/sidebar-light.jpg" alt="Android Use 浅色实时屏幕界面" width="260" /></td>
-    <td align="center"><img src="docs/images/sidebar-dark.jpg" alt="Android Use 深色实时屏幕界面" width="260" /></td>
+    <td align="center"><img src="docs/images/sidebar-light.jpg" alt="带手机机身边框的 Android Use 浅色预览" width="260" /></td>
+    <td align="center"><img src="docs/images/sidebar-dark.jpg" alt="带手机机身边框的 Android Use 深色预览" width="260" /></td>
   </tr>
 </table>
 
-上图使用实际前端渲染，手机内容为文档示例画面。界面随系统明暗主题切换，支持点击、滑动、返回、Home，以及复制 PNG 画面到聊天或文档。[实时屏幕使用说明 →](docs/guide.zh-CN.md#实时屏幕与图片复制)
+上图为真实前端渲染，手机内容使用文档示例。机身随主题、窗口和横竖屏适配；屏幕内支持点击和滑动，工具栏支持返回、Home 与 PNG 画面复制。[实时屏幕指南 →](docs/guide.zh-CN.md#实时屏幕与图片复制)
+
+## Agent 规划，Jev 决策，Android Use 执行
+
+| 负责方 | 职责 |
+| --- | --- |
+| **你的 Agent** | 理解需求、规划子目标、编写文本、恢复和最终验收。 |
+| **Jev · 可选** | 根据当前界面，选择代码提供的下一步候选。 |
+| **Android Use** | 读屏、校验范围与过期状态、执行原生动作、控制预算和暂停。 |
+
+已知路径使用 `batch`、动作加等待或 `scroll_until`。下一步依赖新界面的短流程可交给 `aua_execute_goal`；遇到不确定情况就带着动作账本和安全上下文交回 Agent。[分工、边界与示例 →](docs/jev.zh-CN.md)
+
+## 在屏幕中启用 Jev
+
+1. 打开手机预览，点击右上角**设置齿轮**。
+2. 粘贴 **TypeSafe API Key**。
+3. 点击**验证并启用**。
+
+服务端验证连接，将 Key 保存在这台电脑；新任务立即生效。也可在同一面板测试连接、停用或移除已保存的 Key。**Jev 默认关闭。**[详细配置与高级环境变量方式 →](docs/jev.zh-CN.md#配置)
+
+<details>
+<summary>查看 Jev 设置界面</summary>
+
+<img src="docs/images/jev-settings.jpg" alt="Jev 设置：密码形式的 API Key 输入框与验证并启用按钮" width="340" />
+
+启用后，子目标、可见界面文字和允许输入值会发送给 TypeSafe 进行决策。保存的 Key 不回传界面。
+
+</details>
+
+## 面向真实操作
+
+| 能力 | 你能得到什么 |
+| --- | --- |
+| **理解界面** | 控件树、截图、语义选择器与有界等待。 |
+| **精确操作** | 点击、长按、双击、滑动、拖拽、启动 App 与系统按钮。 |
+| **减少往返** | 动作、等待、观察合并；自动滚动按次数和时间停止。 |
+| **输入与核对** | 中文、emoji、替换/追加和原生回读；稳定输入框可一次决策完成聚焦→输入→回读。 |
+| **清楚交接控制** | 认证由用户接管；保留 partial/uncertain 动作账本，不自动重放。 |
 
 ## 快速开始
 
@@ -179,11 +185,15 @@ uv run android-use scroll_until '{"selector":{"text":"显示与亮度"},"directi
 
 可选决策集成与原有工具配合使用：[Agent + Jev 配置、分工和对比测试 →](docs/jev.zh-CN.md)。
 
+## 有数据，也说明边界
+
+已记录 **18 次源码对照**和 **12 次实时 Agent / Agent + Jev 对比**；实时两组各完成 6/6。动态流程减少了宿主往返，已知批处理路径没有提速。采样复用减少重复查询，输入宏减少决策，但该轮未额外降低耗时。[方法、原始数据与保留的失败记录 →](docs/benchmarks/optimizations-v4.md)
+
 ## 项目状态
 
-**已发布版本 v0.3.0 · MIT。当前源码 151 项 Python 测试；六项浏览器回归覆盖未改动的屏幕 UI。** 已有 Android 16 / Xiaomi 15 Ultra 真机验收；新增 Jev、采样复用和输入宏通过 Android API 35 模拟器的 15 项 stdio MCP 验收，含真实横竖屏与交回恢复。[验收证据与范围 →](docs/validation.md)
+**v0.4.0 · MIT · 175 项 Python 测试 · 12 项浏览器测试。** 模拟器验收覆盖 15 项真实 stdio MCP 场景；已有 Android 16 / Xiaomi 15 Ultra 真机验收。新增 Jev 设置和机身界面在本机/模拟器验证，其他厂商、宿主版本及系统的覆盖范围另见[验证记录](docs/validation.md)。
 
-多指缩放、任意轨迹、精细文本选区、自绘编辑器输入兜底尚未实现。设备和 App 行为存在差异，UI 条件满足不等于业务已完成。控制服务和预览运行于本机；工具结果由你选择的 MCP 客户端 / 模型处理。
+多指手势、任意轨迹、精细文本选区及自绘编辑器输入兜底尚未实现。UI 条件满足仅证明该条件，Agent 仍需验收业务结果。控制和预览运行于本机，工具结果由你选择的客户端与模型处理。
 
 ## 文档与贡献
 

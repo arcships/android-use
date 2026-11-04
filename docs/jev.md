@@ -1,8 +1,8 @@
-# Agent + Jev decision integration (experimental, unreleased)
+# Agent + Jev decision integration (experimental, available since v0.4.0)
 
 **English** · [简体中文](jev.zh-CN.md) · [Project home](../README.md)
 
-`aua_execute_goal` runs a bounded local goal through TypeSafe Jev. All original MCP tools and arguments remain available. It is disabled by default and **not included in the published v0.3.0 ZIP**; use a source checkout containing this feature.
+`aua_execute_goal` runs a bounded local goal through TypeSafe Jev. All original MCP tools and arguments remain available. It is disabled by default and **included in the v0.4.0 ZIP**; v0.3.0 users must update.
 
 Inspired by [browser-use/jev-ultrafast](https://github.com/browser-use/jev-ultrafast), this independent Android implementation observes accessibility trees, builds code-owned action candidates, asks Jev to select an ID, executes it once, then observes again. It does not install the browser project or need a text-generating model at runtime.
 
@@ -29,6 +29,18 @@ Use ordinary tools for a known path; use Jev where the Agent would otherwise rea
 [Latest performance comparison and raw records →](benchmarks/optimizations-v4.md). Run `scripts/benchmark_agent.py` with the same `uv run --env-file .env --frozen python` prefix, `--serial <device>` and `--repeats 3`: the current Agent chooses ordinary tools or Jev decisions, handles recovery and verifies results. The driver measures host waiting separately. Host token charges remain unknown when the host does not expose per-task billing.
 
 ## Configure
+
+### Recommended: screen settings
+
+Open the live phone view, click the settings gear, paste your TypeSafe API Key, and choose **验证并启用** (Verify & enable). This makes one fixed connection-test request without reading phone UI, then saves and enables the key for new tasks. You can test the saved connection, disable Jev, or remove the locally saved key in the same panel. The key field clears after saving and when closing the dialog.
+
+Settings are shared by the local browser, native MCP App and later CLI/MCP calls. They take effect for **new tasks without restarting the server**; an in-progress bounded goal keeps the configuration it started with. The local file is `~/.local/share/android-use/jev.json` (or `ANDROID_USE_STATE_DIR/jev.json`), written atomically with POSIX mode `0600`. It is never included in packages or returned to the UI.
+
+Explicit local enable/disable settings override `ANDROID_USE_JEV_ENABLED`. A saved local key takes priority over `TYPESAFE_API_KEY`; removing it leaves Jev disabled even if an environment key remains available. Provider/model overrides still come from the environment and are displayed in settings.
+
+### Advanced: environment configuration
+
+The UI route needs no manual `.env` edits. Existing environment-based setups remain supported.
 
 Copy `.env.example` to `.env`, set `ANDROID_USE_JEV_ENABLED=1` and `TYPESAFE_API_KEY`. Keep the file private; it is ignored by Git. Never paste keys into chats or tool arguments. Start/verify the normal Android service, launch the intended app, and keep it unlocked. The goal executor does not start the phone service automatically.
 

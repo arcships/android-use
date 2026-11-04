@@ -1,6 +1,6 @@
 # Android Use user guide
 
-Experimental source feature: [optional Jev decision integration and comparison](jev.md). Default off; original tools remain compatible. Not in the v0.3.0 release ZIP.
+Optional feature in v0.4.0: [optional Jev decision integration and comparison](jev.md). Default off; original tools remain compatible. Included in the v0.4.0 release ZIP.
 
 **English** · [简体中文](guide.zh-CN.md) · [Project home](../README.md)
 
@@ -69,7 +69,7 @@ uv run android-use --help
 
 uv can download Python and dependencies as needed. Run subsequent commands from this repository root unless a command explicitly sets `--directory`.
 
-Native-device acceptance currently covers **macOS + Android 16 / Xiaomi 15 Ultra**. Linux CI covers automated tests; Windows/Linux device operation, emulators, and other manufacturers have not completed native acceptance.
+Native-device acceptance currently covers **macOS + Android 16 / Xiaomi 15 Ultra**. API 35 ARM64 emulator acceptance also covers Agent + Jev and first-time screen settings. Linux CI covers automated tests; Windows/Linux device operation and other manufacturers have not completed end-to-end acceptance.
 
 ## Connect a device
 
@@ -140,15 +140,15 @@ Choose a release ZIP or a source checkout. If you already use `android-use-local
 
 ### Install the release ZIP
 
-Download `android-use-0.3.0-plugin.zip` and `SHA256SUMS` from [GitHub Release v0.3.0](https://github.com/JackCaow/android-use/releases/tag/v0.3.0). The ZIP includes the compiled UI, Python source/lockfile, skills, bilingual docs, and a ready-to-register local marketplace. It does not bundle Python, ADB, or ffmpeg; prepare the dependencies above. First installation needs network access to install Python dependencies.
+Download `android-use-0.4.0-plugin.zip` and `SHA256SUMS` from [GitHub Release v0.4.0](https://github.com/JackCaow/android-use/releases/tag/v0.4.0). The ZIP includes the compiled UI, Python source/lockfile, skills, bilingual docs, and a ready-to-register local marketplace. It does not bundle Python, ADB, or ffmpeg; prepare the dependencies above. First installation needs network access to install Python dependencies.
 
 On macOS/Linux, extract it and run:
 
 ```bash
 # Check the downloaded archive first (Linux can use sha256sum -c SHA256SUMS).
 shasum -a 256 -c SHA256SUMS
-unzip android-use-0.3.0-plugin.zip -d android-use-v0.3.0
-cd android-use-v0.3.0
+unzip android-use-0.4.0-plugin.zip -d android-use-v0.4.0
+cd android-use-v0.4.0
 uv sync --frozen --python 3.13
 codex plugin marketplace add .
 codex plugin add android-use@android-use-release
@@ -412,6 +412,10 @@ uv run android-use tools
 | `aua_pause / aua_resume` | User authentication handoff. |
 | `aua_screen` | Open/reuse live preview. |
 | `aua_screen_frame / aua_screen_action` | App-only cached video/UI interfaces; not agent refresh tools. |
+
+## Optional Jev setup
+
+Open the phone view, choose the settings gear, enter your TypeSafe API Key, then click **验证并启用** (Verify & enable). The connection is tested and saved locally. New tasks use it immediately; no `.env` edits or MCP restart are needed. Test, disable or remove the saved key in the same panel. [Full setup, privacy and advanced environment options](jev.md#configure).
 
 ## Updating
 

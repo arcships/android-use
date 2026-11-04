@@ -5,6 +5,12 @@ from PIL import Image
 
 from android_use.runtime import Runtime
 
+
+@pytest.fixture(autouse=True)
+def isolated_user_settings(tmp_path, monkeypatch):
+    monkeypatch.setenv("ANDROID_USE_STATE_DIR", str(tmp_path / "android-state"))
+
+
 XML = """<hierarchy rotation="0"><node class="android.widget.FrameLayout" bounds="[0,0][1080,2400]" enabled="true">
 <node class="android.widget.EditText" resource-id="demo:id/input" text="" focused="true" enabled="true" focusable="true" bounds="[50,200][900,300]"/>
 <node class="android.widget.Button" text="同名" clickable="true" enabled="true" bounds="[0,400][200,500]"/>

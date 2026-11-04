@@ -1,8 +1,8 @@
-# Agent + Jev 决策集成（实验性，尚未发布）
+# Agent + Jev 决策集成（实验性，v0.4.0 起提供）
 
 [English](jev.md) · **简体中文** · [项目首页](../README.zh-CN.md)
 
-新增标准 MCP 工具 `aua_execute_goal`，在本地执行有边界的短目标。全部原有工具及参数保留，无云端密钥也可继续使用。Jev 默认关闭，**已发布的 v0.3.0 ZIP 不包含此功能**，需使用含此实现的源码。
+新增标准 MCP 工具 `aua_execute_goal`，在本地执行有边界的短目标。全部原有工具及参数保留，无云端密钥也可继续使用。Jev 默认关闭，**v0.4.0 ZIP 已包含此功能**；v0.3.0 用户需更新。
 
 参考 [browser-use/jev-ultrafast](https://github.com/browser-use/jev-ultrafast) 独立实现 Android 版本：读取可访问性树 → 本地生成动作候选 → Jev 选 ID → 执行一次 → 再观察。不需要安装浏览器项目，不依赖文本生成模型。
 
@@ -17,6 +17,18 @@
 [最新性能对比与原始记录 →](benchmarks/optimizations-v4.md)。`scripts/benchmark_agent.py` 用实时 JSONL 让当前 Agent 选择普通工具或委托 Jev 决策，并负责恢复、最终验收；驱动单独记录宿主等待，宿主没有提供逐任务 token 账单时，Agent 费用保持未知。
 
 ## 配置
+
+### 推荐：在屏幕中配置
+
+打开实时手机画面，点击设置齿轮，粘贴 TypeSafe API Key，再点**验证并启用**。服务端使用固定内容发起一次连接测试，不读取手机 UI；测试通过后保存并启用。也可测试已有连接、停用，或移除本机保存的 Key。保存成功及关闭设置时，输入框会清空。
+
+本机浏览器、原生 MCP App，以及后续 CLI/MCP 调用共享设置，**新任务无需重启服务即可生效**。正在执行的有界目标继续使用启动时的配置。设置原子写入 `~/.local/share/android-use/jev.json`（可由 `ANDROID_USE_STATE_DIR` 指定），POSIX 权限为 `0600`，不打入安装包，也不回传界面。
+
+本机明确设置的启用/停用优先于 `ANDROID_USE_JEV_ENABLED`；本机保存的 Key 优先于 `TYPESAFE_API_KEY`。移除本机 Key 后仍保持停用，即使环境中还有 Key。模型和服务地址的高级覆盖仍由环境变量提供，设置页会展示当前值。
+
+### 高级：环境变量方式
+
+使用界面无需手动编辑 `.env`；已有环境变量配置仍兼容。
 
 复制 `.env.example` 为 `.env`，设置 `ANDROID_USE_JEV_ENABLED=1` 和 `TYPESAFE_API_KEY`。文件已被 Git 忽略，不要在聊天或工具参数里发送密钥。先启动正常 Android 服务、确认 READY、打开目标 App 并保持解锁；执行层不会自动启动服务。
 

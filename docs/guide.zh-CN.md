@@ -1,6 +1,6 @@
 # Android Use 使用指南
 
-源码实验功能：[可选 Jev 决策集成与对比测试](jev.zh-CN.md)。默认关闭，原有工具兼容保留；v0.3.0 Release ZIP 不包含。
+v0.4.0 可选功能：[可选 Jev 决策集成与对比测试](jev.zh-CN.md)。默认关闭，原有工具兼容保留；v0.4.0 Release ZIP 已包含。
 
 [English](guide.md) · **简体中文** · [返回项目首页](../README.zh-CN.md)
 
@@ -104,7 +104,7 @@ uv run android-use --help
 
 `uv` 会按需下载 Python 和项目依赖。后续命令默认在此仓库根目录运行。
 
-目前已在 **macOS + Android 16 / Xiaomi 15 Ultra** 上完成真机验证；Linux CI 覆盖自动化测试，Windows、Linux 真机和其他厂商设备尚未验收，详见[验证记录](validation.md)。
+目前已在 **macOS + Android 16 / Xiaomi 15 Ultra** 上完成真机验证；API 35 ARM64 模拟器也完成了 Agent + Jev 与首次界面配置验收。Linux CI 覆盖自动化测试，Windows、Linux 真机和其他厂商设备尚未验收，详见[验证记录](validation.md)。
 
 ## 首次连接手机
 
@@ -183,15 +183,15 @@ uv run android-use --serial SERIAL ready
 
 ### 安装发行包 ZIP
 
-从 [GitHub Release v0.3.0](https://github.com/JackCaow/android-use/releases/tag/v0.3.0) 下载 `android-use-0.3.0-plugin.zip` 和 `SHA256SUMS`。ZIP 已含编译好的界面、Python 源码与锁文件、技能、双语文档和可注册的本地市场；不包含 Python、ADB、ffmpeg，先按上文准备依赖。首次安装需要联网下载 Python 依赖。
+从 [GitHub Release v0.4.0](https://github.com/JackCaow/android-use/releases/tag/v0.4.0) 下载 `android-use-0.4.0-plugin.zip` 和 `SHA256SUMS`。ZIP 已含编译好的界面、Python 源码与锁文件、技能、双语文档和可注册的本地市场；不包含 Python、ADB、ffmpeg，先按上文准备依赖。首次安装需要联网下载 Python 依赖。
 
 macOS / Linux 下载后执行：
 
 ```bash
 # 先校验下载文件；Linux 也可使用 sha256sum -c SHA256SUMS。
 shasum -a 256 -c SHA256SUMS
-unzip android-use-0.3.0-plugin.zip -d android-use-v0.3.0
-cd android-use-v0.3.0
+unzip android-use-0.4.0-plugin.zip -d android-use-v0.4.0
+cd android-use-v0.4.0
 uv sync --frozen --python 3.13
 codex plugin marketplace add .
 codex plugin add android-use@android-use-release
@@ -530,6 +530,10 @@ codex mcp add android_use -- uv run --frozen --directory /absolute/path/android-
 ```
 
 如果已经安装 Codex 插件，不要再重复注册同一个 MCP 服务。
+
+## 可选 Jev 设置
+
+打开手机画面，点击设置齿轮，输入 TypeSafe API Key，再点**验证并启用**。本机服务测试连接并保存，新任务即时生效，无需手动修改 `.env` 或重启 MCP。同一面板支持测试、停用和移除 Key。[完整配置、数据范围与高级环境变量方式](jev.zh-CN.md#配置)。
 
 ## 更新
 
