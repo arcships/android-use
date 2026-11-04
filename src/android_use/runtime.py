@@ -17,6 +17,7 @@ from .backend import (
     discover,
     read_config,
     state_dir,
+    viewport_from_info,
     write_config,
 )
 from .models import ARG_MODELS, BatchStep, Selector, WaitCondition
@@ -100,8 +101,18 @@ class Runtime:
         self._check_paused()
         if self.backend.locked():
             raise UseError("phone_locked", "Unlock the device on the phone, then call ready")
-        if not self.backend.d.info.get("screenOn", False):
+        info = self.backend.d.info
+        if not info.get("screenOn", False):
             raise UseError("screen_off", "Wake and unlock the device, then call ready")
+        self._check_paused()
+        return info
+
+    def _checked_context(self):
+        # Scoped reuse only: never keep deviceInfo across inference, actions or waits.
+        info = self._usable()
+        context = self._context(device_info=info)
+        self._check_paused()
+        return context
 
     def call(self, op, **args):
         if op in {"screen", "screen_frame", "screen_action"}:
@@ -169,12 +180,21 @@ class Runtime:
                         (s.op, ARG_MODELS[s.op].model_validate(s.args).model_dump()) for s in steps
                     ]
                 }
+            if op == "execute_goal":
+                from .jev import JevConfig
+
+                goal_config = JevConfig.from_env()  # Fail before discovering or reading a phone.
             self._connect()
             with self._guard():
                 if op == "resume":
                     self._pause_path().unlink(missing_ok=True)
                     return {"ok": True, "paused": False}
                 self._usable()
+                if op == "execute_goal":
+                    from .executor import execute
+                    from .jev import JevPolicy
+
+                    return execute(self, args, JevPolicy(goal_config))
                 if op == "batch":
                     return self._batch(**args)
                 result = self._dispatch(op, args)
@@ -345,17 +365,17 @@ class Runtime:
     def _nodes(self):
         return parse_tree(self.backend.tree())
 
-    def _context(self):
+    def _context(self, *, device_info=None):
         fg = self.backend.foreground()
         return {
             "serial": self.serial,
             "package": fg.get("package"),
             "activity": fg.get("activity"),
-            "size": list(self.backend.size()),
+            "size": list(viewport_from_info(device_info) or self.backend.size()),
         }
 
-    def _observe(self, mode="tree", max_nodes=200, *, nodes=None):
-        context = self._context()
+    def _observe(self, mode="tree", max_nodes=200, *, nodes=None, context=None):
+        context = self._context() if context is None else context
         token = uuid.uuid4().hex
         self.observations[token] = context
         if len(self.observations) > 50:

@@ -1,0 +1,525 @@
+{
+  "environment": {
+    "kind": "emulator",
+    "baseline_commit": "2b930af652c7dd267233e6c26bb19e7d6cc5c740",
+    "baseline_source_sha256": "b410511430851ec88301b29ccc77f3d7c4d959a2eb86cbd06d048d77c1da25f4",
+    "current_source_sha256": "33d241e4ce506b15818a38f517e09931b8430f2607d21ef1335aa932269c7bbc",
+    "fixture_sha256": "ed6040e749dda6294a1dd2413561c52b5e74b124cfeeb1e745275c4680842a97",
+    "tasks": "Chinese draft and UI-dependent four-step color workflow",
+    "design": "Matched seeds, three arms, rotating order; same real Jev model and budgets",
+    "timing": "Wall includes worker startup and independent verification; executor metrics exclude both. Install/reset/cleanup excluded.",
+    "limits": "Synthetic native UI; no IME; small sample; network variability; no general app speed/accuracy claim",
+    "run_status": "Interrupted after the first macro failure; completed trials retained separately, not pooled with the fixed implementation.",
+    "diagnosis": "After exact Chinese setText, the same bound EditText grew from 118px to 124px due to font metrics; an overly strict post-write rectangle check handed off with uncertain text verification. No action was replayed."
+  },
+  "summary": {
+    "draft_zh": {
+      "baseline": {
+        "successes": 1,
+        "runs": 1,
+        "median_wall_seconds": 8.642611208022572,
+        "median_elapsed_seconds": 7.676655874995049,
+        "median_device_read_seconds": 3.615534665004816,
+        "median_device_action_seconds": 1.5817514990339987,
+        "median_model_seconds": 0.9306697090505622,
+        "median_model_calls": 4,
+        "median_stale_decisions": 0,
+        "median_device_info_reads": 62,
+        "median_native_actions": 4
+      },
+      "sampling_macro": {
+        "successes": 0,
+        "runs": 1,
+        "median_wall_seconds": 5.110095249954611,
+        "median_elapsed_seconds": 3.87230379198445,
+        "median_device_read_seconds": 2.008579582965467,
+        "median_device_action_seconds": 0.9742591260001063,
+        "median_model_seconds": 0.4873533329810016,
+        "median_model_calls": 2,
+        "median_stale_decisions": 0,
+        "median_device_info_reads": 20,
+        "median_native_actions": 2
+      },
+      "sampling_only": {
+        "successes": 1,
+        "runs": 1,
+        "median_wall_seconds": 7.762737000011839,
+        "median_elapsed_seconds": 6.9425276659894735,
+        "median_device_read_seconds": 3.6997108759824187,
+        "median_device_action_seconds": 1.2159310830174945,
+        "median_model_seconds": 0.9998569560120814,
+        "median_model_calls": 4,
+        "median_stale_decisions": 0,
+        "median_device_info_reads": 34,
+        "median_native_actions": 4
+      }
+    },
+    "dynamic_workflow_en": {
+      "sampling_macro": {
+        "successes": 1,
+        "runs": 1,
+        "median_wall_seconds": 13.221248292014934,
+        "median_elapsed_seconds": 11.709017665998545,
+        "median_device_read_seconds": 7.335309582937043,
+        "median_device_action_seconds": 1.7988514989847317,
+        "median_model_seconds": 1.1109957080916502,
+        "median_model_calls": 5,
+        "median_stale_decisions": 0,
+        "median_device_info_reads": 40,
+        "median_native_actions": 5
+      },
+      "sampling_only": {
+        "successes": 1,
+        "runs": 1,
+        "median_wall_seconds": 9.681658416986465,
+        "median_elapsed_seconds": 8.685287874948699,
+        "median_device_read_seconds": 4.911200041999109,
+        "median_device_action_seconds": 1.4585120839765295,
+        "median_model_seconds": 1.0598650009487756,
+        "median_model_calls": 5,
+        "median_stale_decisions": 0,
+        "median_device_info_reads": 40,
+        "median_native_actions": 5
+      }
+    }
+  },
+  "runs": [
+    {
+      "task": "draft_zh",
+      "repeat": 1,
+      "seed": 41,
+      "arm": "baseline",
+      "success": true,
+      "elapsed_seconds": 8.642611208022572,
+      "native_actions": 4,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "type_text",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a0",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.99,
+          "margin": 0.98,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.98,
+          "margin": 0.97,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 0.95,
+          "margin": 0.9299999999999999,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 4,
+        "model_seconds": 0.9306697090505622,
+        "input_tokens": 7103,
+        "output_tokens": 264,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000298326,
+        "estimated_cost_usd": 0.000298326,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 7.676655874995049,
+        "device_read_seconds": 3.615534665004816,
+        "device_action_seconds": 1.5817514990339987,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 62,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "draft_zh",
+      "repeat": 1,
+      "seed": 41,
+      "arm": "sampling_only",
+      "success": true,
+      "elapsed_seconds": 7.762737000011839,
+      "native_actions": 4,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "type_text",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a0",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.98,
+          "margin": 0.97,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.98,
+          "margin": 0.97,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 0.98,
+          "margin": 0.97,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 4,
+        "model_seconds": 0.9998569560120814,
+        "input_tokens": 7172,
+        "output_tokens": 264,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000301224,
+        "estimated_cost_usd": 0.000301224,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 6.9425276659894735,
+        "device_read_seconds": 3.6997108759824187,
+        "device_action_seconds": 1.2159310830174945,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 34,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "draft_zh",
+      "repeat": 1,
+      "seed": 41,
+      "arm": "sampling_macro",
+      "success": false,
+      "elapsed_seconds": 5.110095249954611,
+      "native_actions": 2,
+      "ok": false,
+      "verified": false,
+      "stop_reason": "macro_target_changed",
+      "error": {
+        "code": "macro_target_changed",
+        "message": "Input target is no longer an editable field",
+        "uncertain": false
+      },
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "focus_type_text",
+          "candidate": "a1",
+          "state": "uncertain",
+          "substeps": [
+            {
+              "op": "tap",
+              "state": "executed",
+              "acknowledged": true
+            },
+            {
+              "op": "type_text",
+              "state": "uncertain",
+              "acknowledged": true,
+              "verified": false
+            }
+          ]
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a0",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.97,
+          "margin": 0.94,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 2,
+        "model_seconds": 0.4873533329810016,
+        "input_tokens": 3591,
+        "output_tokens": 140,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000150822,
+        "estimated_cost_usd": 0.000150822,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 3.87230379198445,
+        "device_read_seconds": 2.008579582965467,
+        "device_action_seconds": 0.9742591260001063,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 20,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "dynamic_workflow_en",
+      "repeat": 1,
+      "seed": 41,
+      "arm": "sampling_only",
+      "success": true,
+      "elapsed_seconds": 9.681658416986465,
+      "native_actions": 5,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a3",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a3",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.99,
+          "margin": 0.98,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.97,
+          "margin": 0.94,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.86,
+          "margin": 0.78,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.73,
+          "margin": 0.5,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 5,
+        "model_seconds": 1.0598650009487756,
+        "input_tokens": 9859,
+        "output_tokens": 338,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000414078,
+        "estimated_cost_usd": 0.000414078,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 8.685287874948699,
+        "device_read_seconds": 4.911200041999109,
+        "device_action_seconds": 1.4585120839765295,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 40,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "dynamic_workflow_en",
+      "repeat": 1,
+      "seed": 41,
+      "arm": "sampling_macro",
+      "success": true,
+      "elapsed_seconds": 13.221248292014934,
+      "native_actions": 5,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a3",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a3",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.99,
+          "margin": 0.98,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.98,
+          "margin": 0.96,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.87,
+          "margin": 0.8,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.74,
+          "margin": 0.51,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 5,
+        "model_seconds": 1.1109957080916502,
+        "input_tokens": 9859,
+        "output_tokens": 338,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000414078,
+        "estimated_cost_usd": 0.000414078,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 11.709017665998545,
+        "device_read_seconds": 7.335309582937043,
+        "device_action_seconds": 1.7988514989847317,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 40,
+        "legacy_window_size": 0
+      }
+    }
+  ]
+}

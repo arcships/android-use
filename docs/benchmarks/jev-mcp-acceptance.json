@@ -1,0 +1,41 @@
+{
+  "passed": [
+    "tap_wait_visible",
+    "tap_wait_gone",
+    "long_press_event",
+    "double_tap_event",
+    "drag_event",
+    "scroll_find_offscreen_target",
+    "scroll_visible_target_zero_swipes",
+    "scroll_no_progress_stop",
+    "gesture_batch_with_waits",
+    "timeout_no_replay_and_batch_stop",
+    "pause_cancels_active_wait",
+    "jev_goal_over_real_stdio_mcp"
+  ],
+  "tool_count": 23,
+  "scroll_swipes": 5,
+  "no_progress_swipes": 2,
+  "elapsed_seconds": 69.6,
+  "jev_metrics": {
+    "provider": "typesafe",
+    "requested_model": "jev-1.14.0",
+    "models": [
+      "jev-1.14.0"
+    ],
+    "model_calls": 1,
+    "model_seconds": 0.25200162502005696,
+    "input_tokens": 2773,
+    "output_tokens": 66,
+    "unpriced_calls": 0,
+    "estimated_cost_usd_lower_bound": 0.000116466,
+    "estimated_cost_usd": 0.000116466,
+    "cost_basis": "published input-token price; not a billing receipt",
+    "elapsed_seconds": 3.1851157499477267,
+    "device_read_seconds": 2.235254833009094,
+    "device_action_seconds": 0.2776610829751007,
+    "stale_decisions": 0
+  },
+  "environment": "Android API 35 ARM64 emulator (not a physical device)",
+  "date": "2026-11-04"
+}

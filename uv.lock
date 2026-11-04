@@ -31,6 +31,7 @@ name = "android-use"
 version = "0.3.0"
 source = { editable = "." }
 dependencies = [
+    { name = "httpx" },
     { name = "jsonschema" },
     { name = "mcp" },
     { name = "pillow" },
@@ -45,6 +46,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "httpx", specifier = ">=0.27,<1" },
     { name = "jsonschema", specifier = ">=4,<5" },
     { name = "mcp", specifier = ">=1.12,<2" },
     { name = "pillow", specifier = ">=10,<13" },

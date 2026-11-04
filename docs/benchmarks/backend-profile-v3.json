@@ -1,0 +1,47 @@
+{
+  "samples": 7,
+  "environment": "Android API 35 ARM64 emulator",
+  "methods": {
+    "legacy_size": {
+      "median_seconds": 0.07861091702943668,
+      "min_seconds": 0.07498187496094033,
+      "max_seconds": 0.09573066595476121
+    },
+    "fast_size": {
+      "median_seconds": 0.01932512503117323,
+      "min_seconds": 0.017206249991431832,
+      "max_seconds": 0.02009808295406401
+    },
+    "legacy_foreground": {
+      "median_seconds": 0.12414029100909829,
+      "min_seconds": 0.10976362501969561,
+      "max_seconds": 0.14684529200894758
+    },
+    "fast_foreground": {
+      "median_seconds": 0.02900550002232194,
+      "min_seconds": 0.026098000002093613,
+      "max_seconds": 0.03233108401764184
+    }
+  },
+  "geometry_checks": [
+    {
+      "viewport": [
+        1080,
+        2400
+      ],
+      "matches_legacy_and_screenshot": true,
+      "requested_orientation": "l"
+    },
+    {
+      "viewport": [
+        1080,
+        2400
+      ],
+      "matches_legacy_and_screenshot": true,
+      "requested_orientation": "n"
+    }
+  ],
+  "geometry_checks_note": "Requested orientation on launcher remained portrait; actual fixture portrait/landscape is validated separately by accept_device.py.",
+  "date": "2026-11-04",
+  "environment_note": "Dedicated Android API 35 ARM64 emulator; no physical device data"
+}

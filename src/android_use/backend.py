@@ -144,6 +144,15 @@ class SingleAttemptDevice(u2.Device):
         return _jsonrpc_call(self._dev, self._device_server_port, method, params, timeout, False)
 
 
+def viewport_from_info(info):
+    """Return display pixels from one sampled deviceInfo, or request legacy fallback."""
+    if isinstance(info, dict):
+        width, height = info.get("displayWidth"), info.get("displayHeight")
+        if type(width) is int and type(height) is int and width > 0 and height > 0:
+            return width, height
+    return None
+
+
 class Backend:
     def __init__(self, serial):
         self.serial = serial
@@ -207,9 +216,22 @@ class Backend:
         return locked
 
     def size(self):
-        return self.d.window_size()
+        # UiDevice reports current display pixels including rotation/override. The
+        # upstream window_size path separately shells out for wm size and rotation.
+        return viewport_from_info(self.d.info) or self.d.window_size()
 
     def foreground(self):
+        # Newer Android puts focus under display contents; the upstream windows
+        # query can miss it and fall through to two more activity dumpsys calls.
+        try:
+            output = self.shell(["dumpsys", "window", "displays"])
+        except UseError:
+            output = ""
+        displays = set(re.findall(r"\bmDisplayId=(\d+)", output))
+        focused = re.findall(r"mCurrentFocus=Window\{[^\n{}]*\s([^\s/{}]+)/([^\s{}]+)\}", output)
+        if len(focused) == 1 and (not displays or displays == {"0"}):
+            package, activity = focused[0]
+            return {"package": package, "activity": activity}
         return self.d.app_current()
 
     def tree(self):

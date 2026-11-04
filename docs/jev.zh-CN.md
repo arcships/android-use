@@ -1,0 +1,112 @@
+# Agent + Jev 决策集成（实验性，尚未发布）
+
+[English](jev.md) · **简体中文** · [项目首页](../README.zh-CN.md)
+
+新增标准 MCP 工具 `aua_execute_goal`，在本地执行有边界的短目标。全部原有工具及参数保留，无云端密钥也可继续使用。Jev 默认关闭，**已发布的 v0.3.0 ZIP 不包含此功能**，需使用含此实现的源码。
+
+参考 [browser-use/jev-ultrafast](https://github.com/browser-use/jev-ultrafast) 独立实现 Android 版本：读取可访问性树 → 本地生成动作候选 → Jev 选 ID → 执行一次 → 再观察。不需要安装浏览器项目，不依赖文本生成模型。
+
+## Agent + Jev 的分工
+
+路由按端到端完成速度、成功率和减少宿主大模型往返优先。Jev token 费用只作辅助记录，不作为路由约束。连续的局部决策交给同一次调用内的 Jev 循环处理，安全返回的观察用于后续规划，Agent 保留规划、恢复和业务验收职责。
+
+现有 Agent 理解用户需求、规划子目标、编写准确输入内容、打开目标 App，并验收业务结果。需要反复读树选动作的**短局部目标**交给 `aua_execute_goal`：Android Use 读屏并生成候选，Jev 只返回候选 ID 与概率，Android Use 校验后执行一次动作。成功或不确定时返回同一个 Agent，由 Agent 查看已执行步骤和当前位置，决定继续、恢复或转向。长任务按子目标分段，不把完整任务全部交给 Jev。
+
+已知路径继续用 batch / scroll_until。预期收益来自减少 Agent 的高频决策与工具往返，正确对比是 **Agent 逐步操作 vs 同一个 Agent + Jev**，包含规划、交回恢复和最终验收。此前确定性工具对比只反映执行开销。日常使用只需要现有 Agent 和 TypeSafe 密钥，**无需配置 `TEXT_MODEL_*`**；那组变量仅用于另一个 API 基线测试脚本。
+
+[最新性能对比与原始记录 →](benchmarks/optimizations-v4.md)。`scripts/benchmark_agent.py` 用实时 JSONL 让当前 Agent 选择普通工具或委托 Jev 决策，并负责恢复、最终验收；驱动单独记录宿主等待，宿主没有提供逐任务 token 账单时，Agent 费用保持未知。
+
+## 配置
+
+复制 `.env.example` 为 `.env`，设置 `ANDROID_USE_JEV_ENABLED=1` 和 `TYPESAFE_API_KEY`。文件已被 Git 忽略，不要在聊天或工具参数里发送密钥。先启动正常 Android 服务、确认 READY、打开目标 App 并保持解锁；执行层不会自动启动服务。
+
+插件和 MCP 宿主**不会自动加载**仓库 `.env`。将以下配置合并到客户端现有设置，替换绝对路径后重连，也可使用宿主密钥管理器注入环境：
+
+```json
+{
+  "mcpServers": {
+    "android-use": {
+      "command": "uv",
+      "args": ["run", "--env-file", "/absolute/path/android-use/.env", "--frozen", "--directory", "/absolute/path/android-use", "android-use-mcp"]
+    }
+  }
+}
+```
+
+默认固定 `jev-1.14.0`，使用 `https://api.typesafe.ai/v1/systemone`。可用 `TYPESAFE_MODEL` / `TYPESAFE_BASE_URL` 修改；自定义地址会收到密钥，仅使用可信服务。要求 HTTPS（本机测试允许 loopback HTTP），不跟随重定向、不自动重试收费请求、不偷偷切换模型。
+
+## 使用
+
+调用 `aua_execute_goal`，包名和选择器来自实际观察：
+
+```json
+{
+  "goal": "打开 Profile，将 Name 设为 安卓助手，然后点击 Apply draft 保存本地草稿。",
+  "package": "your.verified.app.package",
+  "texts": ["安卓助手"],
+  "completion": {"text": "DRAFT=安卓助手"},
+  "max_steps": 8,
+  "max_model_calls": 16,
+  "timeout_seconds": 20.0
+}
+```
+
+CLI 使用同样 JSON：`uv run --env-file .env --frozen android-use --serial <设备> execute_goal '<JSON>'`。
+
+`texts` 是允许输入的精确值列表，Jev 只选择，不编写新内容。默认允许 `tap`、`swipe`、`type_text`、`wait`；需要长按或返回时，在 `actions` 显式加入 `long_press` / `back`。双击、任意拖拽、启动 App、自绘控件及恢复仍使用原有工具。不能放入 `batch`。
+
+## 减少读屏开销与输入决策
+
+同一校验阶段内，亮屏与视口检查复用一次 `deviceInfo` 响应，不跨模型推理、动作或等待缓存。读树前后仍各自检查最新上下文；推理返回后和执行前仍会校验。
+
+`input_macros` 默认 `true`。同时允许 `tap`、`type_text` 时，有唯一 resource ID 或 content description 的可见、未聚焦 EditText 可提供 `focus_type_text` 候选：**聚焦 → 设置一个精确允许值 → 原生 getText 回读**。Jev 只决策一次，Android Use 最多执行两个原生修改动作。标识必须在包含屏外节点的整棵树中唯一；不支持换行、密码或隐式提交。没有稳定标识时继续使用原有单步候选。
+
+写入前要求焦点、标识、几何和布局仍符合检查；意外弹窗、覆盖层、切页、锁屏或暂停都会停止。写入后允许同一输入框因文字和字体改变尺寸，仍须满足标识唯一、可见、聚焦及原生精确回读，此时不再执行坐标动作。暴露在树中的输入法仍会触发交回；合成验收应用关闭了输入法弹出，测试不代表兼容所有键盘布局。
+
+`steps[].substeps` 分别记录聚焦、写入的确认和验证。聚焦后中止可返回 `partial`；写入或回读异常可返回 `uncertain`，不要自动重放。`handoff.completed_actions` 统计已执行的原生子动作；`max_steps` 统计候选次数，一个输入宏可包含两个原生动作。设置 `"input_macros": false` 可恢复分开的聚焦、输入决策，用于兼容或对照。普通 MCP 工具和 batch 行为不变。
+
+[旧版本 / 仅复用采样 / 采样加输入宏的配对实测 →](benchmarks/optimizations-v4.md)
+
+## 结果与边界
+
+| 返回 | 含义 |
+| --- | --- |
+| `status=completed`、`verified=true` | 当前非空 App 树满足调用者给出的完成选择器；条件是否足以证明业务成功由调用者判断。 |
+| `status=handoff` | 交回宿主 Agent，`ok=true` 也不等于业务成功。 |
+| 模型返回 DONE | 没有完成选择器只算未验证交回；选择器未满足同样不能算成功。 |
+| `steps` | 已尝试候选及 executed/partial/uncertain 状态；宏的 substeps 保留每次原生修改和输入验证，不自动重放。 |
+| `roles` / `decisions` | 规划者、决策者、执行者，以及过期/已消费等决策审计。 |
+| `handoff` | 停止原因、已确认动作数、不确定步骤及认证或重新观察规划的交回建议。 |
+| `observation` | 默认 `observe=tree` 在安全时复用最后校验过的树；`observe=none` 关闭。认证、传输和范围错误不返回旧树。 |
+| `metrics` | 调用数、实际模型、token、模型/设备耗时、过期决策数及费用估算。 |
+
+默认选项概率 ≥0.65、与第二选项差距 ≥0.1，否则交回。它们是实验门槛，不是正确率保证，也不能把 TypeSafe confidence 当成任务正确率。
+
+推理后重读前台、Activity、尺寸和可见 App 树语义指纹（排除全局 XML 序号及父节点序号，保留节点语义、几何、状态、顺序与前台上下文），变化则丢弃决策，计入调用预算。离开目标包、其他包交互覆盖层（包含暴露在树中的输入法）、密码框、锁屏、熄屏、暂停、三步无变化、次数/时间上限都会停止。进行中的 ADB 请求可能超时超额；读树和输入不是原子操作，也不能证明无遮挡，宿主必须验收最终业务结果。
+
+仅从当前 App 可见控件生成动作，最多 200 候选、120 节点 UI 摘要、32 KB UTF-8 状态/候选预算，过大则交回。不提供可能触发提交的换行输入。密码页面在推理前停止。不启用实验性图像接口。
+
+启用后，目标、可见 UI 文本、候选描述、允许输入值及短动作历史会发送到 TypeSafe，避免敏感输入。常规返回轨迹不包含原始 UI 和输入内容。原有本地 MCP 工具独立可用。
+
+已知版本按 [官方价格](https://docs.typesafe.ai/models) 估算：输入每百万 token $0.042，输出免费，不是账单对账。未知模型、缺失 usage、失败请求返回 `estimated_cost_usd=null`，另有费用下界及 `unpriced_calls`，不把未知费用当零。
+
+## 复现对比
+
+需要已授权、解锁的模拟器/真机、JDK、Android SDK（API 28+ 稳定平台和 Build Tools）及正常控制服务。脚本只安装无权限的合成内容临时 APK，拒绝覆盖已存在同名包，结束卸载并恢复原 Activity。
+
+```bash
+uv run --frozen android-use --serial emulator-5554 setup '{"action":"status"}'
+# 仅在服务缺失时启动一次，再确认 READY：
+uv run --frozen android-use --serial emulator-5554 setup '{"action":"start"}'
+uv run --frozen android-use --serial emulator-5554 ready
+uv run --env-file .env --frozen python scripts/benchmark_executor.py \
+  --serial emulator-5554 --repeats 3
+```
+
+三组：现有确定性工具/批处理（执行开销下限）、Jev、可选 OpenAI-compatible 逐步文本模型。模型组共享目标、状态、候选与预算；文本模型无 Jev 选项概率，只校验 ID 并共享其他执行边界。配置 `TEXT_MODEL_BASE_URL`（按服务需要含 `/v1`）、`TEXT_MODEL`、`TEXT_MODEL_API_KEY`；可填写已核实的 `TEXT_MODEL_INPUT_USD_PER_MILLION` / `TEXT_MODEL_OUTPUT_USD_PER_MILLION` 估算费用。未配置明确记录跳过，不编造大模型对比。
+
+四项任务覆盖导航与延迟结果、中文草稿、嵌套滚动选择、长按。每次重置 App、轮换方案顺序；端到端包含推理、动作、观察和独立最终验收，不含构建/安装/重置/清理。失败和交回也计入耗时与每成功任务费用。测试框不弹软键盘，隔离原生 setText；不能外推到生产 App、视觉推理或所有 Android 任务。
+
+默认输出到已忽略的 `test-results/jev-benchmark.json`。[实测与限制 →](benchmarks/jev-emulator.md)
+
+真实 stdio MCP 与旧手势回归：启用后运行 `uv run --env-file .env --frozen python scripts/accept_device.py --serial <设备> --jev`，通过独立 MCP 服务进程验收新工具，同样安装并清理临时 APK。

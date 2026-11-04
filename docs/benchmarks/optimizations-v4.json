@@ -1,0 +1,1727 @@
+{
+  "environment": {
+    "kind": "emulator",
+    "baseline_commit": "2b930af652c7dd267233e6c26bb19e7d6cc5c740",
+    "baseline_source_sha256": "b410511430851ec88301b29ccc77f3d7c4d959a2eb86cbd06d048d77c1da25f4",
+    "current_source_sha256": "8f845aefae74fc7c86fb1bfe072b09f0587040e6025d60a0ed8763b36dd68dc5",
+    "fixture_sha256": "ed6040e749dda6294a1dd2413561c52b5e74b124cfeeb1e745275c4680842a97",
+    "tasks": "Chinese draft and UI-dependent four-step color workflow",
+    "design": "Matched seeds, three arms, rotating order; same real Jev model and budgets",
+    "timing": "Wall includes worker startup and independent verification; executor metrics exclude both. Install/reset/cleanup excluded.",
+    "limits": "Synthetic native UI; no IME; small sample; network variability; no general app speed/accuracy claim",
+    "execution_files_sha256": {
+      "backend.py": "8dd4bd314e43123b4179cd83ead5aa23f803f1aa4f2c4451aacdf3a3ecd82325",
+      "runtime.py": "c46c4be57674352dbd0ae2452f15ae000176bf731712e8a899d3f7481a04940f",
+      "executor.py": "58c2ab892a380fdbe1cee543fee16b0eecd5d24214adb0d77768b9823c7a86be",
+      "models.py": "9bc28622898415749feef8cdbe8a2cbf970983087b12e349bfcfdf349e655225",
+      "jev.py": "7a998fbb3ad24b72808c9dd8dabec116fe7eaa88a9ed9ed73a9fb66098db542b",
+      "tree.py": "d999e485bc2bf6577d16800a5c0fb0c957df622ccc3c73691419c71e53118900"
+    }
+  },
+  "summary": {
+    "draft_zh": {
+      "baseline": {
+        "successes": 3,
+        "runs": 3,
+        "median_wall_seconds": 8.280911332985852,
+        "median_elapsed_seconds": 7.375886625028215,
+        "median_device_read_seconds": 3.6427567899227142,
+        "median_device_action_seconds": 1.198585834063124,
+        "median_model_seconds": 0.9215290840365924,
+        "median_model_calls": 4,
+        "median_stale_decisions": 0,
+        "median_device_info_reads": 62,
+        "median_native_actions": 4
+      },
+      "sampling_macro": {
+        "successes": 3,
+        "runs": 3,
+        "median_wall_seconds": 6.839004457986448,
+        "median_elapsed_seconds": 5.975184583978262,
+        "median_device_read_seconds": 2.687984791060444,
+        "median_device_action_seconds": 1.5786873750039376,
+        "median_model_seconds": 0.7490683340001851,
+        "median_model_calls": 3,
+        "median_stale_decisions": 0,
+        "median_device_info_reads": 31,
+        "median_native_actions": 4
+      },
+      "sampling_only": {
+        "successes": 3,
+        "runs": 3,
+        "median_wall_seconds": 6.224742584046908,
+        "median_elapsed_seconds": 5.363240000035148,
+        "median_device_read_seconds": 2.5526486659655347,
+        "median_device_action_seconds": 1.0438251670566387,
+        "median_model_seconds": 0.9256302919238806,
+        "median_model_calls": 4,
+        "median_stale_decisions": 0,
+        "median_device_info_reads": 34,
+        "median_native_actions": 4
+      }
+    },
+    "dynamic_workflow_en": {
+      "baseline": {
+        "successes": 3,
+        "runs": 3,
+        "median_wall_seconds": 12.07016050000675,
+        "median_elapsed_seconds": 11.077784084016457,
+        "median_device_read_seconds": 6.488138290005736,
+        "median_device_action_seconds": 1.4555735829635523,
+        "median_model_seconds": 1.1316955001093447,
+        "median_model_calls": 5,
+        "median_stale_decisions": 0,
+        "median_device_info_reads": 74,
+        "median_native_actions": 5
+      },
+      "sampling_macro": {
+        "successes": 3,
+        "runs": 3,
+        "median_wall_seconds": 11.856683999998495,
+        "median_elapsed_seconds": 10.870908749988303,
+        "median_device_read_seconds": 5.866939124010969,
+        "median_device_action_seconds": 1.9079807510133833,
+        "median_model_seconds": 1.1725435829139315,
+        "median_model_calls": 5,
+        "median_stale_decisions": 0,
+        "median_device_info_reads": 40,
+        "median_native_actions": 5
+      },
+      "sampling_only": {
+        "successes": 3,
+        "runs": 3,
+        "median_wall_seconds": 9.282092749956064,
+        "median_elapsed_seconds": 8.421447042026557,
+        "median_device_read_seconds": 4.641731667041313,
+        "median_device_action_seconds": 1.4554011669242755,
+        "median_model_seconds": 1.1210701671079732,
+        "median_model_calls": 5,
+        "median_stale_decisions": 0,
+        "median_device_info_reads": 40,
+        "median_native_actions": 5
+      }
+    }
+  },
+  "runs": [
+    {
+      "task": "draft_zh",
+      "repeat": 1,
+      "seed": 41,
+      "arm": "baseline",
+      "success": true,
+      "elapsed_seconds": 8.280911332985852,
+      "native_actions": 4,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "type_text",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a0",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.99,
+          "margin": 0.98,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.98,
+          "margin": 0.97,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 0.98,
+          "margin": 0.96,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 4,
+        "model_seconds": 0.9215290840365924,
+        "input_tokens": 7103,
+        "output_tokens": 264,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000298326,
+        "estimated_cost_usd": 0.000298326,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 7.419413583993446,
+        "device_read_seconds": 3.790050709969364,
+        "device_action_seconds": 1.198585834063124,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 62,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "draft_zh",
+      "repeat": 1,
+      "seed": 41,
+      "arm": "sampling_only",
+      "success": true,
+      "elapsed_seconds": 6.182522457966115,
+      "native_actions": 4,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "type_text",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a0",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.99,
+          "margin": 0.98,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.98,
+          "margin": 0.97,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 0.97,
+          "margin": 0.95,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 4,
+        "model_seconds": 0.8881464169826359,
+        "input_tokens": 7227,
+        "output_tokens": 264,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.00030353400000000005,
+        "estimated_cost_usd": 0.00030353400000000005,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 5.363240000035148,
+        "device_read_seconds": 2.5526486659655347,
+        "device_action_seconds": 1.0399252490024082,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 34,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "draft_zh",
+      "repeat": 1,
+      "seed": 41,
+      "arm": "sampling_macro",
+      "success": true,
+      "elapsed_seconds": 5.85605470801238,
+      "native_actions": 4,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "focus_type_text",
+          "candidate": "a1",
+          "state": "executed",
+          "substeps": [
+            {
+              "op": "tap",
+              "state": "executed",
+              "acknowledged": true
+            },
+            {
+              "op": "type_text",
+              "state": "executed",
+              "acknowledged": true,
+              "verified": true,
+              "verification_source": "native_getText"
+            }
+          ]
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a0",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.97,
+          "margin": 0.94,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 0.99,
+          "margin": 0.98,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 3,
+        "model_seconds": 0.6849070839816704,
+        "input_tokens": 5430,
+        "output_tokens": 206,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.00022805999999999998,
+        "estimated_cost_usd": 0.00022805999999999998,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 5.082287625002209,
+        "device_read_seconds": 2.502759708033409,
+        "device_action_seconds": 1.1989307079929858,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 31,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "dynamic_workflow_en",
+      "repeat": 1,
+      "seed": 41,
+      "arm": "sampling_only",
+      "success": true,
+      "elapsed_seconds": 9.282092749956064,
+      "native_actions": 5,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a3",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a3",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.99,
+          "margin": 0.98,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.96,
+          "margin": 0.9299999999999999,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.89,
+          "margin": 0.8300000000000001,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.76,
+          "margin": 0.56,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 5,
+        "model_seconds": 1.1210701671079732,
+        "input_tokens": 9859,
+        "output_tokens": 338,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000414078,
+        "estimated_cost_usd": 0.000414078,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 8.421447042026557,
+        "device_read_seconds": 4.641731667041313,
+        "device_action_seconds": 1.4554011669242755,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 40,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "dynamic_workflow_en",
+      "repeat": 1,
+      "seed": 41,
+      "arm": "sampling_macro",
+      "success": true,
+      "elapsed_seconds": 11.856683999998495,
+      "native_actions": 5,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a3",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a3",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.96,
+          "margin": 0.9299999999999999,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.98,
+          "margin": 0.96,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.87,
+          "margin": 0.81,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.8,
+          "margin": 0.63,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 5,
+        "model_seconds": 1.1725435829139315,
+        "input_tokens": 9859,
+        "output_tokens": 338,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000414078,
+        "estimated_cost_usd": 0.000414078,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 10.870908749988303,
+        "device_read_seconds": 6.480714417004492,
+        "device_action_seconds": 1.9079807510133833,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 40,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "dynamic_workflow_en",
+      "repeat": 1,
+      "seed": 41,
+      "arm": "baseline",
+      "success": true,
+      "elapsed_seconds": 12.229583417007234,
+      "native_actions": 5,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a3",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a3",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.99,
+          "margin": 0.98,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.96,
+          "margin": 0.9299999999999999,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.84,
+          "margin": 0.76,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.69,
+          "margin": 0.42999999999999994,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 5,
+        "model_seconds": 1.1316955001093447,
+        "input_tokens": 9704,
+        "output_tokens": 338,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000407568,
+        "estimated_cost_usd": 0.000407568,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 11.084258167014923,
+        "device_read_seconds": 6.8105725410277955,
+        "device_action_seconds": 1.4555735829635523,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 74,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "draft_zh",
+      "repeat": 2,
+      "seed": 1038,
+      "arm": "sampling_only",
+      "success": true,
+      "elapsed_seconds": 6.224742584046908,
+      "native_actions": 4,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "type_text",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a0",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.98,
+          "margin": 0.97,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 0.99,
+          "margin": 0.98,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 4,
+        "model_seconds": 0.9584910399862565,
+        "input_tokens": 7172,
+        "output_tokens": 264,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000301224,
+        "estimated_cost_usd": 0.000301224,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 5.321567500010133,
+        "device_read_seconds": 2.512032624974381,
+        "device_action_seconds": 1.0438251670566387,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 34,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "draft_zh",
+      "repeat": 2,
+      "seed": 1038,
+      "arm": "sampling_macro",
+      "success": true,
+      "elapsed_seconds": 6.839004457986448,
+      "native_actions": 4,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "focus_type_text",
+          "candidate": "a1",
+          "state": "executed",
+          "substeps": [
+            {
+              "op": "tap",
+              "state": "executed",
+              "acknowledged": true
+            },
+            {
+              "op": "type_text",
+              "state": "executed",
+              "acknowledged": true,
+              "verified": true,
+              "verification_source": "native_getText"
+            }
+          ]
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a0",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.98,
+          "margin": 0.96,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 0.97,
+          "margin": 0.96,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 3,
+        "model_seconds": 0.7490683340001851,
+        "input_tokens": 5430,
+        "output_tokens": 206,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.00022805999999999998,
+        "estimated_cost_usd": 0.00022805999999999998,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 5.975184583978262,
+        "device_read_seconds": 2.687984791060444,
+        "device_action_seconds": 1.5786873750039376,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 31,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "draft_zh",
+      "repeat": 2,
+      "seed": 1038,
+      "arm": "baseline",
+      "success": true,
+      "elapsed_seconds": 7.165421709010843,
+      "native_actions": 4,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "type_text",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a0",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.99,
+          "margin": 0.98,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.97,
+          "margin": 0.95,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 0.99,
+          "margin": 0.98,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 4,
+        "model_seconds": 0.871255207050126,
+        "input_tokens": 7103,
+        "output_tokens": 264,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000298326,
+        "estimated_cost_usd": 0.000298326,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 6.285171083989553,
+        "device_read_seconds": 2.9285734590957873,
+        "device_action_seconds": 0.9944687909446657,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 62,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "dynamic_workflow_en",
+      "repeat": 2,
+      "seed": 1038,
+      "arm": "sampling_macro",
+      "success": true,
+      "elapsed_seconds": 12.337927165965084,
+      "native_actions": 5,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a3",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a3",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.92,
+          "margin": 0.87,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 0.99,
+          "margin": 0.98,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.98,
+          "margin": 0.96,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 0.99,
+          "margin": 0.98,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 5,
+        "model_seconds": 1.1771053750417195,
+        "input_tokens": 9935,
+        "output_tokens": 338,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.00041727,
+        "estimated_cost_usd": 0.00041727,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 11.4500279170461,
+        "device_read_seconds": 5.866939124010969,
+        "device_action_seconds": 2.809336460020859,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 40,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "dynamic_workflow_en",
+      "repeat": 2,
+      "seed": 1038,
+      "arm": "baseline",
+      "success": true,
+      "elapsed_seconds": 12.07016050000675,
+      "native_actions": 5,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a3",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a3",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.99,
+          "margin": 0.98,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 0.99,
+          "margin": 0.98,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.97,
+          "margin": 0.94,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 0.99,
+          "margin": 0.98,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 5,
+        "model_seconds": 1.0946189580718055,
+        "input_tokens": 9704,
+        "output_tokens": 338,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000407568,
+        "estimated_cost_usd": 0.000407568,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 11.077784084016457,
+        "device_read_seconds": 6.488138290005736,
+        "device_action_seconds": 1.6813667899696156,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 74,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "dynamic_workflow_en",
+      "repeat": 2,
+      "seed": 1038,
+      "arm": "sampling_only",
+      "success": true,
+      "elapsed_seconds": 12.426364375045523,
+      "native_actions": 5,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a3",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a3",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.98,
+          "margin": 0.96,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 0.99,
+          "margin": 0.98,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 5,
+        "model_seconds": 1.118931376026012,
+        "input_tokens": 9859,
+        "output_tokens": 338,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000414078,
+        "estimated_cost_usd": 0.000414078,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 11.29076054203324,
+        "device_read_seconds": 7.24134637392126,
+        "device_action_seconds": 1.544621790992096,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 40,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "draft_zh",
+      "repeat": 3,
+      "seed": 2035,
+      "arm": "sampling_macro",
+      "success": true,
+      "elapsed_seconds": 12.359780083002988,
+      "native_actions": 4,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "focus_type_text",
+          "candidate": "a1",
+          "state": "executed",
+          "substeps": [
+            {
+              "op": "tap",
+              "state": "executed",
+              "acknowledged": true
+            },
+            {
+              "op": "type_text",
+              "state": "executed",
+              "acknowledged": true,
+              "verified": true,
+              "verification_source": "native_getText"
+            }
+          ]
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a0",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.98,
+          "margin": 0.96,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 0.97,
+          "margin": 0.96,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 3,
+        "model_seconds": 0.8598641669959761,
+        "input_tokens": 5430,
+        "output_tokens": 206,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.00022805999999999998,
+        "estimated_cost_usd": 0.00022805999999999998,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 11.35352999996394,
+        "device_read_seconds": 7.6119780819281,
+        "device_action_seconds": 1.8706862929975614,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 31,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "draft_zh",
+      "repeat": 3,
+      "seed": 2035,
+      "arm": "baseline",
+      "success": true,
+      "elapsed_seconds": 8.356798207969405,
+      "native_actions": 4,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "type_text",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a0",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.96,
+          "margin": 0.94,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 0.98,
+          "margin": 0.97,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 4,
+        "model_seconds": 0.9304278760682791,
+        "input_tokens": 7048,
+        "output_tokens": 264,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.00029601599999999997,
+        "estimated_cost_usd": 0.00029601599999999997,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 7.375886625028215,
+        "device_read_seconds": 3.6427567899227142,
+        "device_action_seconds": 1.247874999011401,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 62,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "draft_zh",
+      "repeat": 3,
+      "seed": 2035,
+      "arm": "sampling_only",
+      "success": true,
+      "elapsed_seconds": 8.593103207997046,
+      "native_actions": 4,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "type_text",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a0",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.99,
+          "margin": 0.98,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.98,
+          "margin": 0.97,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 0.96,
+          "margin": 0.94,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 4,
+        "model_seconds": 0.9256302919238806,
+        "input_tokens": 7172,
+        "output_tokens": 264,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000301224,
+        "estimated_cost_usd": 0.000301224,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 7.344433624995872,
+        "device_read_seconds": 4.128485459950753,
+        "device_action_seconds": 1.2313352499622852,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 34,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "dynamic_workflow_en",
+      "repeat": 3,
+      "seed": 2035,
+      "arm": "baseline",
+      "success": true,
+      "elapsed_seconds": 10.420098458009306,
+      "native_actions": 5,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a3",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a3",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.96,
+          "margin": 0.9299999999999999,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.89,
+          "margin": 0.8300000000000001,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.93,
+          "margin": 0.8600000000000001,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 5,
+        "model_seconds": 1.1538120399345644,
+        "input_tokens": 9704,
+        "output_tokens": 338,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000407568,
+        "estimated_cost_usd": 0.000407568,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 9.47646941698622,
+        "device_read_seconds": 5.244772250007372,
+        "device_action_seconds": 1.1332370409509167,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 74,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "dynamic_workflow_en",
+      "repeat": 3,
+      "seed": 2035,
+      "arm": "sampling_only",
+      "success": true,
+      "elapsed_seconds": 8.054005416983273,
+      "native_actions": 5,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a3",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a3",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.95,
+          "margin": 0.9099999999999999,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.92,
+          "margin": 0.87,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.96,
+          "margin": 0.9199999999999999,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 5,
+        "model_seconds": 1.1233399160555564,
+        "input_tokens": 9935,
+        "output_tokens": 338,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.00041727,
+        "estimated_cost_usd": 0.00041727,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 7.159856292011682,
+        "device_read_seconds": 3.76429133414058,
+        "device_action_seconds": 1.1328049580333754,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 40,
+        "legacy_window_size": 0
+      }
+    },
+    {
+      "task": "dynamic_workflow_en",
+      "repeat": 3,
+      "seed": 2035,
+      "arm": "sampling_macro",
+      "success": true,
+      "elapsed_seconds": 8.097050292009953,
+      "native_actions": 5,
+      "ok": true,
+      "verified": true,
+      "stop_reason": "completion_selector",
+      "error": null,
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a3",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a3",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a2",
+          "probability": 1.0,
+          "margin": 1.0,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.98,
+          "margin": 0.97,
+          "state": "consumed"
+        },
+        {
+          "choice": "a1",
+          "probability": 0.86,
+          "margin": 0.79,
+          "state": "consumed"
+        },
+        {
+          "choice": "a0",
+          "probability": 0.96,
+          "margin": 0.9199999999999999,
+          "state": "consumed"
+        }
+      ],
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 5,
+        "model_seconds": 1.15641895896988,
+        "input_tokens": 9935,
+        "output_tokens": 338,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.00041727,
+        "estimated_cost_usd": 0.00041727,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 7.172743334027473,
+        "device_read_seconds": 3.6764364151167683,
+        "device_action_seconds": 1.1575852079549804,
+        "stale_decisions": 0
+      },
+      "rpc_counts": {
+        "device_info": 40,
+        "legacy_window_size": 0
+      }
+    }
+  ]
+}

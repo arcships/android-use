@@ -1,0 +1,154 @@
+{
+  "environment": {
+    "kind": "emulator",
+    "agent": "current host chat, live JSONL decisions; no scripted selector",
+    "timing": "Includes host planning/decisions, CLI bridge latency, executor, final host verification; excludes reset/install",
+    "limits": "single shared chat, familiar fixture, host token usage unavailable; not an isolated API-model benchmark",
+    "host_wall_budget_seconds": 180,
+    "jev_subgoal_budget_seconds": 60,
+    "baseline_helpers": "batch, action-plus-wait and scroll_until available and used; host observed each newly opened page",
+    "timing_validity": "Exploratory wall-clock observations include polling, commentary and agent deliberation; not a controlled speedup estimate"
+  },
+  "summary": {
+    "agent_jev": {
+      "runs": 4,
+      "successes": 4,
+      "median_seconds": 27.137988145492272,
+      "host_decisions": 8,
+      "jev_calls": 14,
+      "jev_estimated_cost_usd": 0.001307922,
+      "host_cost_usd": null,
+      "total_cost_usd": null
+    },
+    "agent_only": {
+      "runs": 4,
+      "successes": 4,
+      "median_seconds": 37.19094697901164,
+      "host_decisions": 13,
+      "jev_calls": 0,
+      "jev_estimated_cost_usd": 0.0,
+      "host_cost_usd": null,
+      "total_cost_usd": null
+    }
+  },
+  "runs": [
+    {
+      "arm": "agent_only",
+      "task": "navigate_wait_en",
+      "repeat": 1,
+      "success": true,
+      "elapsed_seconds": 53.410725124995224,
+      "host_decisions": 3,
+      "jev_calls": 0,
+      "jev_estimated_cost_usd": 0.0,
+      "host_cost_usd": null,
+      "total_cost_usd": null,
+      "stop_reason": "completion_selector",
+      "delegation_stop_reason": null
+    },
+    {
+      "arm": "agent_jev",
+      "task": "navigate_wait_en",
+      "repeat": 1,
+      "success": true,
+      "elapsed_seconds": 22.62173937499756,
+      "host_decisions": 2,
+      "jev_calls": 2,
+      "jev_estimated_cost_usd": 0.000136248,
+      "host_cost_usd": null,
+      "total_cost_usd": null,
+      "stop_reason": "completion_selector",
+      "delegation_stop_reason": null
+    },
+    {
+      "arm": "agent_jev",
+      "task": "draft_zh",
+      "repeat": 1,
+      "success": true,
+      "elapsed_seconds": 27.885197833005805,
+      "host_decisions": 2,
+      "jev_calls": 4,
+      "jev_estimated_cost_usd": 0.00029118600000000003,
+      "host_cost_usd": null,
+      "total_cost_usd": null,
+      "stop_reason": "completion_selector",
+      "delegation_stop_reason": null
+    },
+    {
+      "arm": "agent_only",
+      "task": "draft_zh",
+      "repeat": 1,
+      "success": true,
+      "elapsed_seconds": 25.4888759580208,
+      "host_decisions": 3,
+      "jev_calls": 0,
+      "jev_estimated_cost_usd": 0.0,
+      "host_cost_usd": null,
+      "total_cost_usd": null,
+      "stop_reason": "completion_selector",
+      "delegation_stop_reason": null
+    },
+    {
+      "arm": "agent_only",
+      "task": "scroll_select_en",
+      "repeat": 1,
+      "success": true,
+      "elapsed_seconds": 48.893018000002485,
+      "host_decisions": 4,
+      "jev_calls": 0,
+      "jev_estimated_cost_usd": 0.0,
+      "host_cost_usd": null,
+      "total_cost_usd": null,
+      "stop_reason": "completion_selector",
+      "delegation_stop_reason": null
+    },
+    {
+      "arm": "agent_jev",
+      "task": "scroll_select_en",
+      "repeat": 1,
+      "success": true,
+      "elapsed_seconds": 41.18856104102451,
+      "host_decisions": 2,
+      "jev_calls": 6,
+      "jev_estimated_cost_usd": 0.000729036,
+      "host_cost_usd": null,
+      "total_cost_usd": null,
+      "stop_reason": "completion_selector",
+      "delegation_stop_reason": null
+    },
+    {
+      "arm": "agent_jev",
+      "task": "long_press_zh",
+      "repeat": 1,
+      "success": true,
+      "elapsed_seconds": 26.39077845797874,
+      "host_decisions": 2,
+      "jev_calls": 2,
+      "jev_estimated_cost_usd": 0.000151452,
+      "host_cost_usd": null,
+      "total_cost_usd": null,
+      "stop_reason": "completion_selector",
+      "delegation_stop_reason": null
+    },
+    {
+      "arm": "agent_only",
+      "task": "long_press_zh",
+      "repeat": 1,
+      "success": true,
+      "elapsed_seconds": 23.719437166000716,
+      "host_decisions": 3,
+      "jev_calls": 0,
+      "jev_estimated_cost_usd": 0.0,
+      "host_cost_usd": null,
+      "total_cost_usd": null,
+      "stop_reason": "completion_selector",
+      "delegation_stop_reason": null
+    }
+  ],
+  "date": "2026-11-04",
+  "runtime_source_sha256": {
+    "src/android_use/executor.py": "50fa9753077999b8cd9657bc0ec966133d24f7a36fab9a8af3bfd7781971c016",
+    "src/android_use/jev.py": "e183034559e7dcc291669df2392b7aa4446e1afa98c935f46fe70ee913a151f6",
+    "tests/device_app/MainActivity.java": "926d8df64ec0f72e486057331e0d39e23215cd007dfa8e336fb7f389364382bc"
+  }
+}
