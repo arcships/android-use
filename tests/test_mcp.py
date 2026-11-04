@@ -28,6 +28,8 @@ def test_real_stdio_handshake_schemas_and_error(tmp_path):
                 tools = (await session.list_tools()).tools
                 assert len(tools) == 23
                 assert "aua_execute_goal" in {t.name for t in tools}
+                goal = next(t for t in tools if t.name == "aua_execute_goal")
+                assert goal.inputSchema["properties"]["input_macros"]["default"] is True
                 assert {"aua_long_press", "aua_double_tap", "aua_drag", "aua_scroll_until"} <= {
                     t.name for t in tools
                 }

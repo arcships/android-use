@@ -164,6 +164,7 @@ class ExecuteGoalArgs(StrictModel):
     min_probability: Annotated[float, Field(ge=0, le=1)] = 0.65
     min_margin: Annotated[float, Field(ge=0, le=1)] = 0.1
     observe: Literal["none", "tree"] = "tree"
+    input_macros: bool = True
 
 
 class BatchStep(StrictModel):

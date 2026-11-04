@@ -1,0 +1,61 @@
+{
+  "passed": [
+    "tap_wait_visible",
+    "tap_wait_gone",
+    "long_press_event",
+    "double_tap_event",
+    "drag_event",
+    "scroll_find_offscreen_target",
+    "scroll_visible_target_zero_swipes",
+    "scroll_no_progress_stop",
+    "gesture_batch_with_waits",
+    "timeout_no_replay_and_batch_stop",
+    "pause_cancels_active_wait",
+    "jev_goal_over_real_stdio_mcp",
+    "jev_handoff_then_host_continues_without_replay",
+    "jev_focus_type_unicode_macro_native_readback",
+    "portrait_landscape_geometry_matches_legacy_and_screenshot"
+  ],
+  "tool_count": 23,
+  "scroll_swipes": 5,
+  "no_progress_swipes": 3,
+  "elapsed_seconds": 86.98,
+  "jev_metrics": {
+    "provider": "typesafe",
+    "requested_model": "jev-1.14.0",
+    "models": [
+      "jev-1.14.0"
+    ],
+    "model_calls": 1,
+    "model_seconds": 0.32101170800160617,
+    "input_tokens": 2801,
+    "output_tokens": 66,
+    "unpriced_calls": 0,
+    "estimated_cost_usd_lower_bound": 0.00011764200000000001,
+    "estimated_cost_usd": 0.00011764200000000001,
+    "cost_basis": "published input-token price; not a billing receipt",
+    "elapsed_seconds": 2.0108959160279483,
+    "device_read_seconds": 1.1810519160353579,
+    "device_action_seconds": 0.22996174998115748,
+    "stale_decisions": 0
+  },
+  "handoff_metrics": {
+    "provider": "typesafe",
+    "requested_model": "jev-1.14.0",
+    "models": [
+      "jev-1.14.0"
+    ],
+    "model_calls": 1,
+    "model_seconds": 0.30937170796096325,
+    "input_tokens": 1823,
+    "output_tokens": 74,
+    "unpriced_calls": 0,
+    "estimated_cost_usd_lower_bound": 7.6566e-05,
+    "estimated_cost_usd": 7.6566e-05,
+    "cost_basis": "published input-token price; not a billing receipt",
+    "elapsed_seconds": 1.9892524579772726,
+    "device_read_seconds": 0.9942266240250319,
+    "device_action_seconds": 0.23964124999474734,
+    "stale_decisions": 0
+  }
+}

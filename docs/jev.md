@@ -26,7 +26,7 @@ flowchart LR
 
 Use ordinary tools for a known path; use Jev where the Agent would otherwise read the tree and decide repeatedly. The intended efficiency comparison is **Agent-only vs the same Agent + Jev**, including planning, handoff/recovery and final verification. The earlier deterministic-tools comparison measures execution overhead only. Normal hybrid use needs only your existing Agent and the TypeSafe key; `TEXT_MODEL_*` is optional configuration for a separate API-based benchmark, not an installation requirement.
 
-[Latest performance comparison and raw records →](benchmarks/agent-jev-v3.md). Run `scripts/benchmark_agent.py` with the same `uv run --env-file .env --frozen python` prefix, `--serial <device>` and `--repeats 3`: the current Agent chooses ordinary tools or Jev decisions, handles recovery and verifies results. The driver measures host waiting separately. Host token charges remain unknown when the host does not expose per-task billing.
+[Latest performance comparison and raw records →](benchmarks/optimizations-v4.md). Run `scripts/benchmark_agent.py` with the same `uv run --env-file .env --frozen python` prefix, `--serial <device>` and `--repeats 3`: the current Agent chooses ordinary tools or Jev decisions, handles recovery and verifies results. The driver measures host waiting separately. Host token charges remain unknown when the host does not expose per-task billing.
 
 ## Configure
 
@@ -67,6 +67,18 @@ CLI supports the same JSON: `uv run --env-file .env --frozen android-use --seria
 
 `texts` is an allowlist of exact input values; Jev chooses a value, it cannot write prose. Default actions: `tap`, `swipe`, `type_text`, `wait`. Add `long_press` or `back` to `actions` explicitly when needed. Existing tools handle double taps, arbitrary dragging, launching apps, visual/custom controls and recovery. `execute_goal` cannot be nested in `batch`.
 
+## Fewer reads and input decisions
+
+Within each validation phase, screen-on and viewport checks share one sampled `deviceInfo` response. That response is never cached across inference, actions or waits. The tree is still bracketed by fresh context checks; the selected decision is checked again after inference and before execution.
+
+`input_macros` defaults to `true`. When both `tap` and `type_text` are allowed, a visible unfocused EditText with a unique resource ID or content description can offer a `focus_type_text` candidate: **focus → set one exact supplied value → native getText verification**. Jev selects this as one decision; Android Use executes at most two native mutations. The binding must be unique across the entire hierarchy, including offscreen nodes. Newlines, passwords and implicit submission are excluded. Fields without a stable binding retain the existing primitive candidates.
+
+Before writing, focus, identity, geometry and layout must still match. Unexpected dialogs, overlays, scope changes, locks or pause stop the macro. After writing, the same bound field may resize due to text/font metrics; identity, visibility, focus and exact native readback remain required. No coordinate action follows that resize. An exposed IME still causes a handoff. The synthetic fixture suppresses IME opening, so its results do not establish support for all keyboard layouts.
+
+`steps[].substeps` records focus and input separately, including acknowledged writes and verification. A macro may return `partial` after focus, or `uncertain` after a write/read failure. Never replay it automatically. `handoff.completed_actions` counts executed native leaf actions, not macro candidates. `max_steps` counts selected candidates: one input macro can contain two native actions. Set `"input_macros": false` to retain separate focus/input decisions for compatibility or comparison. Ordinary MCP tools and batch behavior are unchanged.
+
+[Paired baseline / sampling-only / sampling + macro measurements →](benchmarks/optimizations-v4.md)
+
 ## Results and boundaries
 
 | Result | Meaning |
@@ -74,7 +86,7 @@ CLI supports the same JSON: `uv run --env-file .env --frozen android-use --seria
 | `status=completed`, `verified=true` | Caller-supplied completion selector met in a current nonempty app-owned tree. A selector is only as meaningful as the condition chosen. |
 | `status=handoff` | Return control to the host agent. Even `ok=true` is not business success. |
 | Model `DONE` | Without a completion predicate, unverified handoff. An unmet predicate also cannot count as success. |
-| `steps` | Attempted actions with executed/uncertain states; never automatically replay. |
+| `steps` | Attempted candidates with executed/partial/uncertain states; macro `substeps` preserve each native mutation and input verification. Never automatically replay. |
 | `roles` / `decisions` | Planner/decision/executor ownership and candidate decision audit, including stale or consumed decisions. |
 | `handoff` | Stop reason, acknowledged action count, uncertain step indices and recommended user-authentication or observe/replan handoff. |
 | `observation` | Default `observe=tree` reuses the last checked tree when safe. `observe=none` suppresses it. Errors involving authentication, transport or scope never return an old tree. |

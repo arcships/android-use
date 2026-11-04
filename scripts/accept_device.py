@@ -240,7 +240,7 @@ async def exercise(serial, apk, jev=False):
                     max_swipes=20,
                     observe="tree",
                 )
-                assert found["found"] and found["swipes"] > 0
+                assert found["found"] and found["swipes"] > 0, found
                 passed.append("scroll_find_offscreen_target")
                 again = await call("scroll_until", selector={"text": "Row 12"}, region=region)
                 assert again["found"] and again["swipes"] == 0
@@ -392,6 +392,42 @@ async def exercise(serial, apk, jev=False):
                     ]
                     handoff_metrics = handed["metrics"]
                     passed.append("jev_handoff_then_host_continues_without_replay")
+                    # Reset the field so focus + exact Unicode input needs one decision.
+                    shell("am", "force-stop", PACKAGE)
+                    shell(
+                        "am",
+                        "start",
+                        "-W",
+                        "-n",
+                        PACKAGE + "/.MainActivity",
+                        "--ez",
+                        "benchmark",
+                        "true",
+                    )
+                    await call(
+                        "tap",
+                        selector={"description": "open-profile"},
+                        wait_for={"selector": {"description": "draft-name"}},
+                    )
+                    macro = await call(
+                        "execute_goal",
+                        package=PACKAGE,
+                        goal="Set Name to 宏动作🐻 then Apply draft to save locally.",
+                        texts=["宏动作🐻"],
+                        completion={"text_contains": "DRAFT=宏动作"},
+                        max_steps=2,
+                        timeout_seconds=30.0,
+                    )
+                    # AX may replace emoji with dots; native getText is authoritative.
+                    macros = [s for s in macro["steps"] if s["op"] == "focus_type_text"]
+                    assert len(macros) == 1 and macros[0]["state"] == "executed", macro
+                    assert macros[0]["substeps"][1]["verified"]
+                    assert macro["metrics"]["model_calls"] == 2
+                    assert macro["verified"]
+                    assert (await call("find", selector={"text_contains": "DRAFT=宏动作"}))[
+                        "total"
+                    ] == 1
+                    passed.append("jev_focus_type_unicode_macro_native_readback")
                     from android_use.backend import Backend
 
                     probe = Backend(serial)

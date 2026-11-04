@@ -6,7 +6,7 @@ import time
 from typing import Protocol
 
 from .backend import UseError
-from .models import ARG_MODELS, ExecuteGoalArgs
+from .models import ARG_MODELS, ExecuteGoalArgs, Selector
 from .tree import in_viewport, matches, tap_point
 
 
@@ -21,11 +21,9 @@ class DecisionPolicy(Protocol):
 
 
 def snapshot(runtime, package):
-    runtime._usable()
-    before = runtime._context()
+    before = runtime._checked_context()
     nodes = runtime._nodes()
-    runtime._usable()
-    after = runtime._context()
+    after = runtime._checked_context()
     if before != after or after["package"] != package:
         raise UseError(
             "goal_scope_changed", "Foreground app or display changed; inspect current state"
@@ -48,7 +46,7 @@ def snapshot(runtime, package):
     fingerprint = hashlib.sha256(
         json.dumps([after, semantic], sort_keys=True, ensure_ascii=False).encode()
     ).hexdigest()
-    return {"context": after, "nodes": owned, "fingerprint": fingerprint}
+    return {"context": after, "nodes": owned, "all_nodes": nodes, "fingerprint": fingerprint}
 
 
 def candidates(snap, args):
@@ -93,6 +91,29 @@ def candidates(snap, args):
                         },
                         {**label, "set_exact_text": text},
                     )
+        elif (
+            editable and args.input_macros and "tap" in args.actions and "type_text" in args.actions
+        ):
+            # Binding must survive focus/text changes. Never guess a field by position.
+            binding = {"package": args.package, "class_name": node["class_name"]}
+            if node["resource_id"]:
+                binding["resource_id"] = node["resource_id"]
+            elif node["description"]:
+                binding["description"] = node["description"]
+            if (node["resource_id"] or node["description"]) and len(
+                matches(snap.get("all_nodes", snap["nodes"]), Selector.model_validate(binding))
+            ) == 1:
+                for text in args.texts:
+                    if "\n" not in text and "\r" not in text:
+                        add(
+                            "focus_type_text",
+                            {"selector": binding, "text": text},
+                            {
+                                **label,
+                                "focus_and_set_exact_text": text,
+                                "verification": "native text readback; no submit",
+                            },
+                        )
         if node["scrollable"] and "swipe" in args.actions:
             nx, ny, w, h = node["rect"]
             left, top = max(0, nx), max(0, ny)
@@ -117,6 +138,101 @@ def completed(snap, args):
         return False
     found = bool(matches(snap["nodes"], args.completion))
     return found if args.completion_state == "visible" else not found
+
+
+def focus_type_text(runtime, params, snap, package, deadline, entry, read):
+    """Two bounded native actions, one decision; every mutation has its own ledger."""
+    selector = Selector.model_validate(params["selector"])
+
+    def target(current, focused=False, same_rect=True):
+        if current["context"] != snap["context"]:
+            raise UseError("goal_scope_changed", "Context changed within input macro")
+        found = matches(current.get("all_nodes", current["nodes"]), selector)
+        if len(found) != 1:
+            raise UseError("macro_target_changed", "Input target is missing or ambiguous")
+        node = found[0]
+        if (
+            not in_viewport(node, current["context"]["size"])
+            or (same_rect and node["rect"] != original["rect"])
+            or not node["enabled"]
+            or node["password"]
+            or not node["class_name"].endswith("EditText")
+            or (focused and not node["focused"])
+        ):
+            raise UseError("macro_target_changed", "Input target is no longer an editable field")
+        return node
+
+    def guard():
+        if runtime._checked_context() != snap["context"]:
+            raise UseError("goal_scope_changed", "Context changed before macro action")
+        if time.monotonic() >= deadline:
+            raise UseError("goal_timeout", "Input macro budget exhausted; do not replay")
+
+    initial = matches(snap["nodes"], selector)
+    if len(initial) != 1:
+        raise UseError("macro_target_changed", "Input target is missing or ambiguous")
+    original = initial[0]
+    node = target(snap)
+    x, y = tap_point(node, snap["context"]["size"])
+    substeps = entry["substeps"] = []
+
+    def mutate(op, function, *values):
+        guard()
+        step = {"op": op, "state": "attempted"}
+        substeps.append(step)
+        runtime.mutation_attempted = False
+        try:
+            runtime._write(function, *values)
+            step.update(state="executed", acknowledged=True)
+        except Exception:
+            step["state"] = "uncertain" if runtime.mutation_attempted else "failed"
+            raise
+        return step
+
+    mutate("tap", runtime.backend.tap, x, y)
+    focused = read()
+    node = target(focused, focused=True)
+
+    def layout(current):
+        return [
+            {
+                k: v
+                for k, v in item.items()
+                if k not in {"id", "parent", "focused"}
+                and not (k == "text" and matches([item], selector))
+            }
+            for item in current["nodes"]
+        ]
+
+    if layout(focused) != layout(snap):
+        raise UseError(
+            "macro_target_changed", "Unexpected layout change after focusing; inspect UI"
+        )
+    native = {"className": node["class_name"], "packageName": package, "focused": True}
+    if node["resource_id"]:
+        native["resourceId"] = node["resource_id"]
+    else:
+        native["description"] = node["description"]
+    typed = mutate("type_text", runtime.backend.set_text, params["text"], native)
+    try:
+        checked = read()
+        # Text/font metrics can resize the bound field after setText. No further
+        # coordinate action is performed here; stable identity + focus + native
+        # readback remain required. Geometry must still match before writing.
+        target(checked, focused=True, same_rect=False)
+        guard()
+        if runtime.backend.get_text(native) != params["text"]:
+            raise UseError(
+                "input_verification_failed",
+                "Macro input differs; inspect before retrying",
+                uncertain=True,
+            )
+        guard()
+        typed.update(verified=True, verification_source="native_getText")
+    except Exception:
+        typed.update(state="uncertain", verified=False)
+        raise
+    return checked
 
 
 def execute(runtime, args, policy: DecisionPolicy):
@@ -167,7 +283,12 @@ def execute(runtime, args, policy: DecisionPolicy):
             uncertain = [i for i, step in enumerate(trace) if step["state"] == "uncertain"]
             result["handoff"] = {
                 "reason": reason,
-                "completed_actions": sum(s["state"] == "executed" for s in trace),
+                "completed_actions": sum(
+                    child["state"] == "executed"
+                    for step in trace
+                    for child in step.get("substeps", [step])
+                    if child["op"] != "wait_local"
+                ),
                 "uncertain_steps": uncertain,
                 "next": "user_authentication"
                 if reason
@@ -178,9 +299,11 @@ def execute(runtime, args, policy: DecisionPolicy):
             # Reuse the checked final snapshot. The host needn't issue another tree read.
             # Never expose an old snapshot after authentication/transport/scope errors.
             try:
-                runtime._usable()
-                if runtime._context() == snap["context"]:
-                    result["observation"] = runtime._observe("tree", nodes=snap["nodes"])
+                context = runtime._checked_context()
+                if context == snap["context"]:
+                    result["observation"] = runtime._observe(
+                        "tree", nodes=snap["nodes"], context=context
+                    )
             except Exception:
                 pass
         result["metrics"]["elapsed_seconds"] = time.monotonic() - start
@@ -251,8 +374,9 @@ def execute(runtime, args, policy: DecisionPolicy):
                 "state": "pending",
             }
             decisions.append(audit)
-            runtime._usable()
+            runtime._check_paused()
             if time.monotonic() >= deadline:
+                runtime._usable()
                 return finish("timeout")
             fresh = read()
             if fresh["fingerprint"] != snap["fingerprint"]:
@@ -280,8 +404,7 @@ def execute(runtime, args, policy: DecisionPolicy):
             if choice not in options:
                 raise UseError("jev_invalid_response", "Unknown candidate; no action executed")
             selected = options[choice]  # Consume this decision once, before any mutation.
-            runtime._usable()
-            if runtime._context() != fresh["context"]:
+            if runtime._checked_context() != fresh["context"]:
                 raise UseError("goal_scope_changed", "App or display changed before action")
             if time.monotonic() >= deadline:
                 return finish("timeout")
@@ -290,9 +413,15 @@ def execute(runtime, args, policy: DecisionPolicy):
             audit["state"] = "consumed"
             runtime.mutation_attempted = False
             began = time.monotonic()
+            read_before = reads
+            next_snap = None
             try:
                 if selected["op"] == "wait_local":
                     time.sleep(min(0.35, max(0, deadline - time.monotonic())))
+                elif selected["op"] == "focus_type_text":
+                    next_snap = focus_type_text(
+                        runtime, selected["args"], fresh, args.package, deadline, entry, read
+                    )
                 else:
                     params = (
                         ARG_MODELS[selected["op"]].model_validate(selected["args"]).model_dump()
@@ -301,12 +430,22 @@ def execute(runtime, args, policy: DecisionPolicy):
                 entry["state"] = "executed"
                 history.append({"action": selected["op"], "target": selected["label"]})
             except Exception:
-                entry["state"] = "uncertain" if runtime.mutation_attempted else "failed"
+                if "substeps" in entry:
+                    states = {s["state"] for s in entry["substeps"]}
+                    entry["state"] = (
+                        "uncertain"
+                        if "uncertain" in states
+                        else "partial"
+                        if "executed" in states
+                        else "failed"
+                    )
+                else:
+                    entry["state"] = "uncertain" if runtime.mutation_attempted else "failed"
                 raise
             finally:
-                actions += time.monotonic() - began
+                actions += max(0.0, time.monotonic() - began - (reads - read_before))
             # Record the action before reading, so a read failure cannot erase it.
-            next_snap = read()
+            next_snap = read() if next_snap is None else next_snap
             unchanged = unchanged + 1 if next_snap["fingerprint"] == snap["fingerprint"] else 0
             snap = next_snap
     except UseError as exc:

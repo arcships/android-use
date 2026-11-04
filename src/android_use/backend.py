@@ -144,6 +144,15 @@ class SingleAttemptDevice(u2.Device):
         return _jsonrpc_call(self._dev, self._device_server_port, method, params, timeout, False)
 
 
+def viewport_from_info(info):
+    """Return display pixels from one sampled deviceInfo, or request legacy fallback."""
+    if isinstance(info, dict):
+        width, height = info.get("displayWidth"), info.get("displayHeight")
+        if type(width) is int and type(height) is int and width > 0 and height > 0:
+            return width, height
+    return None
+
+
 class Backend:
     def __init__(self, serial):
         self.serial = serial
@@ -209,12 +218,7 @@ class Backend:
     def size(self):
         # UiDevice reports current display pixels including rotation/override. The
         # upstream window_size path separately shells out for wm size and rotation.
-        info = self.d.info
-        if isinstance(info, dict):
-            width, height = info.get("displayWidth"), info.get("displayHeight")
-            if type(width) is int and type(height) is int and width > 0 and height > 0:
-                return width, height
-        return self.d.window_size()
+        return viewport_from_info(self.d.info) or self.d.window_size()
 
     def foreground(self):
         # Newer Android puts focus under display contents; the upstream windows

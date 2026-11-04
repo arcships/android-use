@@ -14,7 +14,7 @@
 
 已知路径继续用 batch / scroll_until。预期收益来自减少 Agent 的高频决策与工具往返，正确对比是 **Agent 逐步操作 vs 同一个 Agent + Jev**，包含规划、交回恢复和最终验收。此前确定性工具对比只反映执行开销。日常使用只需要现有 Agent 和 TypeSafe 密钥，**无需配置 `TEXT_MODEL_*`**；那组变量仅用于另一个 API 基线测试脚本。
 
-[最新性能对比与原始记录 →](benchmarks/agent-jev-v3.md)。`scripts/benchmark_agent.py` 用实时 JSONL 让当前 Agent 选择普通工具或委托 Jev 决策，并负责恢复、最终验收；驱动单独记录宿主等待，宿主没有提供逐任务 token 账单时，Agent 费用保持未知。
+[最新性能对比与原始记录 →](benchmarks/optimizations-v4.md)。`scripts/benchmark_agent.py` 用实时 JSONL 让当前 Agent 选择普通工具或委托 Jev 决策，并负责恢复、最终验收；驱动单独记录宿主等待，宿主没有提供逐任务 token 账单时，Agent 费用保持未知。
 
 ## 配置
 
@@ -55,6 +55,18 @@ CLI 使用同样 JSON：`uv run --env-file .env --frozen android-use --serial <�
 
 `texts` 是允许输入的精确值列表，Jev 只选择，不编写新内容。默认允许 `tap`、`swipe`、`type_text`、`wait`；需要长按或返回时，在 `actions` 显式加入 `long_press` / `back`。双击、任意拖拽、启动 App、自绘控件及恢复仍使用原有工具。不能放入 `batch`。
 
+## 减少读屏开销与输入决策
+
+同一校验阶段内，亮屏与视口检查复用一次 `deviceInfo` 响应，不跨模型推理、动作或等待缓存。读树前后仍各自检查最新上下文；推理返回后和执行前仍会校验。
+
+`input_macros` 默认 `true`。同时允许 `tap`、`type_text` 时，有唯一 resource ID 或 content description 的可见、未聚焦 EditText 可提供 `focus_type_text` 候选：**聚焦 → 设置一个精确允许值 → 原生 getText 回读**。Jev 只决策一次，Android Use 最多执行两个原生修改动作。标识必须在包含屏外节点的整棵树中唯一；不支持换行、密码或隐式提交。没有稳定标识时继续使用原有单步候选。
+
+写入前要求焦点、标识、几何和布局仍符合检查；意外弹窗、覆盖层、切页、锁屏或暂停都会停止。写入后允许同一输入框因文字和字体改变尺寸，仍须满足标识唯一、可见、聚焦及原生精确回读，此时不再执行坐标动作。暴露在树中的输入法仍会触发交回；合成验收应用关闭了输入法弹出，测试不代表兼容所有键盘布局。
+
+`steps[].substeps` 分别记录聚焦、写入的确认和验证。聚焦后中止可返回 `partial`；写入或回读异常可返回 `uncertain`，不要自动重放。`handoff.completed_actions` 统计已执行的原生子动作；`max_steps` 统计候选次数，一个输入宏可包含两个原生动作。设置 `"input_macros": false` 可恢复分开的聚焦、输入决策，用于兼容或对照。普通 MCP 工具和 batch 行为不变。
+
+[旧版本 / 仅复用采样 / 采样加输入宏的配对实测 →](benchmarks/optimizations-v4.md)
+
 ## 结果与边界
 
 | 返回 | 含义 |
@@ -62,7 +74,7 @@ CLI 使用同样 JSON：`uv run --env-file .env --frozen android-use --serial <�
 | `status=completed`、`verified=true` | 当前非空 App 树满足调用者给出的完成选择器；条件是否足以证明业务成功由调用者判断。 |
 | `status=handoff` | 交回宿主 Agent，`ok=true` 也不等于业务成功。 |
 | 模型返回 DONE | 没有完成选择器只算未验证交回；选择器未满足同样不能算成功。 |
-| `steps` | 已尝试动作及执行/不确定状态，不自动重放。 |
+| `steps` | 已尝试候选及 executed/partial/uncertain 状态；宏的 substeps 保留每次原生修改和输入验证，不自动重放。 |
 | `roles` / `decisions` | 规划者、决策者、执行者，以及过期/已消费等决策审计。 |
 | `handoff` | 停止原因、已确认动作数、不确定步骤及认证或重新观察规划的交回建议。 |
 | `observation` | 默认 `observe=tree` 在安全时复用最后校验过的树；`observe=none` 关闭。认证、传输和范围错误不返回旧树。 |

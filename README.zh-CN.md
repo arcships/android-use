@@ -48,7 +48,9 @@ Android Use 让 agent 能在你自己的 Android 手机或模拟器上完成 **�
 
 **路由优先级：任务完成速度、成功率、减少宿主大模型往返。** Jev token 费用不作为路由约束。将连续的局部决策交给 Jev 循环处理，复用安全返回的观察，在规划、不确定情况和最终验收时交回 Agent。usage 仅作辅助记录。
 
-**模拟器性能实测：**屏幕尺寸查询中位数 **78.61 ms → 19.33 ms**，前台查询 **124.14 ms → 29.01 ms**。相同动态 Jev 决策循环三次中位数 **12.45 秒 → 7.38 秒**，保留所有状态检查。新对比复验了已知批处理和动态流程；一次普通 Agent 的宿主回复超时被保留，并另做成功复验。聊天等待与设备工作分别记录。[最新耗时、成功情况及全部记录 →](docs/benchmarks/agent-jev-v3.md)
+**模拟器实测：18 次配对测试全部通过。**仅复用同阶段采样，deviceInfo 查询 **62 → 34 / 74 → 40 次**，两类局部循环中位数 **7.38 → 5.36 秒 / 11.08 → 8.42 秒**。输入宏把草稿决策 **4 → 3 次**，但本轮耗时未优于仅复用采样；小样本结果不作通用提速保证。[完整数据、失败与边界 →](docs/benchmarks/optimizations-v4.md)
+
+**新增源码优化：**同阶段状态检查复用一次采样；稳定输入框可提供一次“**聚焦 → 精确输入 → 原生回读**”决策，每个原生动作仍单独检查、记录。`input_macros=false` 可恢复分开决策。[实现边界与模拟器配对实测 →](docs/benchmarks/optimizations-v4.md)
 
 默认关闭，只需现有 Agent、`TYPESAFE_API_KEY` 和 `ANDROID_USE_JEV_ENABLED=1`，无需另配文本模型 API。**尚未发布的源码功能，v0.3.0 ZIP 不包含。**[配置与示例 →](docs/jev.zh-CN.md)
 
@@ -179,7 +181,7 @@ uv run android-use scroll_until '{"selector":{"text":"显示与亮度"},"directi
 
 ## 项目状态
 
-**已发布版本 v0.3.0 · MIT。当前源码 125 项 Python 测试；六项浏览器回归覆盖未改动的屏幕 UI。** 已有 Android 16 / Xiaomi 15 Ultra 真机验收；新增 Jev 和查询优化通过 Android API 35 模拟器的 14 项 stdio MCP 验收，含真实横竖屏与交回恢复。[验收证据与范围 →](docs/validation.md)
+**已发布版本 v0.3.0 · MIT。当前源码 151 项 Python 测试；六项浏览器回归覆盖未改动的屏幕 UI。** 已有 Android 16 / Xiaomi 15 Ultra 真机验收；新增 Jev、采样复用和输入宏通过 Android API 35 模拟器的 15 项 stdio MCP 验收，含真实横竖屏与交回恢复。[验收证据与范围 →](docs/validation.md)
 
 多指缩放、任意轨迹、精细文本选区、自绘编辑器输入兜底尚未实现。设备和 App 行为存在差异，UI 条件满足不等于业务已完成。控制服务和预览运行于本机；工具结果由你选择的 MCP 客户端 / 模型处理。
 

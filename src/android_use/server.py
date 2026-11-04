@@ -83,6 +83,8 @@ DESCRIPTIONS = {
     "decision loop; requires ANDROID_USE_JEV_ENABLED=1 and "
     "TYPESAFE_API_KEY in server environment. Sends visible app UI text to TypeSafe. "
     "Caller supplies goal, foreground package, exact input texts and optional completion selector. "
+    "input_macros=true can combine stable-field focus and exact input with native readback; "
+    "max_steps counts candidate selections, with at most two native writes per input macro. "
     "Bounded candidate-only actions; no automatic replay. status=handoff is not success. "
     "Keep existing tools for planning, unsupported controls and recovery. Password screens hand off.",
     "doctor": "Read local ADB device inventory and configuration. Does not start a phone service.",

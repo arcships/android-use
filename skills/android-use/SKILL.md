@@ -7,6 +7,8 @@ description: 通过 Android Use 的 MCP 工具或 CLI 操作 ADB 已授权的 An
 
 优化目标按完成任务的端到端速度、成功率、宿主大模型往返次数排序。Jev token 费用不作为路由约束，usage 只作辅助记录。连续局部决策在一次 `aua_execute_goal` 内处理，不逐个动作交回宿主审批；复用安全返回的 observation 规划后续步骤，避免紧接着重复读树。已知路径仍用更直接的 batch / scroll_until，遇到不确定、接管、业务验收时由 Agent 处理。
 
+`aua_execute_goal` 的 `input_macros=true` 默认将有稳定唯一标识的非密码输入框提供为“聚焦→精确输入→原生回读”候选，需同时允许 tap/type_text。无稳定标识或界面意外变化时沿用单步或交回，不强行输入；输入法覆盖层同样会停止。宏不提交、不换行、不生成新文本。max_steps 统计候选次数，一个输入宏最多两次原生动作；检查 steps[].substeps 的执行、partial/uncertain 和验证状态，handoff.completed_actions 统计原生子动作，不能据此重放整个宏。需要对照或禁用宏时传 input_macros=false。
+
 Agent 负责理解任务、规划、编写文本和验收；Jev 是决策模型，只返回候选 ID 和概率；Android Use 校验并执行动作。`aua_execute_goal` 默认关闭，仅在宿主配置 `ANDROID_USE_JEV_ENABLED=1` 和 `TYPESAFE_API_KEY` 时使用，先读 `docs/jev.zh-CN.md`。已知短路径优先 batch / scroll_until；需要逐步读树选动作的局部下一步选择可交给 Jev 决策，传入已观察的包名、短目标、精确输入值和可验证完成选择器，减少宿主反复决策与工具往返。可见界面文本会发给 TypeSafe。检查 `status` / `verified` / `stop_reason` 和已执行步骤；handoff 时回到 Agent，结合 roles / decisions / steps / handoff 和安全返回的 observation，按当前位置继续或恢复，不盲目重发原目标，不重放不确定动作。长任务按局部目标分段，跨 App、认证、自由文本生成和最终业务验收由 Agent 处理。普通运行只需 Jev 密钥，`TEXT_MODEL_*` 仅供另一个自动化基线脚本使用。
 
 首次使用执行 `aua_setup(action="status")`。服务缺失时调用一次 `aua_setup(action="start")`，再调用 `aua_ready(screenshot=false)`。多台设备先 discover，按用户目标 configure(serial=...)，不随意选第一台。USB 未授权或锁屏让用户在手机上完成信任/解锁，再 READY。服务不会自动重启；启动失败按返回原因诊断，不循环 start。

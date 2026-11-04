@@ -96,7 +96,8 @@ def run_host(runtime, args, label, deadline, last_result=None):
                 "verified": False,
                 "stop_reason": "host_timeout",
             }, decisions
-        options = candidates(snap, parsed)
+        # Host-only uses ordinary MCP operations, not an internal Jev candidate macro.
+        options = candidates(snap, parsed.model_copy(update={"input_macros": False}))
         response = ask(
             {
                 "event": "choose",

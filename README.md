@@ -49,7 +49,9 @@ Known paths still use `batch`, action-plus-wait or `scroll_until`. Delegate when
 
 **Routing priority: completion speed, success rate, and fewer host-model round trips.** Jev token cost is not a routing constraint. Let Jev decide through a coherent local workflow, reuse safe returned observations, and bring the Agent back for planning, uncertainty or final verification. Usage remains available as secondary diagnostics.
 
-**Performance measured on an emulator:** viewport queries fell from **78.61 ms to 19.33 ms**, foreground queries from **124.14 ms to 29.01 ms**. The same dynamic Jev decision loop fell from **12.45 s to 7.38 s** median across three runs, without removing state checks. New paired trials verified the familiar batch path and dynamic workflow; one Agent-only host-delivery timeout is retained, with a separate successful follow-up. Chat waiting is separated from device work. [Latest timings, success results and all records →](docs/benchmarks/agent-jev-v3.md)
+**Emulator measurements: all 18 paired trials passed.** With phase-scoped sampling alone, deviceInfo reads fell **62 → 34 / 74 → 40**, and the two local-loop medians fell **7.38 → 5.36 s / 11.08 → 8.42 s**. The input macro reduced draft decisions **4 → 3**, but did not beat sampling-only wall time in this small sample. [Measurements, failures and limits →](docs/benchmarks/optimizations-v4.md)
+
+**New source optimizations:** state checks share a single sample within each validation phase. A stable input field can offer one **focus → exact input → native readback** decision, while each native mutation remains checked and recorded. `input_macros=false` keeps separate decisions. [How it works and paired emulator measurements →](docs/benchmarks/optimizations-v4.md)
 
 Default off. Use your existing Agent plus `TYPESAFE_API_KEY` and `ANDROID_USE_JEV_ENABLED=1`; no separate text-model API is needed. **Unreleased source feature, not included in the v0.3.0 ZIP.** [Setup and examples →](docs/jev.md)
 
@@ -179,7 +181,7 @@ Actions support optional postconditions. A timeout reports what happened and sto
 
 ## Project status
 
-**Published release: v0.3.0 · MIT. Current source: 125 Python tests; the six browser regressions cover the unchanged screen UI.** Existing physical-device acceptance covers Android 16 on a Xiaomi 15 Ultra. New Jev and query-performance changes have 14 stdio MCP acceptance scenarios on an Android API 35 emulator, including real portrait/landscape geometry and handoff/recovery. [Acceptance evidence and scope →](docs/validation.md)
+**Published release: v0.3.0 · MIT. Current source: 151 Python tests; the six browser regressions cover the unchanged screen UI.** Existing physical-device acceptance covers Android 16 on a Xiaomi 15 Ultra. New Jev, sampling and input-macro changes have 15 stdio MCP acceptance scenarios on an Android API 35 emulator, including real portrait/landscape geometry and handoff/recovery. [Acceptance evidence and scope →](docs/validation.md)
 
 Multi-touch, arbitrary gesture paths, fine-grained text selection, and custom-editor input fallbacks are not implemented. Device and app behavior varies; a matched UI condition is not proof of a completed business transaction. This project runs the control service and preview locally; tool results are handled by your chosen MCP client/model.
 
