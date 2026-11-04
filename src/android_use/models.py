@@ -197,6 +197,7 @@ class ReadFieldsArgs(StrictModel):
     # Explicit provenance: supplied OCR is never represented as a direct phone read.
     evidence_text: Annotated[str, Field(min_length=1, max_length=12000)] | None = None
     region: Region | None = None
+    currency: Literal["CNY", "JPY", "USD", "HKD", "EUR", "GBP", "CAD", "AUD"] | None = None
     timeout_seconds: Annotated[float, Field(gt=0, le=60)] = 20.0
     min_probability: Annotated[float, Field(ge=0, le=1)] = 0.65
     min_margin: Annotated[float, Field(ge=0, le=1)] = 0.1

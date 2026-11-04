@@ -1,6 +1,5 @@
 """Read-only closed-set field judgments; code owns every extracted numeric span."""
 
-import re
 import time
 from decimal import Decimal
 
@@ -8,8 +7,7 @@ from .backend import UseError
 from .decision_context import check_budget, encoded_size
 from .executor import snapshot
 from .models import ReadFieldsArgs
-
-MONEY = re.compile(r"(?<![\d.])(?:[-−]\s*)?(?:[¥￥]\s*)?[-−]?\d+(?:\.\d{1,2})?(?:\s*元)?(?![\d.])")
+from .money import MONEY, parse_money
 
 
 def tree_lines(nodes):
@@ -138,15 +136,22 @@ def read_fields(runtime, values, policy):
                     evidence = sources[field.name][answer["choice"]]
                     item.update(value=evidence["value"], evidence=evidence)
                     if field.kind == "money":
-                        item["decimal"] = str(
-                            Decimal(re.sub(r"[^\d.\-]", "", evidence["value"].replace("−", "-")))
-                        )
+                        try:
+                            item.update(parse_money(evidence["value"], args.currency))
+                        except ValueError:
+                            item.update(accepted=False, review_reason="invalid_money")
             fields[field.name] = item
         checks = []
         if args.sum_check:
             check = args.sum_check
             names = [check.total, *check.add, *check.subtract]
             ready = all(fields[name]["accepted"] for name in names)
+            currencies = {fields[n].get("currency") for n in names}
+            reason = "missing_fields" if not ready else "matched"
+            if ready and (None in currencies or len(currencies) != 1):
+                reason = "currency_unresolved_or_mixed"
+            if ready and any(Decimal(fields[n]["decimal"]) < 0 for n in check.subtract):
+                reason = "negative_subtrahend"
             expected = (
                 (
                     sum((Decimal(fields[n]["decimal"]) for n in check.add), Decimal(0))
@@ -155,12 +160,14 @@ def read_fields(runtime, values, policy):
                 if ready
                 else None
             )
-            matched = ready and expected == Decimal(fields[check.total]["decimal"])
+            matched = reason == "matched" and expected == Decimal(fields[check.total]["decimal"])
+            if reason == "matched" and not matched:
+                reason = "mismatch"
             checks.append(
                 {
                     "type": "sum",
                     "passed": bool(matched),
-                    "reason": "matched" if matched else "mismatch" if ready else "missing_fields",
+                    "reason": reason,
                     "computed": str(expected) if expected is not None else None,
                 }
             )
