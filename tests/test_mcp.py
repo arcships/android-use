@@ -29,7 +29,11 @@ def test_real_stdio_handshake_schemas_and_error(tmp_path):
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 tools = (await session.list_tools()).tools
-                assert len(tools) == 23
+                assert len(tools) == 24
+                assert "aua_read_fields" in {t.name for t in tools}
+                assert next(
+                    t for t in tools if t.name == "aua_read_fields"
+                ).annotations.readOnlyHint
                 assert "aua_execute_goal" in {t.name for t in tools}
                 goal = next(t for t in tools if t.name == "aua_execute_goal")
                 assert goal.inputSchema["properties"]["input_macros"]["default"] is True

@@ -28,6 +28,37 @@ Use ordinary tools for a known path; use Jev where the Agent would otherwise rea
 
 [Latest performance comparison and raw records →](benchmarks/optimizations-v4.md). Run `scripts/benchmark_agent.py` with the same `uv run --env-file .env --frozen python` prefix, `--serial <device>` and `--repeats 3`: the current Agent chooses ordinary tools or Jev decisions, handles recovery and verifies results. The driver measures host waiting separately. Host token charges remain unknown when the host does not expose per-task billing.
 
+## Structured decisions and field judgments (source update, unreleased)
+
+The source checkout now sends a compact semantic UI table instead of the first 120 raw nodes. Candidate targets remain represented even when they occur later in the tree. Empty layout properties and repeated labels are removed; unlabeled wrappers with actionable children no longer compete with those children. If needed, text summaries and non-target context shrink further. Exact supplied input values are never truncated. The full local tree still validates actions.
+
+Each action cycle asks an **operation Choice plus compatible target Choices in one request**. Only the selected operation's target is consumed; unused heads cannot trigger actions. Probability and margin gates use the weakest selected head. This reorganizes one request, not a claim of fewer requests by itself.
+
+`aua_read_fields` is a new **read-only standard MCP tool**, also available as CLI `read_fields`. It supports up to 12 requested `money`, `text`, or `choice` fields. Code finds observed spans; Jev selects their roles; code copies the exact value and parses money with `Decimal`. Every question has a `NONE` option. All field questions share one request.
+
+```json
+{
+  "package": "com.example.shop",
+  "fields": [
+    {"name": "items", "instructions": "Select the purchased item subtotal before coupons."},
+    {"name": "packing", "instructions": "Select the charged packaging fee."},
+    {"name": "delivery", "instructions": "Select current charged delivery, not the old price."},
+    {"name": "total", "instructions": "Select the actual checkout payable total."}
+  ],
+  "sum_check": {"total": "total", "add": ["items", "packing", "delivery"]}
+}
+```
+
+Use the actual foreground package and include every applicable charge/discount in the check. `sum_check` computes **sum(add) − sum(subtract) = total** exactly, within one currency. A printed negative discount can go in `add`; a positive discount magnitude can go in `subtract`. Do not apply both conventions to the same discount. Missing fields or mismatches mark all participating fields unaccepted while retaining their evidence for review. An arithmetic match does not prove semantic correctness.
+
+Optional `region={x,y,width,height}` selects text nodes by their centers in **Android display pixels**, reducing irrelevant banners/address text. Text is grouped by visual rows before judgment. Read-only validation compares current context and the same region's text rows after inference; it ignores empty-layout animation but rejects changed evidence. Authentication/lock/pause checks still cover the full page. Actions retain their stricter tree/geometry checks.
+
+For an AX-poor page, the Agent can provide current, visually inspected OCR as `evidence_text`. Its source is always `caller_provided_text` with `source_verified_on_device=false`: matching the app context cannot establish that the supplied OCR is fresh or correct. The Agent owns that verification. OCR extraction, image/Box grounding and automatic visual clicks are **not built in**. Routing depends on each page's exposed semantics, not whether the app is called native or cross-platform. [Complete page-routing design — 中文](visual-routing.zh-CN.md)
+
+Check `fields.*.accepted`, `checks`, and provenance. `status=judged`, `all_fields_accepted=true` and `source_verified_on_device=true` **never mean business success**; `verified` remains false. Missing/low-probability answers return no value. A sum conflict preserves selected values with `review_reason=sum_check_failed`. Error telemetry is retained under `error.metrics` when inference had started.
+
+[Physical Meituan / Taobao acceptance, including failed attempts](benchmarks/real-app-jev-v5.md): final observed totals were 22.9 and 21.8 yuan. These were resumed known-store checkout flows with Agent recovery, not a matched whole-task speed or success-rate benchmark. The released v0.4.0 ZIP predates this source update; use an updated source checkout, then reload the MCP connection to discover the new tool.
+
 ## Configure
 
 ### Recommended: screen settings
@@ -108,7 +139,7 @@ Default gates require selected probability ≥0.65 and margin ≥0.1. These expe
 
 After inference, the executor rereads foreground/activity/display and a visible app-tree semantic fingerprint (excluding global XML traversal/parent indices, preserving node semantics, geometry, state, ordering and foreground context). Changed state discards the decision within the call budget. It stops on scope changes, interactive foreign overlays (including exposed keyboards), passwords, lock/off screens, pause, three unchanged steps, action/call limits or deadline. In-flight ADB can exceed the budget. Tree checks and input are not atomic and cannot prove a target is unobstructed. The host must verify final business outcomes.
 
-Only visible app-owned nodes generate actions. At most 200 candidates, a 120-node UI summary and a 32 KB UTF-8 state/candidate budget are used; oversized contexts hand off. Newline input is not offered because editors may submit it. Password screens stop before inference. Experimental TypeSafe image support is not enabled.
+Only visible app-owned nodes generate actions. At most 200 candidates are retained. Model-facing context is adaptively compacted with conservative local budgets of 28,000 UTF-8 bytes per state/question and 56,000 bytes per state/all-questions, leaving room below the provider token limits. These byte budgets are not token counts. Irreducibly oversized exact inputs/targets still hand off. Newline input is not offered because editors may submit it. Password screens stop before inference. Experimental TypeSafe image support is not enabled.
 
 Opting in sends the goal, visible UI text, candidate descriptions, supplied input values and short action history to TypeSafe. Avoid sensitive inputs. Returned traces omit raw UI and input values. Original local tools work without cloud keys.
 

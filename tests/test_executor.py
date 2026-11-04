@@ -203,7 +203,7 @@ def test_candidates_are_code_owned_and_no_newlines(goal_rig):
     assert len(options) <= 200
 
 
-def test_context_bound_stops_before_inference(goal_rig):
+def test_large_context_compacts_before_inference(goal_rig):
     runtime, backend = goal_rig
     backend.xml = (
         "<hierarchy>"
@@ -213,10 +213,12 @@ def test_context_bound_stops_before_inference(goal_rig):
         )
         + "</hierarchy>"
     )
-    policy = Policy()
+    policy = Policy("BLOCKED")
     result = run(runtime, policy)
-    assert result["stop_reason"] == "context_too_large"
-    assert not backend.actions and policy.metrics["model_calls"] == 0
+    assert result["stop_reason"] == "model_blocked"
+    assert not backend.actions and policy.metrics["model_calls"] == 1
+    assert result["decisions"][0]["context"]["request_bytes"] <= 56_000
+    assert len(policy.states[0][0]["ui"]) == 100
 
 
 def test_swipe_direction_is_visible_to_policy(goal_rig):

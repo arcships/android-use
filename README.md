@@ -184,6 +184,14 @@ uv run android-use scroll_until '{"selector":{"text":"Display"},"direction":"up"
 
 Actions support optional postconditions. A timeout reports what happened and stops the batch; it does not repeat the action. Auto-scroll stops on a match, its limits, or repeated lack of progress. [Gestures, waits, batches, and the original tools →](docs/guide.md#cli-reference) · [Optional Jev setup and benchmarks →](docs/jev.md)
 
+## Source update: structured actions and checkout fields
+
+**Not yet included in the released v0.4.0 ZIP.** Updated source compacts large-page context and chooses the operation and target in one request. The new read-only standard MCP tool `aua_read_fields` batches fee/coupon judgments, preserves printed amounts and checks totals in code. Reload your MCP connection after updating source. The source regression suite currently passes **209 Python tests**.
+
+Physical acceptance resumed known HEYTEA stores: **¥22.9 on Meituan, ¥21.8 on Taobao**. Meituan used accessibility text; Taobao still needed Agent screenshot actions and Agent-provided OCR. No order/payment was made; temporary items were removed. This is neither an exhaustive cheapest-price result nor a matched whole-task speed benchmark.
+
+[Field tool and provenance](docs/jev.md#structured-decisions-and-field-judgments-source-update-unreleased) · [Live evidence and retained failures](docs/benchmarks/real-app-jev-v5.md) · [Planned automatic OCR / visual routing — 中文](docs/visual-routing.zh-CN.md)
+
 ## Measured, with clear limits
 
 Development comparisons include **18 source-level trials** and **12 live Agent / Agent + Jev trials**. Both live arms completed 6/6 tasks. Dynamic workflows needed fewer host replies with Jev; familiar batch paths did not improve. Sampling reduced repeated state queries, while input macros reduced decisions without an additional timing win in that sample. [Methodology, raw records and retained failures →](docs/benchmarks/optimizations-v4.md)

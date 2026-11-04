@@ -167,6 +167,52 @@ class ExecuteGoalArgs(StrictModel):
     input_macros: bool = True
 
 
+class FieldQuestion(StrictModel):
+    name: Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]{0,39}$")]
+    instructions: Annotated[str, Field(min_length=1, max_length=500)]
+    kind: Literal["money", "text", "choice"] = "money"
+    options: Annotated[dict[str, Annotated[str, Field(max_length=200)]], Field(max_length=32)] = (
+        Field(default_factory=dict)
+    )
+
+    @model_validator(mode="after")
+    def valid_options(self):
+        if (self.kind == "choice") != bool(self.options):
+            raise ValueError("Only choice fields require options")
+        if any(not key or len(key) > 40 or key == "NONE" for key in self.options):
+            raise ValueError("Option IDs must be short and may not use reserved NONE")
+        return self
+
+
+class FieldSumCheck(StrictModel):
+    total: str
+    add: Annotated[list[str], Field(min_length=1, max_length=10)]
+    subtract: Annotated[list[str], Field(max_length=10)] = Field(default_factory=list)
+
+
+class ReadFieldsArgs(StrictModel):
+    package: Annotated[str, Field(pattern=r"^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z0-9_]+)+$")]
+    fields: Annotated[list[FieldQuestion], Field(min_length=1, max_length=12)]
+    # Explicit provenance: supplied OCR is never represented as a direct phone read.
+    evidence_text: Annotated[str, Field(min_length=1, max_length=12000)] | None = None
+    region: Region | None = None
+    timeout_seconds: Annotated[float, Field(gt=0, le=60)] = 20.0
+    min_probability: Annotated[float, Field(ge=0, le=1)] = 0.65
+    min_margin: Annotated[float, Field(ge=0, le=1)] = 0.1
+    sum_check: FieldSumCheck | None = None
+
+    @model_validator(mode="after")
+    def unique_fields(self):
+        if len({f.name for f in self.fields}) != len(self.fields):
+            raise ValueError("Field names must be unique")
+        if self.sum_check:
+            money = {f.name for f in self.fields if f.kind == "money"}
+            names = [self.sum_check.total, *self.sum_check.add, *self.sum_check.subtract]
+            if not set(names) <= money or len(names) != len(set(names)):
+                raise ValueError("Sum check must refer to distinct requested money fields")
+        return self
+
+
 class BatchStep(StrictModel):
     op: Literal[
         "tap",
@@ -185,6 +231,7 @@ class BatchStep(StrictModel):
 
 
 ARG_MODELS = {
+    "read_fields": ReadFieldsArgs,
     "execute_goal": ExecuteGoalArgs,
     "tap": TapArgs,
     "long_press": LongPressArgs,

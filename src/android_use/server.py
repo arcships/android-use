@@ -93,10 +93,17 @@ SCHEMAS.update(
 SCHEMAS["batch"]["required"] = ["steps"]
 SCHEMAS["screen_action"]["required"] = ["action"]
 DESCRIPTIONS = {
+    "read_fields": "Read-only Jev field judgments on current app text. Extract code-owned money/text "
+    "spans or classify supplied options, all fields in one request. Requires Jev enabled. "
+    "evidence_text optionally supplies Agent OCR text, explicitly marked caller_provided_text, "
+    "not verified as a phone read. Missing/ambiguous values return NONE. Decimal parsing is local. "
+    "region limits phone text in display pixels. Optional sum_check validates Decimal sums in code; "
+    "no device actions. verified=false always requires Agent business verification.",
     "execute_goal": "Agent plans, Jev selects candidate IDs, Android Use executes. Optional local "
     "decision loop; enable with a TypeSafe key in screen settings, or through "
     "ANDROID_USE_JEV_ENABLED=1 / TYPESAFE_API_KEY. Sends visible app UI text to TypeSafe. "
     "Caller supplies goal, foreground package, exact input texts and optional completion selector. "
+    "Compact semantic state and parallel operation/target questions share one Jev request per step. "
     "input_macros=true can combine stable-field focus and exact input with native readback; "
     "max_steps counts candidate selections, with at most two native writes per input macro. "
     "Bounded candidate-only actions; no automatic replay. status=handoff is not success. "
@@ -174,7 +181,7 @@ def create_server(runtime=None):
 
     @server.list_tools()
     async def list_tools():
-        reads = {"doctor", "observe", "find", "wait", "apps", "ready"}
+        reads = {"doctor", "observe", "find", "wait", "apps", "ready", "read_fields"}
         tools = [
             Tool(
                 name="aua_" + name,

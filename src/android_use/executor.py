@@ -6,6 +6,7 @@ import time
 from typing import Protocol
 
 from .backend import UseError
+from .decision_context import prepare_action_context
 from .models import ARG_MODELS, ExecuteGoalArgs, Selector
 from .tree import in_viewport, matches, tap_point
 
@@ -62,9 +63,30 @@ def candidates(snap, args):
             continue
         label = {k: node[k][:300] for k in ("text", "description", "resource_id", "class_name")}
         label["node"] = node["id"]
+        if not node["text"] and not node["description"]:
+            descendants = []
+            owned_ids = {node["id"]}
+            for child in snap["nodes"]:
+                if child["parent"] in owned_ids:
+                    owned_ids.add(child["id"])
+                    if child["text"] or child["description"]:
+                        descendants.append(child["text"] or child["description"])
+            if descendants:
+                label["context"] = " | ".join(descendants)[:300]
         x, y = tap_point(node, size)
         editable = node["class_name"].endswith("EditText")
-        if node["clickable"] or editable:
+        # Unlabelled layout wrappers often duplicate a real child button. They can
+        # split target probability or tap blank space; retain the concrete child.
+        nested_control = False
+        if not node["text"] and not node["description"] and not editable:
+            descendants = {node["id"]}
+            for child in snap["nodes"]:
+                if child["parent"] in descendants:
+                    descendants.add(child["id"])
+                    nested_control |= child["enabled"] and (
+                        child["clickable"] or child["class_name"].endswith("EditText")
+                    )
+        if (node["clickable"] or editable) and not nested_control:
             if "tap" in args.actions:
                 add("tap", {"x": x, "y": y}, label)
             if "long_press" in args.actions:
@@ -324,45 +346,7 @@ def execute(runtime, args, policy: DecisionPolicy):
             if unchanged >= 3:
                 return finish("no_progress")
             options = candidates(snap, args)
-            criteria = {
-                key: {
-                    "action": value["op"],
-                    "target": value["label"],
-                    **(
-                        {
-                            "finger_motion": value["args"]["direction"],
-                            "meaning": {
-                                "up": "reveal later rows below",
-                                "down": "reveal earlier rows above",
-                                "left": "reveal content to the right",
-                                "right": "reveal content to the left",
-                            }[value["args"]["direction"]],
-                        }
-                        if value["op"] == "swipe"
-                        else {}
-                    ),
-                }
-                for key, value in options.items()
-            }
-            criteria.update(
-                DONE="Goal already achieved in the current UI",
-                BLOCKED="Cannot safely achieve the goal with these actions",
-            )
-            state = {
-                "goal": args.goal,
-                "ui": [
-                    {
-                        k: (v[:300] if isinstance(v, str) else v)
-                        for k, v in n.items()
-                        if k not in {"package", "parent", "password"}
-                    }
-                    for n in snap["nodes"][:120]
-                ],
-                "ui_truncated": len(snap["nodes"]) > 120,
-                "history": history[-8:],
-            }
-            if len(json.dumps([state, criteria], ensure_ascii=False).encode()) > 32_000:
-                return finish("context_too_large")
+            state, criteria, context_metrics = prepare_action_context(snap, args, options, history)
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 return finish("timeout")
@@ -372,6 +356,8 @@ def execute(runtime, args, policy: DecisionPolicy):
                 "probability": decision["probability"],
                 "margin": decision["margin"],
                 "state": "pending",
+                "context": context_metrics,
+                **({"heads": decision["heads"]} if "heads" in decision else {}),
             }
             decisions.append(audit)
             runtime._check_paused()

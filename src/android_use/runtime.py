@@ -187,7 +187,7 @@ class Runtime:
                         (s.op, ARG_MODELS[s.op].model_validate(s.args).model_dump()) for s in steps
                     ]
                 }
-            if op == "execute_goal":
+            if op in {"execute_goal", "read_fields"}:
                 from .jev import JevConfig
 
                 goal_config = JevConfig.from_env()  # Fail before discovering or reading a phone.
@@ -202,6 +202,11 @@ class Runtime:
                     from .jev import JevPolicy
 
                     return execute(self, args, JevPolicy(goal_config))
+                if op == "read_fields":
+                    from .fields import read_fields
+                    from .jev import JevPolicy
+
+                    return read_fields(self, args, JevPolicy(goal_config))
                 if op == "batch":
                     return self._batch(**args)
                 result = self._dispatch(op, args)

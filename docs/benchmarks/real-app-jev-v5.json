@@ -1,0 +1,676 @@
+{
+  "date": "2026-11-04",
+  "kind": "iterative physical-device acceptance, not a matched performance benchmark",
+  "scope": "Resume known HEYTEA stores; open specifications, temporarily add one drink, inspect checkout, remove temporary items. No full store search or exhaustive price ranking.",
+  "transport": "Source CLI and separate standard stdio MCP subprocess with live TypeSafe Jev 1.14.0",
+  "privacy": "Allowlisted metrics and field values only; no device serial, address, contacts, credentials, raw screenshots, OCR or full UI trees.",
+  "limitations": [
+    "Code and prompts changed during these attempts; failures are retained, not a production success-rate sample.",
+    "Taobao exposes no useful accessibility controls here; Agent used screenshot coordinates and local macOS Vision OCR. OCR is not bundled or automatic.",
+    "No matched Agent-only control or whole-task speedup claim. Field acceptance and sum matching are not independent business verification."
+  ],
+  "final_results": {
+    "meituan": {
+      "items": "19",
+      "packing": "1.5",
+      "delivery": "2.4",
+      "total": "22.9",
+      "coupon_kind": "paid_pack",
+      "source": "accessibility_tree"
+    },
+    "taobao": {
+      "items": "24",
+      "packing": "1.5",
+      "delivery": "2.3",
+      "discount": "-6",
+      "total": "21.8",
+      "coupon_kind": "already_applied",
+      "source": "caller_provided_text"
+    },
+    "cleanup": {
+      "meituan": "Temporary cart empty, visually verified",
+      "taobao": "Temporary cart ¥0, visually verified",
+      "order_submitted": false,
+      "payment_made": false
+    }
+  },
+  "attempts": [
+    {
+      "id": "1793770714749180000-execute_goal",
+      "operation": "execute_goal",
+      "ok": true,
+      "status": "completed",
+      "stop_reason": "completion_selector",
+      "metrics": {
+        "model_calls": 1,
+        "model_seconds": 0.3181062919902615,
+        "elapsed_seconds": 2.175478583027143,
+        "device_read_seconds": 1.3012802100274712,
+        "device_action_seconds": 0.19124679203378037,
+        "input_tokens": 8266,
+        "output_tokens": 641,
+        "stale_decisions": 0
+      },
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a42",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a42",
+          "probability": 0.98,
+          "margin": 0.96,
+          "state": "consumed",
+          "context": {
+            "request_bytes": 14143,
+            "ui_nodes": 132,
+            "available_ui_nodes": 132,
+            "candidates": 63,
+            "text_limit": 240
+          },
+          "heads": {
+            "operation": {
+              "choice": "tap",
+              "probability": 0.98,
+              "margin": 0.97,
+              "confidence": 0.97
+            },
+            "target": {
+              "choice": "a42",
+              "probability": 0.98,
+              "margin": 0.96,
+              "confidence": 0.98
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "1793770746945637000-execute_goal",
+      "operation": "execute_goal",
+      "ok": true,
+      "status": "handoff",
+      "stop_reason": "low_confidence",
+      "metrics": {
+        "model_calls": 2,
+        "model_seconds": 0.6253743340494111,
+        "elapsed_seconds": 3.160136665974278,
+        "device_read_seconds": 1.923472166992724,
+        "device_action_seconds": 0.1932867499999702,
+        "input_tokens": 22789,
+        "output_tokens": 1642,
+        "stale_decisions": 0
+      },
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a67",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a67",
+          "probability": 0.93,
+          "margin": 0.9,
+          "state": "consumed",
+          "context": {
+            "request_bytes": 19618,
+            "ui_nodes": 181,
+            "available_ui_nodes": 181,
+            "candidates": 83,
+            "text_limit": 240
+          },
+          "heads": {
+            "operation": {
+              "choice": "tap",
+              "probability": 0.96,
+              "margin": 0.9199999999999999,
+              "confidence": 0.95
+            },
+            "target": {
+              "choice": "a67",
+              "probability": 0.93,
+              "margin": 0.9,
+              "confidence": 0.93
+            }
+          }
+        },
+        {
+          "choice": "a79",
+          "probability": 0.61,
+          "margin": 0.25,
+          "state": "handoff",
+          "context": {
+            "request_bytes": 19663,
+            "ui_nodes": 181,
+            "available_ui_nodes": 181,
+            "candidates": 83,
+            "text_limit": 240
+          },
+          "heads": {
+            "operation": {
+              "choice": "tap",
+              "probability": 0.98,
+              "margin": 0.97,
+              "confidence": 0.97
+            },
+            "target": {
+              "choice": "a79",
+              "probability": 0.61,
+              "margin": 0.25,
+              "confidence": 0.61
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "1793770802135991000-execute_goal",
+      "operation": "execute_goal",
+      "ok": true,
+      "status": "handoff",
+      "stop_reason": "low_confidence",
+      "metrics": {
+        "model_calls": 3,
+        "model_seconds": 0.821327209006995,
+        "elapsed_seconds": 3.9918491250136867,
+        "device_read_seconds": 2.477919458062388,
+        "device_action_seconds": 0.18594204203691334,
+        "input_tokens": 29182,
+        "output_tokens": 2030,
+        "stale_decisions": 1
+      },
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a62",
+          "state": "executed"
+        }
+      ],
+      "decisions": [
+        {
+          "choice": "a62",
+          "probability": 0.99,
+          "margin": 0.98,
+          "state": "consumed",
+          "context": {
+            "request_bytes": 15810,
+            "ui_nodes": 181,
+            "available_ui_nodes": 181,
+            "candidates": 65,
+            "text_limit": 240
+          },
+          "heads": {
+            "operation": {
+              "choice": "tap",
+              "probability": 1.0,
+              "margin": 1.0,
+              "confidence": 1.0
+            },
+            "target": {
+              "choice": "a62",
+              "probability": 0.99,
+              "margin": 0.98,
+              "confidence": 0.99
+            }
+          }
+        },
+        {
+          "choice": "a0",
+          "probability": 0.76,
+          "margin": 0.6,
+          "state": "stale",
+          "context": {
+            "request_bytes": 16148,
+            "ui_nodes": 186,
+            "available_ui_nodes": 186,
+            "candidates": 66,
+            "text_limit": 240
+          },
+          "heads": {
+            "operation": {
+              "choice": "tap",
+              "probability": 0.76,
+              "margin": 0.6,
+              "confidence": 0.68
+            },
+            "target": {
+              "choice": "a0",
+              "probability": 0.87,
+              "margin": 0.75,
+              "confidence": 0.87
+            }
+          }
+        },
+        {
+          "choice": "a68",
+          "probability": 0.47,
+          "margin": 0.019999999999999962,
+          "state": "handoff",
+          "context": {
+            "request_bytes": 17108,
+            "ui_nodes": 201,
+            "available_ui_nodes": 201,
+            "candidates": 70,
+            "text_limit": 240
+          },
+          "heads": {
+            "operation": {
+              "choice": "tap",
+              "probability": 0.71,
+              "margin": 0.49,
+              "confidence": 0.61
+            },
+            "target": {
+              "choice": "a68",
+              "probability": 0.47,
+              "margin": 0.019999999999999962,
+              "confidence": 0.46
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "1793770877648515000-read_fields",
+      "operation": "read_fields",
+      "ok": true,
+      "status": "judged",
+      "stop_reason": null,
+      "metrics": {
+        "model_calls": 1,
+        "model_seconds": 0.29834954196121544,
+        "elapsed_seconds": 1.6596362499985844,
+        "input_tokens": 4571,
+        "output_tokens": 983,
+        "request_bytes": 7125
+      },
+      "source": "accessibility_tree",
+      "source_verified_on_device": true,
+      "all_fields_accepted": false,
+      "checks": [],
+      "fields": {
+        "total": {
+          "value": "¥22.9",
+          "decimal": "22.9",
+          "accepted": true,
+          "choice": "v31",
+          "probability": 0.91,
+          "margin": 0.8200000000000001,
+          "confidence": 0.91
+        },
+        "packing": {
+          "value": "1.5",
+          "decimal": "1.5",
+          "accepted": true,
+          "choice": "v19",
+          "probability": 0.88,
+          "margin": 0.79,
+          "confidence": 0.88
+        },
+        "delivery": {
+          "value": "¥5.4",
+          "decimal": "5.4",
+          "accepted": true,
+          "choice": "v21",
+          "probability": 0.94,
+          "margin": 0.8999999999999999,
+          "confidence": 0.94
+        },
+        "coupon_kind": {
+          "value": null,
+          "accepted": false,
+          "choice": "NONE",
+          "probability": 0.62,
+          "margin": 0.26,
+          "confidence": 0.49
+        }
+      }
+    },
+    {
+      "id": "1793770951173957000-read_fields",
+      "operation": "read_fields",
+      "ok": false,
+      "status": null,
+      "stop_reason": "stale_field_evidence",
+      "metrics": {},
+      "telemetry": "Pre-telemetry error output; provider call count is not available."
+    },
+    {
+      "id": "1793770991193968000-read_fields",
+      "operation": "read_fields",
+      "ok": false,
+      "status": null,
+      "stop_reason": "stale_field_evidence",
+      "metrics": {},
+      "telemetry": "Pre-telemetry error output; provider call count is not available."
+    },
+    {
+      "id": "1793771068397066000-read_fields",
+      "operation": "read_fields",
+      "ok": false,
+      "status": null,
+      "stop_reason": "device_busy",
+      "metrics": {},
+      "telemetry": "Pre-telemetry error output; provider call count is not available."
+    },
+    {
+      "id": "1793771080458598000-read_fields",
+      "operation": "read_fields",
+      "ok": false,
+      "status": null,
+      "stop_reason": "goal_scope_changed",
+      "metrics": {},
+      "telemetry": "Pre-telemetry error output; provider call count is not available."
+    },
+    {
+      "id": "1793771467563081000-read_fields",
+      "operation": "read_fields",
+      "ok": false,
+      "status": null,
+      "stop_reason": "stale_field_evidence",
+      "metrics": {},
+      "telemetry": "Pre-telemetry error output; provider call count is not available."
+    },
+    {
+      "id": "1793771495060514000-read_fields",
+      "operation": "read_fields",
+      "ok": true,
+      "status": "judged",
+      "stop_reason": null,
+      "metrics": {
+        "model_calls": 1,
+        "model_seconds": 0.30755645799217746,
+        "elapsed_seconds": 1.4151582079939544,
+        "input_tokens": 3383,
+        "output_tokens": 679,
+        "request_bytes": 6062
+      },
+      "source": "accessibility_tree",
+      "source_verified_on_device": true,
+      "all_fields_accepted": true,
+      "checks": [
+        {
+          "type": "sum",
+          "passed": true,
+          "reason": "matched",
+          "computed": "22.9"
+        }
+      ],
+      "fields": {
+        "total": {
+          "value": "¥22.9",
+          "decimal": "22.9",
+          "accepted": true,
+          "choice": "v14",
+          "probability": 0.97,
+          "margin": 0.94,
+          "confidence": 0.97
+        },
+        "items": {
+          "value": "¥ 19",
+          "decimal": "19",
+          "accepted": true,
+          "choice": "v1",
+          "probability": 1.0,
+          "margin": 1.0,
+          "confidence": 1.0
+        },
+        "packing": {
+          "value": "¥ 1.5",
+          "decimal": "1.5",
+          "accepted": true,
+          "choice": "v2",
+          "probability": 1.0,
+          "margin": 1.0,
+          "confidence": 1.0
+        },
+        "delivery": {
+          "value": "¥ 2.4",
+          "decimal": "2.4",
+          "accepted": true,
+          "choice": "v5",
+          "probability": 1.0,
+          "margin": 1.0,
+          "confidence": 1.0
+        },
+        "coupon_kind": {
+          "value": "paid_pack",
+          "accepted": true,
+          "choice": "paid_pack",
+          "probability": 0.67,
+          "margin": 0.35000000000000003,
+          "confidence": 0.56
+        }
+      }
+    },
+    {
+      "id": "1793771574653467000-execute_goal",
+      "operation": "execute_goal",
+      "ok": true,
+      "status": "handoff",
+      "stop_reason": "model_blocked",
+      "metrics": {
+        "model_calls": 1,
+        "model_seconds": 0.3112632909906097,
+        "elapsed_seconds": 1.2479495839797892,
+        "device_read_seconds": 0.8423162079998292,
+        "device_action_seconds": 0.0,
+        "input_tokens": 552,
+        "output_tokens": 68,
+        "stale_decisions": 0
+      },
+      "steps": [],
+      "decisions": [
+        {
+          "choice": "BLOCKED",
+          "probability": 0.75,
+          "margin": 0.5,
+          "state": "handoff",
+          "context": {
+            "request_bytes": 1104,
+            "ui_nodes": 0,
+            "available_ui_nodes": 0,
+            "candidates": 1,
+            "text_limit": 240
+          },
+          "heads": {
+            "operation": {
+              "choice": "BLOCKED",
+              "probability": 0.75,
+              "margin": 0.5,
+              "confidence": 0.62
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "1793771668306162000-mcp-read_fields",
+      "operation": "read_fields",
+      "ok": false,
+      "status": null,
+      "stop_reason": "device_busy",
+      "metrics": {},
+      "telemetry": "Pre-telemetry error output; provider call count is not available."
+    },
+    {
+      "id": "1793771691668862000-mcp-read_fields",
+      "operation": "read_fields",
+      "ok": false,
+      "status": null,
+      "stop_reason": "goal_scope_changed",
+      "metrics": {},
+      "telemetry": "Pre-telemetry error output; provider call count is not available."
+    },
+    {
+      "id": "1793771741846972000-mcp-read_fields",
+      "operation": "read_fields",
+      "ok": true,
+      "status": "judged",
+      "stop_reason": null,
+      "metrics": {
+        "model_calls": 1,
+        "model_seconds": 0.5330693749710917,
+        "elapsed_seconds": 1.2089916660333984,
+        "input_tokens": 2497,
+        "output_tokens": 555,
+        "request_bytes": 4719
+      },
+      "source": "caller_provided_text",
+      "source_verified_on_device": false,
+      "all_fields_accepted": false,
+      "checks": [
+        {
+          "type": "sum",
+          "passed": false,
+          "reason": "missing_fields",
+          "computed": null
+        }
+      ],
+      "fields": {
+        "total": {
+          "value": "¥21.8",
+          "decimal": "21.8",
+          "accepted": false,
+          "choice": "v8",
+          "probability": 0.85,
+          "margin": 0.7,
+          "confidence": 0.84,
+          "review_reason": "sum_check_failed"
+        },
+        "items": {
+          "value": "¥24",
+          "decimal": "24",
+          "accepted": false,
+          "choice": "v0",
+          "probability": 1.0,
+          "margin": 1.0,
+          "confidence": 1.0,
+          "review_reason": "sum_check_failed"
+        },
+        "packing": {
+          "value": "¥1.5",
+          "decimal": "1.5",
+          "accepted": false,
+          "choice": "v3",
+          "probability": 0.97,
+          "margin": 0.95,
+          "confidence": 0.97,
+          "review_reason": "sum_check_failed"
+        },
+        "delivery": {
+          "value": null,
+          "accepted": false,
+          "choice": "NONE",
+          "probability": 0.69,
+          "margin": 0.4099999999999999,
+          "confidence": 0.66,
+          "review_reason": "sum_check_failed"
+        },
+        "discount": {
+          "value": null,
+          "accepted": false,
+          "choice": "v5",
+          "probability": 0.47,
+          "margin": 0.19999999999999996,
+          "confidence": 0.42,
+          "review_reason": "sum_check_failed"
+        },
+        "coupon_kind": {
+          "value": "already_applied",
+          "accepted": true,
+          "choice": "already_applied",
+          "probability": 0.78,
+          "margin": 0.62,
+          "confidence": 0.67
+        }
+      }
+    },
+    {
+      "id": "1793771772221974000-mcp-read_fields",
+      "operation": "read_fields",
+      "ok": true,
+      "status": "judged",
+      "stop_reason": null,
+      "metrics": {
+        "model_calls": 1,
+        "model_seconds": 0.30651941598625854,
+        "elapsed_seconds": 1.2057964589912444,
+        "input_tokens": 2708,
+        "output_tokens": 556,
+        "request_bytes": 5231
+      },
+      "source": "caller_provided_text",
+      "source_verified_on_device": false,
+      "all_fields_accepted": true,
+      "checks": [
+        {
+          "type": "sum",
+          "passed": true,
+          "reason": "matched",
+          "computed": "21.8"
+        }
+      ],
+      "fields": {
+        "total": {
+          "value": "¥21.8",
+          "decimal": "21.8",
+          "accepted": true,
+          "choice": "v8",
+          "probability": 0.7,
+          "margin": 0.39999999999999997,
+          "confidence": 0.67
+        },
+        "items": {
+          "value": "¥24",
+          "decimal": "24",
+          "accepted": true,
+          "choice": "v0",
+          "probability": 1.0,
+          "margin": 1.0,
+          "confidence": 1.0
+        },
+        "packing": {
+          "value": "¥1.5",
+          "decimal": "1.5",
+          "accepted": true,
+          "choice": "v3",
+          "probability": 1.0,
+          "margin": 1.0,
+          "confidence": 1.0
+        },
+        "delivery": {
+          "value": "¥2.3",
+          "decimal": "2.3",
+          "accepted": true,
+          "choice": "v5",
+          "probability": 1.0,
+          "margin": 1.0,
+          "confidence": 1.0
+        },
+        "discount": {
+          "value": "-¥6",
+          "decimal": "-6",
+          "accepted": true,
+          "choice": "v6",
+          "probability": 0.99,
+          "margin": 0.98,
+          "confidence": 0.99
+        },
+        "coupon_kind": {
+          "value": "already_applied",
+          "accepted": true,
+          "choice": "already_applied",
+          "probability": 0.87,
+          "margin": 0.75,
+          "confidence": 0.8
+        }
+      }
+    }
+  ]
+}

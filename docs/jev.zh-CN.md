@@ -16,6 +16,35 @@
 
 [最新性能对比与原始记录 →](benchmarks/optimizations-v4.md)。`scripts/benchmark_agent.py` 用实时 JSONL 让当前 Agent 选择普通工具或委托 Jev 决策，并负责恢复、最终验收；驱动单独记录宿主等待，宿主没有提供逐任务 token 账单时，Agent 费用保持未知。
 
+## 结构化决策与字段判断（源码更新，尚未发布）
+
+新版源码不再取前 120 个原始节点直接发送，而是构造精简语义表、保留候选目标信息，并逐级压缩非目标内容。重复的无标签父容器不再与其可操作子控件竞争；精确输入文本不截断。完整界面树仍留在本机校验动作。每轮一次 Jev 请求，并行判断操作和各操作的目标，只消费选中操作对应的目标头，按所需头中最低的概率与 margin 检查。
+
+新增只读标准 MCP 工具 **`aua_read_fields`**，CLI 对应 `read_fields`。最多 12 个 `money/text/choice` 字段在一次请求中判断：代码先找原文候选，Jev 选择角色，代码复制原文并用 Decimal 解析金额；缺失、含糊时选择 NONE，不生成数字。
+
+```json
+{
+  "package": "com.example.shop",
+  "fields": [
+    {"name": "items", "instructions": "选择实际购买商品的优惠前小计。"},
+    {"name": "packing", "instructions": "选择本单打包费。"},
+    {"name": "delivery", "instructions": "选择当前实际配送费，不选划线原价。"},
+    {"name": "total", "instructions": "选择结算实际待支付合计。"}
+  ],
+  "sum_check": {"total": "total", "add": ["items", "packing", "delivery"]}
+}
+```
+
+按实际前台填写包名、费用和优惠。`sum_check` 用代码验证 **sum(add) − sum(subtract) = total**，仅适合同一币种、费用完整的等式。原文负优惠可放 add，正的优惠金额可放 subtract，不能重复抵扣。缺字段或等式不符时，参与字段均标为不接受，保留原文供 Agent 复核。
+
+可传 `region={x,y,width,height}` 限定账单区域，单位为 Android 显示像素，按文本节点中心取值。先按视觉行组合文字，再判断字段；推理后检查同一前台/Activity/视口和区域文本是否变化。仅只读判断忽略空容器动画，动作仍保留严格的新鲜度与几何校验；密码、锁屏、接管检查始终覆盖整页。
+
+树缺失时，可由 Agent 提供当前截图的 OCR 文本 `evidence_text`。结果明确标记 `caller_provided_text`、`source_verified_on_device=false`，不能证明 OCR 新鲜或正确。**自动 OCR、图片/Box 定位和视觉点击尚未内置**。应按页面暴露的语义选择路径，不能简单按“原生/非原生 App”分类。[完整页面路由方案](visual-routing.zh-CN.md)
+
+检查 `fields.*.accepted`、`checks` 和来源。`status=judged`、字段全部接受或数字相符均不证明业务成功，`verified` 始终为 false，最终由 Agent 对照结算画面验收。缺失/低概率值返回 null；金额冲突保留已选原文并标记 `review_reason=sum_check_failed`。推理后出错时仍在 `error.metrics` 保留用量与耗时。
+
+[美团/淘宝真机记录与保留的失败](benchmarks/real-app-jev-v5.md)：最终观察到 22.9 / 21.8 元。验证从已知门店继续，包含 Agent 恢复，不是完整搜索或严格性能对照。v0.4.0 已发布 ZIP 不含本节更新；需更新源码并重新加载 MCP 连接后发现新工具。
+
 ## 配置
 
 ### 推荐：在屏幕中配置
@@ -96,7 +125,7 @@ CLI 使用同样 JSON：`uv run --env-file .env --frozen android-use --serial <�
 
 推理后重读前台、Activity、尺寸和可见 App 树语义指纹（排除全局 XML 序号及父节点序号，保留节点语义、几何、状态、顺序与前台上下文），变化则丢弃决策，计入调用预算。离开目标包、其他包交互覆盖层（包含暴露在树中的输入法）、密码框、锁屏、熄屏、暂停、三步无变化、次数/时间上限都会停止。进行中的 ADB 请求可能超时超额；读树和输入不是原子操作，也不能证明无遮挡，宿主必须验收最终业务结果。
 
-仅从当前 App 可见控件生成动作，最多 200 候选、120 节点 UI 摘要、32 KB UTF-8 状态/候选预算，过大则交回。不提供可能触发提交的换行输入。密码页面在推理前停止。不启用实验性图像接口。
+仅从当前 App 可见控件生成动作，最多 200 个候选；模型上下文按预算逐级压缩。保守本地预算为每个状态/问题 28,000 UTF-8 字节、整份状态/所有问题 56,000 字节，并为服务端 token 限制留余量；字节不是 token。不可再压缩的精确输入或目标仍交回。不提供可能触发提交的换行输入。密码页面在推理前停止。不启用实验性图像接口。
 
 启用后，目标、可见 UI 文本、候选描述、允许输入值及短动作历史会发送到 TypeSafe，避免敏感输入。常规返回轨迹不包含原始 UI 和输入内容。原有本地 MCP 工具独立可用。
 
