@@ -5,6 +5,10 @@ description: 通过 Android Use 的 MCP 工具或 CLI 操作 ADB 已授权的 An
 
 # Android Use
 
+优化目标按完成任务的端到端速度、成功率、宿主大模型往返次数排序。Jev token 费用不作为路由约束，usage 只作辅助记录。连续局部决策在一次 `aua_execute_goal` 内处理，不逐个动作交回宿主审批；复用安全返回的 observation 规划后续步骤，避免紧接着重复读树。已知路径仍用更直接的 batch / scroll_until，遇到不确定、接管、业务验收时由 Agent 处理。
+
+Agent 负责理解任务、规划、编写文本和验收；Jev 是决策模型，只返回候选 ID 和概率；Android Use 校验并执行动作。`aua_execute_goal` 默认关闭，仅在宿主配置 `ANDROID_USE_JEV_ENABLED=1` 和 `TYPESAFE_API_KEY` 时使用，先读 `docs/jev.zh-CN.md`。已知短路径优先 batch / scroll_until；需要逐步读树选动作的局部下一步选择可交给 Jev 决策，传入已观察的包名、短目标、精确输入值和可验证完成选择器，减少宿主反复决策与工具往返。可见界面文本会发给 TypeSafe。检查 `status` / `verified` / `stop_reason` 和已执行步骤；handoff 时回到 Agent，结合 roles / decisions / steps / handoff 和安全返回的 observation，按当前位置继续或恢复，不盲目重发原目标，不重放不确定动作。长任务按局部目标分段，跨 App、认证、自由文本生成和最终业务验收由 Agent 处理。普通运行只需 Jev 密钥，`TEXT_MODEL_*` 仅供另一个自动化基线脚本使用。
+
 首次使用执行 `aua_setup(action="status")`。服务缺失时调用一次 `aua_setup(action="start")`，再调用 `aua_ready(screenshot=false)`。多台设备先 discover，按用户目标 configure(serial=...)，不随意选第一台。USB 未授权或锁屏让用户在手机上完成信任/解锁，再 READY。服务不会自动重启；启动失败按返回原因诊断，不循环 start。
 
 READY 自动关联本聊天的实时手机屏幕侧边栏；同一聊天复用同一个面板，不反复打开新面板。用户单独要求看屏幕时调用一次 `aua_screen()`，无需为打开预览重复 READY。视频由独立的 ADB screenrecord H.264 通道提供；需要宿主安装 ffmpeg，缺失时按工具返回处理。预览没有可见 viewer 5 秒后停止手机端采集；前端读取的是内存中缓存的视频帧，不轮询手机截图或 XML。侧边栏失败不自动判定控制通道失效。

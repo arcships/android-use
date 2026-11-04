@@ -30,9 +30,28 @@ Android Use gives an agent the tools to **read a screen, find a control, take an
 | **Understand the screen** | Compact accessibility trees, screenshots, semantic selectors, and bounded waits. |
 | **Act precisely** | Tap, long press, double tap, swipe, drag, launch apps, and use system buttons. |
 | **Cut tool round trips** | Combine an action, a visible/gone condition, and an observation in one call. Search lists with bounded auto-scroll. |
+| **Agent + Jev** | Your Agent plans, [Jev decides the next action](docs/jev.md#agent--jev), and Android Use validates and executes it. Existing tools stay available. Experimental source feature. |
 | **Write real text** | Unicode and emoji input, replace or append, and native text readback. No implicit submission. |
 | **Follow along live** | An independent H.264 stream in an MCP Apps view or local browser. Copy the displayed frame straight to the clipboard. |
 | **Keep a clear handoff** | Pause reads, actions, and video for user authentication. Stop batches on unmet conditions; never automatically replay uncertain actions. |
+
+## Agent plans. Jev decides. Android Use acts.
+
+An optional local loop lets your existing Agent delegate repeated UI decisions while keeping planning, recovery and final verification in the Agent. **Jev is a decision model:** it chooses from code-owned candidate IDs; Android Use performs the device operations.
+
+| Responsibility | Owner |
+| --- | --- |
+| Understand the request, plan subgoals, compose text, verify and recover | Host Agent |
+| Choose the next candidate from the current UI | Jev, when enabled |
+| Observe, validate scope/freshness, tap/type/swipe, enforce budgets and pause | Android Use |
+
+Known paths still use `batch`, action-plus-wait or `scroll_until`. Delegate when the next action depends on newly observed UI; a handoff returns the action ledger and safe context so the Agent can continue from the current position.
+
+**Routing priority: completion speed, success rate, and fewer host-model round trips.** Jev token cost is not a routing constraint. Let Jev decide through a coherent local workflow, reuse safe returned observations, and bring the Agent back for planning, uncertainty or final verification. Usage remains available as secondary diagnostics.
+
+**Performance measured on an emulator:** viewport queries fell from **78.61 ms to 19.33 ms**, foreground queries from **124.14 ms to 29.01 ms**. The same dynamic Jev decision loop fell from **12.45 s to 7.38 s** median across three runs, without removing state checks. New paired trials verified the familiar batch path and dynamic workflow; one Agent-only host-delivery timeout is retained, with a separate successful follow-up. Chat waiting is separated from device work. [Latest timings, success results and all records →](docs/benchmarks/agent-jev-v3.md)
+
+Default off. Use your existing Agent plus `TYPESAFE_API_KEY` and `ANDROID_USE_JEV_ENABLED=1`; no separate text-model API is needed. **Unreleased source feature, not included in the v0.3.0 ZIP.** [Setup and examples →](docs/jev.md)
 
 ## A screen you can follow
 
@@ -156,11 +175,11 @@ uv run android-use tap '{"selector":{"text":"Display"},"wait_for":{"selector":{"
 uv run android-use scroll_until '{"selector":{"text":"Display"},"direction":"up","max_swipes":8,"timeout_seconds":20}'
 ```
 
-Actions support optional postconditions. A timeout reports what happened and stops the batch; it does not repeat the action. Auto-scroll stops on a match, its limits, or repeated lack of progress. [Gestures, waits, batches, and all 22 tools →](docs/guide.md#cli-reference)
+Actions support optional postconditions. A timeout reports what happened and stops the batch; it does not repeat the action. Auto-scroll stops on a match, its limits, or repeated lack of progress. [Gestures, waits, batches, and the original tools →](docs/guide.md#cli-reference) · [Optional Jev setup and benchmarks →](docs/jev.md)
 
 ## Project status
 
-**v0.3.0 · MIT · 70 Python tests · 6 browser tests.** Native device acceptance covers Android 16 on a Xiaomi 15 Ultra, including gesture events, delayed UI conditions, auto-scroll, and pause/resume. [Acceptance evidence and scope →](docs/validation.md)
+**Published release: v0.3.0 · MIT. Current source: 125 Python tests; the six browser regressions cover the unchanged screen UI.** Existing physical-device acceptance covers Android 16 on a Xiaomi 15 Ultra. New Jev and query-performance changes have 14 stdio MCP acceptance scenarios on an Android API 35 emulator, including real portrait/landscape geometry and handoff/recovery. [Acceptance evidence and scope →](docs/validation.md)
 
 Multi-touch, arbitrary gesture paths, fine-grained text selection, and custom-editor input fallbacks are not implemented. Device and app behavior varies; a matched UI condition is not proof of a completed business transaction. This project runs the control service and preview locally; tool results are handled by your chosen MCP client/model.
 

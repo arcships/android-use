@@ -19,13 +19,15 @@ def test_real_stdio_handshake_schemas_and_error(tmp_path):
                 **os.environ,
                 "ANDROID_USE_ADB": str(fake),
                 "ANDROID_USE_STATE_DIR": str(tmp_path / "state"),
+                "ANDROID_USE_JEV_ENABLED": "0",
             },
         )
         async with stdio_client(params) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 tools = (await session.list_tools()).tools
-                assert len(tools) == 22
+                assert len(tools) == 23
+                assert "aua_execute_goal" in {t.name for t in tools}
                 assert {"aua_long_press", "aua_double_tap", "aua_drag", "aua_scroll_until"} <= {
                     t.name for t in tools
                 }
@@ -50,6 +52,15 @@ def test_real_stdio_handshake_schemas_and_error(tmp_path):
                 assert doctor.structuredContent["devices"] == []
                 invalid = await session.call_tool("aua_tap", {"x": "bad", "y": 1})
                 assert invalid.isError
+                disabled = await session.call_tool(
+                    "aua_execute_goal",
+                    {
+                        "goal": "Show result",
+                        "package": "demo.app",
+                    },
+                )
+                assert disabled.isError
+                assert disabled.structuredContent["error"]["code"] == "jev_disabled"
                 absent = await session.call_tool("aua_ready", {})
                 assert absent.isError
                 assert absent.structuredContent["error"]["code"] == "device_selection_required"

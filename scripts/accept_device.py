@@ -142,7 +142,7 @@ def build_app(sdk, output):
     return output / "test.apk"
 
 
-async def exercise(serial, apk):
+async def exercise(serial, apk, jev=False):
     adb = os.environ.get("ANDROID_USE_ADB") or shutil.which("adb")
     if not adb:
         raise RuntimeError("ADB is required")
@@ -158,6 +158,8 @@ async def exercise(serial, apk):
         env={**os.environ, "ANDROID_SERIAL": serial},
     )
     passed = []
+    jev_metrics = None
+    handoff_metrics = None
     original = None
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as client:
@@ -320,12 +322,108 @@ async def exercise(serial, apk):
                 finally:
                     assert (await call("resume"))["paused"] is False
                 passed.append("pause_cancels_active_wait")
+                if jev:
+                    goal = await call(
+                        "execute_goal",
+                        goal="Tap Show and wait for TARGET_VISIBLE.",
+                        package=PACKAGE,
+                        actions=["tap", "wait"],
+                        completion={"text": "TARGET_VISIBLE"},
+                        timeout_seconds=30.0,
+                    )
+                    assert goal["verified"] and goal["status"] == "completed"
+                    assert (await call("wait", selector={"text": "TARGET_VISIBLE"}))[
+                        "condition_met"
+                    ]
+                    jev_metrics = goal["metrics"]
+                    assert goal["roles"] == {
+                        "planner": "host_agent",
+                        "decision": "jev",
+                        "executor": "android_use",
+                    }
+                    passed.append("jev_goal_over_real_stdio_mcp")
+                    shell("am", "force-stop", PACKAGE)
+                    shell(
+                        "am",
+                        "start",
+                        "-W",
+                        "-n",
+                        PACKAGE + "/.MainActivity",
+                        "--ez",
+                        "benchmark",
+                        "true",
+                    )
+                    assert (await call("wait", selector={"description": "open-profile"}))[
+                        "condition_met"
+                    ]
+                    handed = await call(
+                        "execute_goal",
+                        goal="Open Profile, enter 接管验收 into Name, then Apply draft.",
+                        package=PACKAGE,
+                        texts=["接管验收"],
+                        completion={"text": "DRAFT=接管验收"},
+                        max_steps=1,
+                        timeout_seconds=30.0,
+                    )
+                    assert handed["status"] == "handoff" and handed["stop_reason"] == "max_steps"
+                    assert handed["handoff"]["completed_actions"] == 1
+                    assert handed["handoff"]["uncertain_steps"] == []
+                    assert handed["observation"]["foreground"] == PACKAGE
+                    assert (await call("find", selector={"description": "draft-name"}))[
+                        "total"
+                    ] == 1
+                    # Continue at the handed-off field; don't replay the navigation prefix.
+                    await call(
+                        "batch",
+                        steps=[
+                            {"op": "tap", "args": {"selector": {"description": "draft-name"}}},
+                            {"op": "type_text", "args": {"text": "接管验收", "verify": True}},
+                            {
+                                "op": "tap",
+                                "args": {
+                                    "selector": {"description": "apply-draft"},
+                                    "wait_for": {"selector": {"text": "DRAFT=接管验收"}},
+                                },
+                            },
+                        ],
+                    )
+                    assert (await call("wait", selector={"text": "DRAFT=接管验收"}))[
+                        "condition_met"
+                    ]
+                    handoff_metrics = handed["metrics"]
+                    passed.append("jev_handoff_then_host_continues_without_replay")
+                    from android_use.backend import Backend
+
+                    probe = Backend(serial)
+                    try:
+                        for orientation, rotation in [("l", 1), ("n", 0)]:
+                            probe.d.set_orientation(orientation)
+                            end = time.monotonic() + 5
+                            while (
+                                probe.d.info["displayRotation"] != rotation
+                                and time.monotonic() < end
+                            ):
+                                await asyncio.sleep(0.1)
+                            size = tuple(probe.size())
+                            assert size == tuple(probe.d.window_size()) == probe.screenshot().size
+                            assert (size[0] > size[1]) == (rotation == 1)
+                            observation = await call("observe", mode="tree")
+                            assert tuple(observation["viewport"]) == size
+                    finally:
+                        probe.d.set_orientation("n")
+                        probe.d.freeze_rotation(False)
+                    passed.append("portrait_landscape_geometry_matches_legacy_and_screenshot")
                 return {
                     "passed": passed,
                     "tool_count": len((await client.list_tools()).tools),
                     "scroll_swipes": found["swipes"],
                     "no_progress_swipes": missed["swipes"],
                     "elapsed_seconds": round(time.monotonic() - start, 2),
+                    **(
+                        {"jev_metrics": jev_metrics, "handoff_metrics": handoff_metrics}
+                        if jev
+                        else {}
+                    ),
                 }
             finally:
                 # Runs on assertion/tool failure too; the app holds no persistent user data.
@@ -350,6 +448,7 @@ async def exercise(serial, apk):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--serial", required=True)
+    parser.add_argument("--jev", action="store_true", help="Also exercise opt-in Jev via real MCP")
     parser.add_argument(
         "--sdk",
         type=Path,
@@ -360,9 +459,13 @@ def main():
         ),
     )
     options = parser.parse_args()
+    if options.jev:
+        from android_use.jev import JevConfig
+
+        JevConfig.from_env()
     with tempfile.TemporaryDirectory(prefix="android-use-acceptance-") as directory:
         apk = build_app(options.sdk, Path(directory))
-        print(json.dumps(asyncio.run(exercise(options.serial, apk)), indent=2))
+        print(json.dumps(asyncio.run(exercise(options.serial, apk, options.jev)), indent=2))
 
 
 if __name__ == "__main__":

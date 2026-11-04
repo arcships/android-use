@@ -146,6 +146,26 @@ class FindArgs(StrictModel):
     limit: Annotated[int, Field(ge=1, le=50)] = 20
 
 
+class ExecuteGoalArgs(StrictModel):
+    goal: Annotated[str, Field(min_length=1, max_length=2000)]
+    package: Annotated[str, Field(pattern=r"^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z0-9_]+)+$")]
+    texts: Annotated[list[Annotated[str, Field(max_length=2000)]], Field(max_length=8)] = Field(
+        default_factory=list
+    )
+    actions: Annotated[
+        list[Literal["tap", "long_press", "swipe", "type_text", "back", "wait"]],
+        Field(min_length=1, max_length=6),
+    ] = Field(default_factory=lambda: ["tap", "swipe", "type_text", "wait"])
+    completion: Selector | None = None
+    completion_state: Literal["visible", "gone"] = "visible"
+    max_steps: Annotated[int, Field(ge=1, le=20)] = 8
+    max_model_calls: Annotated[int, Field(ge=1, le=40)] = 16
+    timeout_seconds: Annotated[float, Field(gt=0, le=60)] = 20.0
+    min_probability: Annotated[float, Field(ge=0, le=1)] = 0.65
+    min_margin: Annotated[float, Field(ge=0, le=1)] = 0.1
+    observe: Literal["none", "tree"] = "tree"
+
+
 class BatchStep(StrictModel):
     op: Literal[
         "tap",
@@ -164,6 +184,7 @@ class BatchStep(StrictModel):
 
 
 ARG_MODELS = {
+    "execute_goal": ExecuteGoalArgs,
     "tap": TapArgs,
     "long_press": LongPressArgs,
     "double_tap": DoubleTapArgs,

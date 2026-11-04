@@ -20,6 +20,7 @@ def test_release_archive_is_an_installable_marketplace_without_local_state(tmp_p
         "uv.lock": "",
         ".mcp.json": "{}",
         ".gitignore": "",
+        ".env.example": "TYPESAFE_API_KEY=\n",
         ".codex-plugin/plugin.json": json.dumps({"name": "android-use", "version": "0.3.0"}),
         "src/android_use/assets/phone-screen.html": "compiled UI",
         "skills/android-use/SKILL.md": "skill",
@@ -50,6 +51,7 @@ def test_release_archive_is_an_installable_marketplace_without_local_state(tmp_p
             "docs/guide.md",
             "src/android_use/assets/phone-screen.html",
             ".codex-plugin/plugin.json",
+            ".env.example",
         } <= names
         assert not any(
             set(Path(n).parts) & {"node_modules", "__pycache__", "test-results"} for n in names

@@ -1,0 +1,763 @@
+{
+  "environment": {
+    "kind": "emulator",
+    "api_level": "35",
+    "fixture": "permission-free synthetic native UI; no IME",
+    "reset_excluded": true,
+    "final_verification_included": true,
+    "confidence_gate": "Jev probability>=0.65, margin>=0.1; text model has no calibrated probabilities",
+    "host_architecture": "arm64"
+  },
+  "skipped": {
+    "text": "Baseline model configuration absent; no LLM comparison claimed"
+  },
+  "summary": {
+    "deterministic": {
+      "runs": 12,
+      "successes": 12,
+      "success_rate": 1.0,
+      "median_seconds_all_runs": 2.6976496250135824,
+      "p95_seconds_all_runs": 22.65961099998094,
+      "model_calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "estimated_cost_usd": 0.0,
+      "cost_per_success_usd": 0.0
+    },
+    "jev": {
+      "runs": 12,
+      "successes": 12,
+      "success_rate": 1.0,
+      "median_seconds_all_runs": 8.600138353998773,
+      "p95_seconds_all_runs": 25.979112041997723,
+      "model_calls": 42,
+      "input_tokens": 92882,
+      "output_tokens": 3759,
+      "estimated_cost_usd": 0.0039010440000000006,
+      "cost_per_success_usd": 0.00032508700000000005
+    }
+  },
+  "runs": [
+    {
+      "arm": "deterministic",
+      "task": "navigate_wait_en",
+      "repeat": 1,
+      "success": true,
+      "elapsed_seconds": 2.556994207960088,
+      "stop_reason": "complete",
+      "metrics": {
+        "model_calls": 0,
+        "estimated_cost_usd": 0.0
+      },
+      "steps": []
+    },
+    {
+      "arm": "jev",
+      "task": "navigate_wait_en",
+      "repeat": 1,
+      "success": true,
+      "elapsed_seconds": 6.250175790977664,
+      "stop_reason": "completion_selector",
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 2,
+        "model_seconds": 0.5880343749886379,
+        "input_tokens": 3244,
+        "output_tokens": 124,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000136248,
+        "estimated_cost_usd": 0.000136248,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 5.916458666033577,
+        "device_read_seconds": 3.8105296660214663,
+        "device_action_seconds": 0.6065355430473574,
+        "stale_decisions": 0
+      },
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        }
+      ]
+    },
+    {
+      "arm": "deterministic",
+      "task": "draft_zh",
+      "repeat": 1,
+      "success": true,
+      "elapsed_seconds": 3.2471616250113584,
+      "stop_reason": "complete",
+      "metrics": {
+        "model_calls": 0,
+        "estimated_cost_usd": 0.0
+      },
+      "steps": []
+    },
+    {
+      "arm": "jev",
+      "task": "draft_zh",
+      "repeat": 1,
+      "success": true,
+      "elapsed_seconds": 11.115008916007355,
+      "stop_reason": "completion_selector",
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 4,
+        "model_seconds": 0.9191269579459913,
+        "input_tokens": 6880,
+        "output_tokens": 256,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.00028896000000000005,
+        "estimated_cost_usd": 0.00028896000000000005,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 10.786513834027573,
+        "device_read_seconds": 6.7852220390341245,
+        "device_action_seconds": 1.3086601659306325,
+        "stale_decisions": 0
+      },
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "type_text",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        }
+      ]
+    },
+    {
+      "arm": "deterministic",
+      "task": "scroll_select_en",
+      "repeat": 1,
+      "success": true,
+      "elapsed_seconds": 22.65961099998094,
+      "stop_reason": "complete",
+      "metrics": {
+        "model_calls": 0,
+        "estimated_cost_usd": 0.0
+      },
+      "steps": []
+    },
+    {
+      "arm": "jev",
+      "task": "scroll_select_en",
+      "repeat": 1,
+      "success": true,
+      "elapsed_seconds": 25.979112041997723,
+      "stop_reason": "completion_selector",
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 6,
+        "model_seconds": 1.3933579999720678,
+        "input_tokens": 17250,
+        "output_tokens": 709,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.0007245000000000001,
+        "estimated_cost_usd": 0.0007245000000000001,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 25.681449458003044,
+        "device_read_seconds": 10.20563179301098,
+        "device_action_seconds": 11.612561876070686,
+        "stale_decisions": 0
+      },
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "swipe",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "swipe",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "swipe",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "swipe",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a10",
+          "state": "executed"
+        }
+      ]
+    },
+    {
+      "arm": "deterministic",
+      "task": "long_press_zh",
+      "repeat": 1,
+      "success": true,
+      "elapsed_seconds": 2.7115583330160007,
+      "stop_reason": "complete",
+      "metrics": {
+        "model_calls": 0,
+        "estimated_cost_usd": 0.0
+      },
+      "steps": []
+    },
+    {
+      "arm": "jev",
+      "task": "long_press_zh",
+      "repeat": 1,
+      "success": true,
+      "elapsed_seconds": 6.990305208018981,
+      "stop_reason": "completion_selector",
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 2,
+        "model_seconds": 0.5156244999961928,
+        "input_tokens": 3577,
+        "output_tokens": 164,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000150234,
+        "estimated_cost_usd": 0.000150234,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 6.600061999983154,
+        "device_read_seconds": 3.8129616240621544,
+        "device_action_seconds": 1.2804692490026355,
+        "stale_decisions": 0
+      },
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a4",
+          "state": "executed"
+        },
+        {
+          "op": "long_press",
+          "candidate": "a3",
+          "state": "executed"
+        }
+      ]
+    },
+    {
+      "arm": "jev",
+      "task": "navigate_wait_en",
+      "repeat": 2,
+      "success": true,
+      "elapsed_seconds": 7.38334441697225,
+      "stop_reason": "completion_selector",
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 2,
+        "model_seconds": 0.5684667089954019,
+        "input_tokens": 3220,
+        "output_tokens": 124,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.00013524,
+        "estimated_cost_usd": 0.00013524,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 7.0636779590277,
+        "device_read_seconds": 4.746801956964191,
+        "device_action_seconds": 0.6101219159900211,
+        "stale_decisions": 0
+      },
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        }
+      ]
+    },
+    {
+      "arm": "deterministic",
+      "task": "navigate_wait_en",
+      "repeat": 2,
+      "success": true,
+      "elapsed_seconds": 2.6188016250380315,
+      "stop_reason": "complete",
+      "metrics": {
+        "model_calls": 0,
+        "estimated_cost_usd": 0.0
+      },
+      "steps": []
+    },
+    {
+      "arm": "jev",
+      "task": "draft_zh",
+      "repeat": 2,
+      "success": true,
+      "elapsed_seconds": 10.258466458995827,
+      "stop_reason": "completion_selector",
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 4,
+        "model_seconds": 1.0282087080413476,
+        "input_tokens": 6933,
+        "output_tokens": 256,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.00029118600000000003,
+        "estimated_cost_usd": 0.00029118600000000003,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 9.966921833984088,
+        "device_read_seconds": 6.012879249930847,
+        "device_action_seconds": 1.2661756670568138,
+        "stale_decisions": 0
+      },
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "type_text",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        }
+      ]
+    },
+    {
+      "arm": "deterministic",
+      "task": "draft_zh",
+      "repeat": 2,
+      "success": true,
+      "elapsed_seconds": 2.876574665948283,
+      "stop_reason": "complete",
+      "metrics": {
+        "model_calls": 0,
+        "estimated_cost_usd": 0.0
+      },
+      "steps": []
+    },
+    {
+      "arm": "jev",
+      "task": "scroll_select_en",
+      "repeat": 2,
+      "success": true,
+      "elapsed_seconds": 25.238406874996144,
+      "stop_reason": "completion_selector",
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 6,
+        "model_seconds": 1.3713320000097156,
+        "input_tokens": 17250,
+        "output_tokens": 709,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.0007245000000000001,
+        "estimated_cost_usd": 0.0007245000000000001,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 24.96312345797196,
+        "device_read_seconds": 9.812060624128208,
+        "device_action_seconds": 11.261092750995886,
+        "stale_decisions": 0
+      },
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "swipe",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "swipe",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "swipe",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "swipe",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a10",
+          "state": "executed"
+        }
+      ]
+    },
+    {
+      "arm": "deterministic",
+      "task": "scroll_select_en",
+      "repeat": 2,
+      "success": true,
+      "elapsed_seconds": 19.806308583007194,
+      "stop_reason": "complete",
+      "metrics": {
+        "model_calls": 0,
+        "estimated_cost_usd": 0.0
+      },
+      "steps": []
+    },
+    {
+      "arm": "jev",
+      "task": "long_press_zh",
+      "repeat": 2,
+      "success": true,
+      "elapsed_seconds": 6.26880900003016,
+      "stop_reason": "completion_selector",
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 2,
+        "model_seconds": 0.4572494570747949,
+        "input_tokens": 3577,
+        "output_tokens": 164,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000150234,
+        "estimated_cost_usd": 0.000150234,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 5.961508082982618,
+        "device_read_seconds": 3.4863725000759587,
+        "device_action_seconds": 1.2372196670621634,
+        "stale_decisions": 0
+      },
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a4",
+          "state": "executed"
+        },
+        {
+          "op": "long_press",
+          "candidate": "a3",
+          "state": "executed"
+        }
+      ]
+    },
+    {
+      "arm": "deterministic",
+      "task": "long_press_zh",
+      "repeat": 2,
+      "success": true,
+      "elapsed_seconds": 2.549683249962982,
+      "stop_reason": "complete",
+      "metrics": {
+        "model_calls": 0,
+        "estimated_cost_usd": 0.0
+      },
+      "steps": []
+    },
+    {
+      "arm": "deterministic",
+      "task": "navigate_wait_en",
+      "repeat": 3,
+      "success": true,
+      "elapsed_seconds": 2.57017816696316,
+      "stop_reason": "complete",
+      "metrics": {
+        "model_calls": 0,
+        "estimated_cost_usd": 0.0
+      },
+      "steps": []
+    },
+    {
+      "arm": "jev",
+      "task": "navigate_wait_en",
+      "repeat": 3,
+      "success": true,
+      "elapsed_seconds": 5.655691333988216,
+      "stop_reason": "completion_selector",
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 2,
+        "model_seconds": 0.4596879169694148,
+        "input_tokens": 3244,
+        "output_tokens": 124,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000136248,
+        "estimated_cost_usd": 0.000136248,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 5.381622207991313,
+        "device_read_seconds": 3.5710715830209665,
+        "device_action_seconds": 0.5494917079922743,
+        "stale_decisions": 0
+      },
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        }
+      ]
+    },
+    {
+      "arm": "deterministic",
+      "task": "draft_zh",
+      "repeat": 3,
+      "success": true,
+      "elapsed_seconds": 2.683740917011164,
+      "stop_reason": "complete",
+      "metrics": {
+        "model_calls": 0,
+        "estimated_cost_usd": 0.0
+      },
+      "steps": []
+    },
+    {
+      "arm": "jev",
+      "task": "draft_zh",
+      "repeat": 3,
+      "success": true,
+      "elapsed_seconds": 9.816932291025296,
+      "stop_reason": "completion_selector",
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 4,
+        "model_seconds": 0.9024487499846146,
+        "input_tokens": 6880,
+        "output_tokens": 256,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.00028896000000000005,
+        "estimated_cost_usd": 0.00028896000000000005,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 9.526335417001974,
+        "device_read_seconds": 5.8982273320434615,
+        "device_action_seconds": 1.1871712089632638,
+        "stale_decisions": 0
+      },
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "type_text",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a2",
+          "state": "executed"
+        }
+      ]
+    },
+    {
+      "arm": "deterministic",
+      "task": "scroll_select_en",
+      "repeat": 3,
+      "success": true,
+      "elapsed_seconds": 19.517228791024536,
+      "stop_reason": "complete",
+      "metrics": {
+        "model_calls": 0,
+        "estimated_cost_usd": 0.0
+      },
+      "steps": []
+    },
+    {
+      "arm": "jev",
+      "task": "scroll_select_en",
+      "repeat": 3,
+      "success": true,
+      "elapsed_seconds": 25.096141458954662,
+      "stop_reason": "completion_selector",
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 6,
+        "model_seconds": 1.3673390409676358,
+        "input_tokens": 17250,
+        "output_tokens": 709,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.0007245000000000001,
+        "estimated_cost_usd": 0.0007245000000000001,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 24.797091709042434,
+        "device_read_seconds": 9.417617251048796,
+        "device_action_seconds": 11.473068541032262,
+        "stale_decisions": 0
+      },
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a1",
+          "state": "executed"
+        },
+        {
+          "op": "swipe",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "swipe",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "swipe",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "swipe",
+          "candidate": "a0",
+          "state": "executed"
+        },
+        {
+          "op": "tap",
+          "candidate": "a10",
+          "state": "executed"
+        }
+      ]
+    },
+    {
+      "arm": "deterministic",
+      "task": "long_press_zh",
+      "repeat": 3,
+      "success": true,
+      "elapsed_seconds": 2.4532093749730848,
+      "stop_reason": "complete",
+      "metrics": {
+        "model_calls": 0,
+        "estimated_cost_usd": 0.0
+      },
+      "steps": []
+    },
+    {
+      "arm": "jev",
+      "task": "long_press_zh",
+      "repeat": 3,
+      "success": true,
+      "elapsed_seconds": 6.21101574995555,
+      "stop_reason": "completion_selector",
+      "metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 2,
+        "model_seconds": 0.4337419170187786,
+        "input_tokens": 3577,
+        "output_tokens": 164,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.000150234,
+        "estimated_cost_usd": 0.000150234,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 5.894813292019535,
+        "device_read_seconds": 3.3607549180160277,
+        "device_action_seconds": 1.2879967499757186,
+        "stale_decisions": 0
+      },
+      "steps": [
+        {
+          "op": "tap",
+          "candidate": "a4",
+          "state": "executed"
+        },
+        {
+          "op": "long_press",
+          "candidate": "a3",
+          "state": "executed"
+        }
+      ]
+    }
+  ],
+  "date": "2026-11-04",
+  "source_sha256": {
+    "src/android_use/executor.py": "50fa9753077999b8cd9657bc0ec966133d24f7a36fab9a8af3bfd7781971c016",
+    "src/android_use/jev.py": "e183034559e7dcc291669df2392b7aa4446e1afa98c935f46fe70ee913a151f6",
+    "src/android_use/models.py": "cd43a49e3b982f17df40ce12b72dbf67cbb25b3f5734079ea89a9f89ce163472",
+    "tests/device_app/MainActivity.java": "926d8df64ec0f72e486057331e0d39e23215cd007dfa8e336fb7f389364382bc"
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "environment": {
+    "kind": "emulator",
+    "agent": "current host chat, live JSONL decisions; no scripted selector",
+    "timing": "Includes host planning/decisions, CLI bridge latency, executor, final host verification; excludes reset/install",
+    "limits": "same live host chat; familiar fixed tasks plus seeded UI-dependent workflow; host token usage/cost unavailable",
+    "roles": {
+      "planner": "host_agent",
+      "next_action_decision": "host_agent or Jev",
+      "executor": "Android Use"
+    },
+    "host_wait": "separately measured from prompt emission to JSON reply; includes inference, bridge and polling",
+    "payload_bytes": "UTF-8 protocol size only, not billed tokens",
+    "host_budget_seconds": 600.0,
+    "seed_base": 2035
+  },
+  "summary": {
+    "agent_jev": {
+      "runs": 1,
+      "successes": 1,
+      "median_seconds": 21.87928745802492,
+      "host_decisions": 2,
+      "jev_calls": 5,
+      "jev_estimated_cost_usd": 0.00041118000000000003,
+      "host_cost_usd": null,
+      "total_cost_usd": null,
+      "host_wait_seconds": 12.857812041940633,
+      "median_non_host_seconds": 9.021508958074264,
+      "host_input_utf8_bytes": 1001,
+      "host_output_utf8_bytes": 320
+    },
+    "agent_only": {
+      "runs": 1,
+      "successes": 1,
+      "median_seconds": 41.88489933300298,
+      "host_decisions": 6,
+      "jev_calls": 0,
+      "jev_estimated_cost_usd": 0.0,
+      "host_cost_usd": null,
+      "total_cost_usd": null,
+      "host_wait_seconds": 37.200464499997906,
+      "median_non_host_seconds": 4.684443250007462,
+      "host_input_utf8_bytes": 8565,
+      "host_output_utf8_bytes": 98
+    }
+  },
+  "runs": [
+    {
+      "arm": "agent_only",
+      "routing": "ordinary_tools",
+      "task": "dynamic_workflow_en",
+      "repeat": 1,
+      "success": true,
+      "elapsed_seconds": 41.88489933300298,
+      "host_decisions": 6,
+      "jev_calls": 0,
+      "jev_estimated_cost_usd": 0.0,
+      "jev_metrics": {},
+      "host_cost_usd": null,
+      "total_cost_usd": null,
+      "stop_reason": "completion_selector",
+      "delegation_stop_reason": null,
+      "verification_error": null,
+      "seed": 2035,
+      "host_requests": 6,
+      "host_replies": 6,
+      "host_wait_seconds": 37.200464499997906,
+      "host_input_utf8_bytes": 8565,
+      "host_output_utf8_bytes": 98,
+      "non_host_seconds": 4.684443250007462
+    },
+    {
+      "arm": "agent_jev",
+      "routing": "jev_decisions",
+      "task": "dynamic_workflow_en",
+      "repeat": 1,
+      "success": true,
+      "elapsed_seconds": 21.87928745802492,
+      "host_decisions": 2,
+      "jev_calls": 5,
+      "jev_estimated_cost_usd": 0.00041118000000000003,
+      "jev_metrics": {
+        "provider": "typesafe",
+        "requested_model": "jev-1.14.0",
+        "models": [
+          "jev-1.14.0"
+        ],
+        "model_calls": 5,
+        "model_seconds": 1.3676762930699624,
+        "input_tokens": 9790,
+        "output_tokens": 338,
+        "unpriced_calls": 0,
+        "estimated_cost_usd_lower_bound": 0.00041118000000000003,
+        "estimated_cost_usd": 0.00041118000000000003,
+        "cost_basis": "published input-token price; not a billing receipt",
+        "elapsed_seconds": 8.410606499994174,
+        "device_read_seconds": 4.060171873134095,
+        "device_action_seconds": 1.6940755419782363,
+        "stale_decisions": 0
+      },
+      "host_cost_usd": null,
+      "total_cost_usd": null,
+      "stop_reason": "completion_selector",
+      "delegation_stop_reason": null,
+      "verification_error": null,
+      "seed": 2035,
+      "host_requests": 2,
+      "host_replies": 2,
+      "host_wait_seconds": 12.857812041940633,
+      "host_input_utf8_bytes": 1001,
+      "host_output_utf8_bytes": 320,
+      "non_host_seconds": 9.021508958074264
+    }
+  ],
+  "date": "2026-11-04",
+  "environment_note": "Dedicated Android API 35 ARM64 emulator; no physical device data",
+  "source_sha256": {
+    "src/android_use/backend.py": "e6a87acbfbb254a72f417b88f5f74431f0e7fde61b1ac308a4371ceaa99950e9",
+    "src/android_use/runtime.py": "e72ff10c8455889b8719ed4fa07040d08e562ed9a699e6b0f90005a674a9d265",
+    "src/android_use/executor.py": "6485baeb90f3f95e2b60fed385da75613aea7b38e6d07663478e85c18ef5f2ef",
+    "src/android_use/jev.py": "bdef0d55719d914b3a185faaafee1e8caf276903fcfaec193c04b6e75d089ff3",
+    "scripts/benchmark_agent.py": "9193dee163084a7044b301f733c068367c81ea2d211c3f28967ae764b873dc9d",
+    "tests/device_app/MainActivity.java": "ed6040e749dda6294a1dd2413561c52b5e74b124cfeeb1e745275c4680842a97"
+  }
+}

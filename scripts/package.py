@@ -22,6 +22,7 @@ def main():
             "uv.lock",
             ".mcp.json",
             ".gitignore",
+            ".env.example",
             ".codex-plugin/plugin.json",
         )
     ]

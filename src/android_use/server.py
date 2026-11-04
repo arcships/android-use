@@ -79,6 +79,12 @@ SCHEMAS.update(
 SCHEMAS["batch"]["required"] = ["steps"]
 SCHEMAS["screen_action"]["required"] = ["action"]
 DESCRIPTIONS = {
+    "execute_goal": "Agent plans, Jev selects candidate IDs, Android Use executes. Optional local "
+    "decision loop; requires ANDROID_USE_JEV_ENABLED=1 and "
+    "TYPESAFE_API_KEY in server environment. Sends visible app UI text to TypeSafe. "
+    "Caller supplies goal, foreground package, exact input texts and optional completion selector. "
+    "Bounded candidate-only actions; no automatic replay. status=handoff is not success. "
+    "Keep existing tools for planning, unsupported controls and recovery. Password screens hand off.",
     "doctor": "Read local ADB device inventory and configuration. Does not start a phone service.",
     "setup": "First use: status/discover, start once if needed, then ready. configure selects a serial. "
     "start pushes a pinned JAR and reuses/starts UiAutomator without root or keyboard APK.",
@@ -130,6 +136,16 @@ def create_server(runtime=None):
         "android-use",
         version=__version__,
         instructions="First call aua_setup(status), start if absent, then aua_ready. "
+        "The host agent owns task understanding, planning, exact text composition, recovery and "
+        "final business verification. When enabled, use aua_execute_goal for a short local UI "
+        "subgoal: Jev decides the next candidate; Android Use alone executes actions. "
+        "Known paths should still use batch. "
+        "Optimize end-to-end completion time and success rate, reducing host-model round trips. "
+        "Do not route based on Jev token cost. Delegate a coherent local decision loop rather "
+        "than asking the host to approve every low-level choice. Reuse a safe returned "
+        "observation when planning the next step instead of immediately reading it again. "
+        "On handoff inspect steps and current state, then continue with existing tools; do not "
+        "repeat the original goal blindly. Jev does not replace the host agent. "
         "Use trees first, screenshots for visual content/failures. "
         "Actions accept wait_for={selector,state:visible|gone,timeout_seconds}; "
         "use scroll_until for bounded list search. An unmet condition never replays the action. "

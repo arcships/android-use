@@ -169,12 +169,21 @@ class Runtime:
                         (s.op, ARG_MODELS[s.op].model_validate(s.args).model_dump()) for s in steps
                     ]
                 }
+            if op == "execute_goal":
+                from .jev import JevConfig
+
+                goal_config = JevConfig.from_env()  # Fail before discovering or reading a phone.
             self._connect()
             with self._guard():
                 if op == "resume":
                     self._pause_path().unlink(missing_ok=True)
                     return {"ok": True, "paused": False}
                 self._usable()
+                if op == "execute_goal":
+                    from .executor import execute
+                    from .jev import JevPolicy
+
+                    return execute(self, args, JevPolicy(goal_config))
                 if op == "batch":
                     return self._batch(**args)
                 result = self._dispatch(op, args)

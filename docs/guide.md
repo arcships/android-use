@@ -1,5 +1,7 @@
 # Android Use user guide
 
+Experimental source feature: [optional Jev decision integration and comparison](jev.md). Default off; original tools remain compatible. Not in the v0.3.0 release ZIP.
+
 **English** · [简体中文](guide.zh-CN.md) · [Project home](../README.md)
 
 [Install](#installation) · [Connect a device](#connect-a-device) · [Codex](#codex-plugin) · [Other clients](#other-mcp-clients) · [CLI](#cli-reference) · [Troubleshooting](#troubleshooting)
