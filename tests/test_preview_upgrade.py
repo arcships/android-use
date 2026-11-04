@@ -4,10 +4,14 @@ from types import SimpleNamespace
 import pytest
 
 from android_use.backend import UseError
-from android_use.screen import PREVIEW_PROTOCOL_VERSION, ScreenClient
+from android_use.screen import (
+    PREVIEW_IMPLEMENTATION_VERSION,
+    PREVIEW_PROTOCOL_VERSION,
+    ScreenClient,
+)
 
 
-def client(monkeypatch, protocol, *, mismatch=False):
+def client(monkeypatch, protocol, *, revision=PREVIEW_IMPLEMENTATION_VERSION, mismatch=False):
     current = ScreenClient("usb", "hardware-key")
     started, killed, calls = [], [], []
 
@@ -28,6 +32,7 @@ def client(monkeypatch, protocol, *, mismatch=False):
             "pid": 900003 if mismatch else current.info["pid"],
             "device_key": "hardware-key",
             "protocol_version": PREVIEW_PROTOCOL_VERSION if started else protocol,
+            "preview_revision": PREVIEW_IMPLEMENTATION_VERSION if started else revision,
         }
 
     def spawn(*args, **kwargs):
@@ -48,9 +53,9 @@ def test_healthy_preview_is_reused_without_restart(monkeypatch):
     assert not started and not killed
 
 
-@pytest.mark.parametrize("protocol", [None, 2])
+@pytest.mark.parametrize("protocol", [None, 2, 3])
 def test_legacy_authenticated_preview_is_replaced_and_new_process_confirmed(monkeypatch, protocol):
-    preview, started, killed, calls = client(monkeypatch, protocol)
+    preview, started, killed, calls = client(monkeypatch, protocol, revision=None)
     preview.ensure()
     assert killed == [900001] and len(started) == 1
     assert calls == ["status", "stop_capture", "status"]
@@ -77,4 +82,12 @@ def test_client_process_can_never_be_terminated_as_old_preview(monkeypatch):
     monkeypatch.setattr(preview, "_load", load)
     with pytest.raises(UseError):
         preview.ensure()
+    assert not started and not killed
+
+
+def test_older_client_reuses_newer_compatible_daemon_without_downgrade(monkeypatch):
+    preview, started, killed, _ = client(
+        monkeypatch, PREVIEW_PROTOCOL_VERSION, revision=PREVIEW_IMPLEMENTATION_VERSION + 1
+    )
+    preview.ensure()
     assert not started and not killed

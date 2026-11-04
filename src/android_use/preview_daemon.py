@@ -14,7 +14,12 @@ from importlib.resources import files
 
 from .backend import Backend, UseError
 from .runtime import Runtime, save_images
-from .screen import PREVIEW_PROTOCOL_VERSION, ScreenHub, device_paths
+from .screen import (
+    PREVIEW_IMPLEMENTATION_VERSION,
+    PREVIEW_PROTOCOL_VERSION,
+    ScreenHub,
+    device_paths,
+)
 from .settings import JEV_ACTIONS, settings_action
 
 
@@ -103,6 +108,7 @@ def serve(serial, key):
                         "pid": os.getpid(),
                         "device_key": key,
                         "protocol_version": PREVIEW_PROTOCOL_VERSION,
+                        "preview_revision": PREVIEW_IMPLEMENTATION_VERSION,
                     }
                 elif endpoint == "switch_serial":
                     new_serial = args.get("serial")
@@ -179,6 +185,7 @@ def serve(serial, key):
         "serial": serial,
         "device_key": key,
         "protocol_version": PREVIEW_PROTOCOL_VERSION,
+        "preview_revision": PREVIEW_IMPLEMENTATION_VERSION,
     }
     temporary = info_path.with_suffix(".tmp")
     temporary.write_text(json.dumps(info))
