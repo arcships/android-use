@@ -25,6 +25,9 @@
 ```json
 {
   "package": "com.example.shop",
+  "currency": "CNY",
+  "source": "auto",
+  "expected_labels": ["合计", "打包费"],
   "fields": [
     {"name": "items", "instructions": "选择实际购买商品的优惠前小计。"},
     {"name": "packing", "instructions": "选择本单打包费。"},
@@ -39,11 +42,29 @@
 
 可传 `region={x,y,width,height}` 限定账单区域，单位为 Android 显示像素，按文本节点中心取值。先按视觉行组合文字，再判断字段；推理后检查同一前台/Activity/视口和区域文本是否变化。仅只读判断忽略空容器动画，动作仍保留严格的新鲜度与几何校验；密码、锁屏、接管检查始终覆盖整页。
 
-树缺失时，可由 Agent 提供当前截图的 OCR 文本 `evidence_text`。结果明确标记 `caller_provided_text`、`source_verified_on_device=false`，不能证明 OCR 新鲜或正确。**自动 OCR、图片/Box 定位和视觉点击尚未内置**。应按页面暴露的语义选择路径，不能简单按“原生/非原生 App”分类。[完整页面路由方案](visual-routing.zh-CN.md)
+树缺失时，默认可自动截取当前 ROI 并在本机 OCR；也保留 Agent 提供 `evidence_text` 的途径。后者始终标为 `caller_provided_text`、`source_verified_on_device=false`、`freshness=unchecked`，由 Agent 确认其新鲜度与正确性。自动视觉定位及点击尚未实现。
 
 检查 `fields.*.accepted`、`checks` 和来源。`status=judged`、字段全部接受或数字相符均不证明业务成功，`verified` 始终为 false，最终由 Agent 对照结算画面验收。缺失/低概率值返回 null；金额冲突保留已选原文并标记 `review_reason=sum_check_failed`。推理后出错时仍在 `error.metrics` 保留用量与耗时。
 
-[美团/淘宝真机记录与保留的失败](benchmarks/real-app-jev-v5.md)：最终观察到 22.9 / 21.8 元。验证从已知门店继续，包含 Agent 恢复，不是完整搜索或严格性能对照。v0.4.0 已发布 ZIP 不含本节更新；需更新源码并重新加载 MCP 连接后发现新工具。
+[最新自动 OCR 验收及失败](benchmarks/real-app-ocr-v6.md) · [此前 Agent 提供 OCR 的历史记录](benchmarks/real-app-jev-v5.md)。开发验收最终为 22.9 / 21.8 元，饮品不同；不是最低价或整体性能对照。v0.4.0 ZIP 不含这批源码更新。
+
+## 自动只读 OCR（源码更新，尚未发布）
+
+`aua_read_fields` / CLI `read_fields` 的 `source` 默认 `auto`：所选区域有文本、包含全部 `expected_labels`，且 money 问题有金额候选时走 AX；否则在首次 Jev 请求前切换本机 OCR。这只是确定性的充分性筛选，不证明目标信息完整。`source=tree` 禁用 OCR；`source=screen_ocr` 强制 OCR。`expected_labels` 最多 12 个，按原文子串匹配。可先用宽泛字段判断，但比价应明确费用角色，并根据当前画面指定账单 `region`。
+
+内置提供器目前仅支持 **macOS Vision + Xcode Command Line Tools**。缺少工具时按系统方式安装 `xcode-select --install`；本项目不会自动安装。Linux / Windows 上 AX 和现有工具仍可用，OCR 返回 `ocr_unavailable`，由 Agent 恢复或提供已核对的文本；尚未实现这些平台的 OCR。
+
+截图在本机裁剪，OCR 输出文字、块边界框和分数，再按视觉行生成字段候选。图像不发送到 TypeSafe，**识别到的文字和字段问题会发送**。ROI 和可选 `ocr_masks` 均为 Android 显示像素；mask 必须完整位于 ROI，最多 8 个，面积之和不超过 ROI 的 20%，在 OCR 与哈希前涂白，不能当作证据。不要屏蔽价格、弹窗或业务结果；优先通过 ROI 排除地址等无关隐私。
+
+OCR 推理后再次读取同一 ROI，比较精确像素哈希；变化就丢弃全部字段。仅显式 mask 排除的区域可变化，不使用未经校准的模糊相似度。前台、Activity、视口、暂停、锁屏与可检测认证状态均重新检查；截图不能证明所有自绘遮挡或认证都已被识别。输出 `source=device_screen_ocr`、`freshness=roi_pixels_checked`，并保留 `frame` 的 ROI、像素摘要、时间、mask 与独立 ID。这个 ID **不是**可供点击使用的 `observation_id`。`source_verified_on_device=true` 只说明证据来源于手机，不代表 OCR 或业务正确；`verified` 始终为 false。
+
+`min_ocr_confidence` 默认 0，只保留提供器分数；它不是正确率。money/text 字段可按已验证样本设置阈值，低于阈值不接受；choice 分类没有单个金额候选的 OCR 分数。Jev 概率/margin、OCR 分数、金额等式和 Agent 验收互不替代。OCR 当前不识别划线样式，输出 `style=unknown`；不能仅靠左右位置保证现价角色。
+
+全局 `timeout_seconds` 默认 20、最大 60 秒；冷编译最多使用剩余 15 秒，本机识别最多剩余 5 秒，Jev 最多剩余 8 秒。期限耗尽不返回有效判断；设备 RPC 受现有超时约束，进行中的调用可能超出剩余预算。返回分项耗时，失败时保留模型调用指标。
+
+**兼容性变化：** `sum_check` 要求每项币种明确且一致。`¥` / `$` 有歧义，应传 `currency`；支持 CNY、JPY、USD、HKD、EUR、GBP、CAD、AUD。保留原文，规范化负号和千位逗号，用 Decimal 解析；仅支持逗号千位、点号小数（含全角等价字符），不支持所有金额地区格式。负优惠放 `add`；`subtract` 只接受正的抵扣幅度，负数会报 `negative_subtrahend`。传 `evidence_text` 时不能同时指定设备 `source`、`region` 或 `ocr_masks`，避免虚假的来源或区域声明。
+
+`aua_execute_goal` 另新增 `effect_timeout_seconds`（默认 1，范围 0.1–3 秒）。点击/输入确认后只观察，等待非空语义变化或完成条件；无效果交回 `uncertain_effect`，同一调用回到已消费的状态与动作则交回 `duplicate_action`。几何动画和过渡空树不算效果。ACK 仍记为 executed，不代表业务成功；`wait` 与有界列表滑动保留原有无进展限制。该机制不是跨调用去重，Agent 仍需根据返回记录恢复，不能重新提交整个目标。
 
 ## 配置
 

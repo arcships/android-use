@@ -23,6 +23,7 @@ def test_release_archive_is_an_installable_marketplace_without_local_state(tmp_p
         ".env.example": "TYPESAFE_API_KEY=\n",
         ".codex-plugin/plugin.json": json.dumps({"name": "android-use", "version": "0.3.0"}),
         "src/android_use/assets/phone-screen.html": "compiled UI",
+        "src/android_use/assets/ocr.swift": "local OCR helper",
         "skills/android-use/SKILL.md": "skill",
         "docs/guide.md": "guide",
         "docs/images/hero.png": "documentation asset",
@@ -50,6 +51,7 @@ def test_release_archive_is_an_installable_marketplace_without_local_state(tmp_p
             "README.zh-CN.md",
             "docs/guide.md",
             "src/android_use/assets/phone-screen.html",
+            "src/android_use/assets/ocr.swift",
             ".codex-plugin/plugin.json",
             ".env.example",
         } <= names

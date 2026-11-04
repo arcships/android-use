@@ -1,0 +1,871 @@
+{
+  "date": "2026-11-04",
+  "kind": "iterative physical-device acceptance, not a controlled benchmark",
+  "transport": "Source CLI and separate standard stdio MCP with live Jev 1.14.0; local macOS Vision",
+  "privacy": "Allowlisted telemetry and selected field values only. No serial, credentials, address, contacts, bank details, raw OCR, screenshots or full UI trees.",
+  "limitations": [
+    "ROI, masking, evidence grouping and confidence handling changed during development; all recorded field/goal attempts, including diagnostics and failures, are retained.",
+    "This is not an exhaustive cheapest-price search or an Agent-only comparison; the drinks differ.",
+    "Agent performed screenshot navigation and independently checked checkout and cart cleanup. Automatic visual clicks are not implemented.",
+    "The later transient-empty-tree effect-wait and expanded authentication-prompt guards passed offline tests only; phone testing stopped at the user request.",
+    "The full preview rollover test was interrupted and is not part of this OCR acceptance."
+  ],
+  "final_results": {
+    "meituan": {
+      "items": "19",
+      "packing": "1.5",
+      "delivery": "2.4",
+      "total": "22.9",
+      "coupon_kind": "paid_pack",
+      "ocr_record": "1793775050836818000-mcp-read_fields",
+      "ax_record": "1793775056717490000-mcp-read_fields"
+    },
+    "taobao": {
+      "items": "24",
+      "packing": "1.5",
+      "delivery": "2.3",
+      "discount": "-6",
+      "total": "21.8",
+      "coupon_kind": "already_applied",
+      "auto_ocr_record": "1793775792305719000-mcp-read_fields"
+    },
+    "cleanup": {
+      "meituan": "Temporary cart empty, visually verified",
+      "taobao": "Temporary cart zero, visually verified",
+      "order_submitted": false,
+      "payment_made": false,
+      "new_coupon_or_card_purchase": false
+    }
+  },
+  "attempts": [
+    {
+      "id": "1793774511796491000-execute_goal",
+      "operation": "execute_goal",
+      "ok": false,
+      "status": "handoff",
+      "stop_reason": "goal_empty_tree",
+      "action_attempted": true,
+      "replay_action": false,
+      "error_code": "goal_empty_tree",
+      "metrics": {
+        "model_calls": 1,
+        "model_seconds": 0.32514129095943645,
+        "input_tokens": 6100,
+        "output_tokens": 452,
+        "elapsed_seconds": 2.0803430840023793,
+        "device_read_seconds": 1.1205456260358915,
+        "device_action_seconds": 0.17646799999056384,
+        "stale_decisions": 0
+      },
+      "steps": [
+        {
+          "op": "tap",
+          "state": "executed"
+        }
+      ]
+    },
+    {
+      "id": "1793774687798022000-mcp-read_fields",
+      "operation": "read_fields",
+      "ok": false,
+      "action_attempted": false,
+      "replay_action": false,
+      "error_code": "stale_field_evidence",
+      "metrics": {
+        "model_calls": 1,
+        "model_seconds": 0.38600741600384936,
+        "input_tokens": 3274,
+        "output_tokens": 462,
+        "capture_seconds": 0.5751789580099285,
+        "ocr_seconds": 1.3070117500028573,
+        "freshness_seconds": 0.0,
+        "elapsed_seconds": 3.8716239169589244
+      }
+    },
+    {
+      "id": "1793774767557988000-mcp-read_fields",
+      "operation": "read_fields",
+      "ok": true,
+      "status": "judged",
+      "source": "device_screen_ocr",
+      "all_fields_accepted": false,
+      "freshness": "roi_pixels_checked",
+      "route": {
+        "requested": "screen_ocr",
+        "ax_rows": 12,
+        "ax_sufficient": true,
+        "selected": "device_screen_ocr"
+      },
+      "action_attempted": false,
+      "replay_action": false,
+      "metrics": {
+        "model_calls": 1,
+        "model_seconds": 0.4749202079838142,
+        "input_tokens": 3268,
+        "output_tokens": 462,
+        "capture_seconds": 0.37048866698751226,
+        "ocr_seconds": 0.8118669159593992,
+        "freshness_seconds": 1.3081315839663148,
+        "elapsed_seconds": 4.01283154101111,
+        "request_bytes": 5968
+      },
+      "fields": {
+        "total": {
+          "value": null,
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 0.94,
+          "margin": 0.8799999999999999
+        },
+        "items": {
+          "value": "¥19",
+          "decimal": "19",
+          "currency": "CNY",
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 0.92,
+          "margin": 0.8400000000000001,
+          "ocr_confidence": 0.5
+        },
+        "packing": {
+          "value": "¥1.5",
+          "decimal": "1.5",
+          "currency": "CNY",
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 1.0,
+          "margin": 1.0,
+          "ocr_confidence": 0.5
+        },
+        "delivery": {
+          "value": "¥2.4",
+          "decimal": "2.4",
+          "currency": "CNY",
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 0.97,
+          "margin": 0.95,
+          "ocr_confidence": 0.5
+        },
+        "coupon_kind": {
+          "value": "paid_pack",
+          "accepted": true,
+          "probability": 0.99,
+          "margin": 0.98
+        }
+      },
+      "checks": [
+        {
+          "type": "sum",
+          "passed": false,
+          "reason": "missing_fields",
+          "computed": null
+        }
+      ],
+      "roi": {
+        "x": 0,
+        "y": 1280,
+        "width": 1080,
+        "height": 1070
+      },
+      "masks": [
+        {
+          "x": 660,
+          "y": 1980,
+          "width": 60,
+          "height": 100
+        }
+      ]
+    },
+    {
+      "id": "1793774828162438000-mcp-read_fields",
+      "operation": "read_fields",
+      "ok": true,
+      "status": "judged",
+      "source": "device_screen_ocr",
+      "all_fields_accepted": false,
+      "freshness": "roi_pixels_checked",
+      "route": {
+        "requested": "screen_ocr",
+        "ax_rows": 12,
+        "ax_sufficient": true,
+        "selected": "device_screen_ocr"
+      },
+      "action_attempted": false,
+      "replay_action": false,
+      "metrics": {
+        "model_calls": 1,
+        "model_seconds": 0.4352006670087576,
+        "input_tokens": 2341,
+        "output_tokens": 462,
+        "capture_seconds": 0.4464318340178579,
+        "ocr_seconds": 1.392103375052102,
+        "freshness_seconds": 1.3489361249958165,
+        "elapsed_seconds": 4.781220792036038,
+        "request_bytes": 4563
+      },
+      "fields": {
+        "total": {
+          "value": null,
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 0.88,
+          "margin": 0.77
+        },
+        "items": {
+          "value": "¥19",
+          "decimal": "19",
+          "currency": "CNY",
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 0.85,
+          "margin": 0.7,
+          "ocr_confidence": 0.5
+        },
+        "packing": {
+          "value": "¥1.5",
+          "decimal": "1.5",
+          "currency": "CNY",
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 1.0,
+          "margin": 1.0,
+          "ocr_confidence": 0.5
+        },
+        "delivery": {
+          "value": "¥2.4",
+          "decimal": "2.4",
+          "currency": "CNY",
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 0.99,
+          "margin": 0.98,
+          "ocr_confidence": 0.5
+        },
+        "coupon_kind": {
+          "value": "paid_pack",
+          "accepted": true,
+          "probability": 0.99,
+          "margin": 0.98
+        }
+      },
+      "checks": [
+        {
+          "type": "sum",
+          "passed": false,
+          "reason": "missing_fields",
+          "computed": null
+        }
+      ],
+      "roi": {
+        "x": 0,
+        "y": 1280,
+        "width": 1080,
+        "height": 1070
+      },
+      "masks": [
+        {
+          "x": 660,
+          "y": 1980,
+          "width": 60,
+          "height": 100
+        }
+      ]
+    },
+    {
+      "id": "1793774919138227000-mcp-read_fields",
+      "operation": "read_fields",
+      "ok": true,
+      "status": "judged",
+      "source": "device_screen_ocr",
+      "all_fields_accepted": false,
+      "freshness": "roi_pixels_checked",
+      "route": {
+        "requested": "screen_ocr",
+        "ax_rows": 12,
+        "ax_sufficient": true,
+        "selected": "device_screen_ocr"
+      },
+      "action_attempted": false,
+      "replay_action": false,
+      "metrics": {
+        "model_calls": 1,
+        "model_seconds": 0.4108050420181826,
+        "input_tokens": 3352,
+        "output_tokens": 709,
+        "capture_seconds": 0.45609345799311996,
+        "ocr_seconds": 1.0676271660486236,
+        "freshness_seconds": 1.5895935840089805,
+        "elapsed_seconds": 4.676231666002423,
+        "request_bytes": 5949
+      },
+      "fields": {
+        "total": {
+          "value": null,
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 0.75,
+          "margin": 0.51
+        },
+        "items": {
+          "value": null,
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 0.67,
+          "margin": 0.35000000000000003
+        },
+        "packing": {
+          "value": null,
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 1.0,
+          "margin": 1.0
+        },
+        "delivery": {
+          "value": null,
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 0.73,
+          "margin": 0.51
+        },
+        "coupon_kind": {
+          "value": null,
+          "accepted": false,
+          "probability": 0.63,
+          "margin": 0.27
+        }
+      },
+      "checks": [
+        {
+          "type": "sum",
+          "passed": false,
+          "reason": "missing_fields",
+          "computed": null
+        }
+      ],
+      "roi": {
+        "x": 0,
+        "y": 1280,
+        "width": 1080,
+        "height": 1070
+      },
+      "masks": [
+        {
+          "x": 660,
+          "y": 1980,
+          "width": 60,
+          "height": 100
+        }
+      ]
+    },
+    {
+      "id": "1793774923536147000-mcp-read_fields",
+      "operation": "read_fields",
+      "ok": true,
+      "status": "judged",
+      "source": "accessibility_tree",
+      "all_fields_accepted": false,
+      "freshness": "text_rows_checked",
+      "route": {
+        "requested": "auto",
+        "ax_rows": 12,
+        "ax_sufficient": true,
+        "selected": "accessibility_tree"
+      },
+      "action_attempted": false,
+      "replay_action": false,
+      "metrics": {
+        "model_calls": 1,
+        "model_seconds": 0.3117590839974582,
+        "input_tokens": 3240,
+        "output_tokens": 637,
+        "capture_seconds": 0.0,
+        "ocr_seconds": 0.0,
+        "freshness_seconds": 0.48255216696998104,
+        "elapsed_seconds": 1.3145033330074511,
+        "request_bytes": 5789
+      },
+      "fields": {
+        "total": {
+          "value": null,
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 0.69,
+          "margin": 0.39999999999999997
+        },
+        "items": {
+          "value": null,
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 0.78,
+          "margin": 0.56
+        },
+        "packing": {
+          "value": null,
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 1.0,
+          "margin": 1.0
+        },
+        "delivery": {
+          "value": null,
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 0.77,
+          "margin": 0.5800000000000001
+        },
+        "coupon_kind": {
+          "value": null,
+          "accepted": false,
+          "probability": 0.94,
+          "margin": 0.9099999999999999
+        }
+      },
+      "checks": [
+        {
+          "type": "sum",
+          "passed": false,
+          "reason": "missing_fields",
+          "computed": null
+        }
+      ]
+    },
+    {
+      "id": "1793775050836818000-mcp-read_fields",
+      "operation": "read_fields",
+      "ok": true,
+      "status": "judged",
+      "source": "device_screen_ocr",
+      "all_fields_accepted": true,
+      "freshness": "roi_pixels_checked",
+      "route": {
+        "requested": "screen_ocr",
+        "ax_rows": 17,
+        "ax_sufficient": true,
+        "selected": "device_screen_ocr"
+      },
+      "action_attempted": false,
+      "replay_action": false,
+      "metrics": {
+        "model_calls": 1,
+        "model_seconds": 0.3151915830094367,
+        "input_tokens": 3805,
+        "output_tokens": 787,
+        "capture_seconds": 0.43827654101187363,
+        "ocr_seconds": 1.0478514999849722,
+        "freshness_seconds": 1.570086874999106,
+        "elapsed_seconds": 4.417465083010029,
+        "request_bytes": 6721
+      },
+      "fields": {
+        "total": {
+          "value": "¥22.9",
+          "decimal": "22.9",
+          "currency": "CNY",
+          "accepted": true,
+          "probability": 0.94,
+          "margin": 0.8799999999999999,
+          "ocr_confidence": 0.30000001192092896
+        },
+        "items": {
+          "value": "¥19",
+          "decimal": "19",
+          "currency": "CNY",
+          "accepted": true,
+          "probability": 0.84,
+          "margin": 0.6799999999999999,
+          "ocr_confidence": 0.5
+        },
+        "packing": {
+          "value": "¥1.5",
+          "decimal": "1.5",
+          "currency": "CNY",
+          "accepted": true,
+          "probability": 1.0,
+          "margin": 1.0,
+          "ocr_confidence": 0.5
+        },
+        "delivery": {
+          "value": "¥2.4",
+          "decimal": "2.4",
+          "currency": "CNY",
+          "accepted": true,
+          "probability": 0.91,
+          "margin": 0.8300000000000001,
+          "ocr_confidence": 0.5
+        },
+        "coupon_kind": {
+          "value": "paid_pack",
+          "accepted": true,
+          "probability": 1.0,
+          "margin": 1.0
+        }
+      },
+      "checks": [
+        {
+          "type": "sum",
+          "passed": true,
+          "reason": "matched",
+          "computed": "22.9"
+        }
+      ],
+      "roi": {
+        "x": 0,
+        "y": 750,
+        "width": 1080,
+        "height": 1600
+      },
+      "masks": [
+        {
+          "x": 660,
+          "y": 1980,
+          "width": 60,
+          "height": 100
+        },
+        {
+          "x": 200,
+          "y": 2220,
+          "width": 475,
+          "height": 100
+        }
+      ]
+    },
+    {
+      "id": "1793775056717490000-mcp-read_fields",
+      "operation": "read_fields",
+      "ok": true,
+      "status": "judged",
+      "source": "accessibility_tree",
+      "all_fields_accepted": true,
+      "freshness": "text_rows_checked",
+      "route": {
+        "requested": "auto",
+        "ax_rows": 17,
+        "ax_sufficient": true,
+        "selected": "accessibility_tree"
+      },
+      "action_attempted": false,
+      "replay_action": false,
+      "metrics": {
+        "model_calls": 1,
+        "model_seconds": 0.375634457974229,
+        "input_tokens": 4187,
+        "output_tokens": 859,
+        "capture_seconds": 0.0,
+        "ocr_seconds": 0.0,
+        "freshness_seconds": 0.5454498340259306,
+        "elapsed_seconds": 1.3944828750099987,
+        "request_bytes": 7156
+      },
+      "fields": {
+        "total": {
+          "value": "¥22.9",
+          "decimal": "22.9",
+          "currency": "CNY",
+          "accepted": true,
+          "probability": 0.93,
+          "margin": 0.8600000000000001,
+          "ocr_confidence": null
+        },
+        "items": {
+          "value": "¥ 19",
+          "decimal": "19",
+          "currency": "CNY",
+          "accepted": true,
+          "probability": 0.9,
+          "margin": 0.8,
+          "ocr_confidence": null
+        },
+        "packing": {
+          "value": "¥ 1.5",
+          "decimal": "1.5",
+          "currency": "CNY",
+          "accepted": true,
+          "probability": 1.0,
+          "margin": 1.0,
+          "ocr_confidence": null
+        },
+        "delivery": {
+          "value": "¥ 2.4",
+          "decimal": "2.4",
+          "currency": "CNY",
+          "accepted": true,
+          "probability": 0.99,
+          "margin": 0.98,
+          "ocr_confidence": null
+        },
+        "coupon_kind": {
+          "value": "paid_pack",
+          "accepted": true,
+          "probability": 0.74,
+          "margin": 0.49
+        }
+      },
+      "checks": [
+        {
+          "type": "sum",
+          "passed": true,
+          "reason": "matched",
+          "computed": "22.9"
+        }
+      ]
+    },
+    {
+      "id": "1793775381896481000-mcp-read_fields",
+      "operation": "read_fields",
+      "ok": true,
+      "status": "judged",
+      "source": "device_screen_ocr",
+      "all_fields_accepted": false,
+      "freshness": "roi_pixels_checked",
+      "route": {
+        "requested": "auto",
+        "ax_rows": 0,
+        "ax_sufficient": false,
+        "selected": "device_screen_ocr"
+      },
+      "action_attempted": false,
+      "replay_action": false,
+      "metrics": {
+        "model_calls": 1,
+        "model_seconds": 0.32611204200657085,
+        "input_tokens": 2564,
+        "output_tokens": 549,
+        "capture_seconds": 0.40363766701193526,
+        "ocr_seconds": 0.9921711249626242,
+        "freshness_seconds": 1.1310997920227237,
+        "elapsed_seconds": 3.5800413750112057,
+        "request_bytes": 5054
+      },
+      "fields": {
+        "total": {
+          "value": "¥21.8",
+          "decimal": "21.8",
+          "currency": "CNY",
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 0.98,
+          "margin": 0.96,
+          "ocr_confidence": 0.5
+        },
+        "items": {
+          "value": null,
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 1.0,
+          "margin": 1.0
+        },
+        "packing": {
+          "value": null,
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 1.0,
+          "margin": 1.0
+        },
+        "delivery": {
+          "value": null,
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 0.95,
+          "margin": 0.8999999999999999
+        },
+        "discount": {
+          "value": null,
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 0.95,
+          "margin": 0.9099999999999999
+        },
+        "coupon_kind": {
+          "value": null,
+          "accepted": false,
+          "probability": 0.98,
+          "margin": 0.97
+        }
+      },
+      "checks": [
+        {
+          "type": "sum",
+          "passed": false,
+          "reason": "missing_fields",
+          "computed": null
+        }
+      ],
+      "roi": {
+        "x": 0,
+        "y": 800,
+        "width": 1080,
+        "height": 1550
+      },
+      "masks": []
+    },
+    {
+      "id": "1793775792305719000-mcp-read_fields",
+      "operation": "read_fields",
+      "ok": true,
+      "status": "judged",
+      "source": "device_screen_ocr",
+      "all_fields_accepted": true,
+      "freshness": "roi_pixels_checked",
+      "route": {
+        "requested": "auto",
+        "ax_rows": 0,
+        "ax_sufficient": false,
+        "selected": "device_screen_ocr"
+      },
+      "action_attempted": false,
+      "replay_action": false,
+      "metrics": {
+        "model_calls": 1,
+        "model_seconds": 0.32459600002039224,
+        "input_tokens": 3691,
+        "output_tokens": 826,
+        "capture_seconds": 0.44903354096459225,
+        "ocr_seconds": 1.3549552080221474,
+        "freshness_seconds": 1.0803857080172747,
+        "elapsed_seconds": 4.053662499994971,
+        "request_bytes": 6661
+      },
+      "fields": {
+        "total": {
+          "value": "¥21.8",
+          "decimal": "21.8",
+          "currency": "CNY",
+          "accepted": true,
+          "probability": 1.0,
+          "margin": 1.0,
+          "ocr_confidence": 0.5
+        },
+        "items": {
+          "value": "¥24",
+          "decimal": "24",
+          "currency": "CNY",
+          "accepted": true,
+          "probability": 1.0,
+          "margin": 1.0,
+          "ocr_confidence": 0.5
+        },
+        "packing": {
+          "value": "¥1.5",
+          "decimal": "1.5",
+          "currency": "CNY",
+          "accepted": true,
+          "probability": 1.0,
+          "margin": 1.0,
+          "ocr_confidence": 0.5
+        },
+        "delivery": {
+          "value": "¥2.3",
+          "decimal": "2.3",
+          "currency": "CNY",
+          "accepted": true,
+          "probability": 0.98,
+          "margin": 0.97,
+          "ocr_confidence": 0.5
+        },
+        "discount": {
+          "value": "-¥6",
+          "decimal": "-6",
+          "currency": "CNY",
+          "accepted": true,
+          "probability": 0.98,
+          "margin": 0.96,
+          "ocr_confidence": 0.5
+        },
+        "coupon_kind": {
+          "value": "already_applied",
+          "accepted": true,
+          "probability": 0.91,
+          "margin": 0.8500000000000001
+        }
+      },
+      "checks": [
+        {
+          "type": "sum",
+          "passed": true,
+          "reason": "matched",
+          "computed": "21.8"
+        }
+      ],
+      "roi": {
+        "x": 0,
+        "y": 850,
+        "width": 1080,
+        "height": 1300
+      },
+      "masks": []
+    },
+    {
+      "id": "diagnostic-read_fields",
+      "operation": "read_fields",
+      "ok": true,
+      "status": "judged",
+      "source": "accessibility_tree",
+      "all_fields_accepted": false,
+      "freshness": "text_rows_checked",
+      "route": {
+        "requested": "auto",
+        "ax_rows": 12,
+        "ax_sufficient": true,
+        "selected": "accessibility_tree"
+      },
+      "action_attempted": false,
+      "replay_action": false,
+      "metrics": {
+        "model_calls": 1,
+        "model_seconds": 0.3103717909543775,
+        "input_tokens": 3240,
+        "output_tokens": 637,
+        "capture_seconds": 0.0,
+        "ocr_seconds": 0.0,
+        "freshness_seconds": 0.55513187503675,
+        "elapsed_seconds": 1.4779764580307528,
+        "request_bytes": 5789
+      },
+      "fields": {
+        "total": {
+          "value": null,
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 0.67,
+          "margin": 0.35000000000000003
+        },
+        "items": {
+          "value": null,
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 0.75,
+          "margin": 0.51
+        },
+        "packing": {
+          "value": null,
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 1.0,
+          "margin": 1.0
+        },
+        "delivery": {
+          "value": null,
+          "accepted": false,
+          "review_reason": "sum_check_failed",
+          "probability": 0.78,
+          "margin": 0.5900000000000001
+        },
+        "coupon_kind": {
+          "value": null,
+          "accepted": false,
+          "probability": 0.96,
+          "margin": 0.94
+        }
+      },
+      "checks": [
+        {
+          "type": "sum",
+          "passed": false,
+          "reason": "missing_fields",
+          "computed": null
+        }
+      ]
+    }
+  ]
+}

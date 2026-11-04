@@ -34,9 +34,20 @@ def test_real_stdio_handshake_schemas_and_error(tmp_path):
                 assert next(
                     t for t in tools if t.name == "aua_read_fields"
                 ).annotations.readOnlyHint
+                fields = next(t for t in tools if t.name == "aua_read_fields")
+                props = fields.inputSchema["properties"]
+                assert props["source"]["default"] == "auto"
+                assert set(props["source"]["enum"]) == {"auto", "tree", "screen_ocr"}
+                assert {
+                    "expected_labels",
+                    "ocr_masks",
+                    "min_ocr_confidence",
+                    "currency",
+                } <= props.keys()
                 assert "aua_execute_goal" in {t.name for t in tools}
                 goal = next(t for t in tools if t.name == "aua_execute_goal")
                 assert goal.inputSchema["properties"]["input_macros"]["default"] is True
+                assert goal.inputSchema["properties"]["effect_timeout_seconds"]["default"] == 1.0
                 assert {"aua_long_press", "aua_double_tap", "aua_drag", "aua_scroll_until"} <= {
                     t.name for t in tools
                 }

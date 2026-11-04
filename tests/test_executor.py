@@ -1,5 +1,6 @@
 import json
 import time
+from types import SimpleNamespace
 
 import httpx
 import pytest
@@ -176,12 +177,20 @@ def test_action_ledger_survives_post_action_read_failure(goal_rig):
     assert not result["verified"]
 
 
-def test_no_progress_and_step_limit(goal_rig):
+def test_no_effect_never_repeats_a_mutation(goal_rig):
     runtime, backend = goal_rig
-    assert run(runtime, Policy(), max_steps=2)["stop_reason"] == "max_steps"
-    backend.actions.clear()
-    result = run(runtime, Policy())
-    assert result["stop_reason"] == "no_progress" and len(backend.actions) == 3
+    result = run(runtime, Policy(), effect_timeout_seconds=0.1)
+    assert result["stop_reason"] == "uncertain_effect" and len(backend.actions) == 1
+    assert result["steps"][0]["state"] == "executed"
+    assert result["steps"][0]["effect"]["observed"] is False
+    assert result["metrics"]["model_calls"] == 1
+
+
+def test_wait_local_still_has_bounded_no_progress(goal_rig):
+    runtime, backend = goal_rig
+    assert run(runtime, Policy(), actions=["wait"], max_steps=2)["stop_reason"] == "max_steps"
+    assert run(runtime, Policy(), actions=["wait"])["stop_reason"] == "no_progress"
+    assert not backend.actions
 
 
 def test_deadline_after_slow_model(goal_rig):
@@ -321,3 +330,85 @@ def test_unknown_or_missing_usage_is_not_free(overrides):
     assert policy.summary()["estimated_cost_usd"] is None
     assert policy.summary()["unpriced_calls"] == 1
     policy.close()
+
+
+@pytest.mark.parametrize("delay,budget,success", [(0.3, 0.5, True), (1.5, 0.5, False)])
+def test_delayed_effect_waits_without_another_decision(
+    goal_rig, monkeypatch, delay, budget, success
+):
+    runtime, backend = goal_rig
+    now = [time.monotonic()]
+    began = now[0]
+    monkeypatch.setattr(
+        "android_use.executor.time",
+        SimpleNamespace(
+            monotonic=lambda: now[0], sleep=lambda seconds: now.__setitem__(0, now[0] + seconds)
+        ),
+    )
+    backend.tree = lambda: (
+        XML.replace("Show", "Done") if backend.actions and now[0] - began >= delay else XML
+    )
+    policy = Policy()
+    result = run(runtime, policy, effect_timeout_seconds=budget, completion={"text": "Done"})
+    assert result["verified"] is success
+    assert result["stop_reason"] == ("completion_selector" if success else "uncertain_effect")
+    assert len(backend.actions) == 1 and policy.metrics["model_calls"] == 1
+
+
+def test_transient_empty_tree_after_ack_does_not_replay(goal_rig, monkeypatch):
+    runtime, backend = goal_rig
+    now = [time.monotonic()]
+    began = now[0]
+    monkeypatch.setattr(
+        "android_use.executor.time",
+        SimpleNamespace(
+            monotonic=lambda: now[0], sleep=lambda seconds: now.__setitem__(0, now[0] + seconds)
+        ),
+    )
+    backend.tree = lambda: (
+        XML
+        if not backend.actions
+        else "<hierarchy/>"
+        if now[0] - began < 0.2
+        else XML.replace("Show", "Done")
+    )
+    result = run(runtime, Policy(), effect_timeout_seconds=0.5, completion={"text": "Done"})
+    assert result["verified"] and len(backend.actions) == 1
+
+
+def test_geometry_animation_is_not_action_effect(goal_rig):
+    runtime, backend = goal_rig
+    backend.tree = lambda: (
+        XML.replace("[0,200][300,300]", "[0,400][300,500]") if backend.actions else XML
+    )
+    result = run(runtime, Policy(), effect_timeout_seconds=0.1)
+    assert result["stop_reason"] == "uncertain_effect" and len(backend.actions) == 1
+
+
+def test_return_to_consumed_state_does_not_repeat_action(goal_rig):
+    runtime, backend = goal_rig
+    backend.tree = lambda: XML.replace("Show", "Back") if len(backend.actions) % 2 else XML
+    result = run(runtime, Policy())
+    assert result["stop_reason"] == "duplicate_action" and len(backend.actions) == 2
+
+
+@pytest.mark.parametrize("kind", ["pause", "lock", "password", "scope"])
+def test_effect_wait_keeps_authentication_and_scope_guards(goal_rig, kind):
+    runtime, backend = goal_rig
+    original = backend.tap
+
+    def tap(*args):
+        original(*args)
+        if kind == "pause":
+            runtime._pause_path().touch()
+        elif kind == "lock":
+            backend.is_locked = True
+        elif kind == "password":
+            backend.xml = XML.replace('enabled="true"', 'enabled="true" password="true"')
+        else:
+            backend.front["package"] = "other.app"
+
+    backend.tap = tap
+    result = run(runtime, Policy())
+    assert not result["ok"] and len(backend.actions) == 1
+    assert result["steps"][0]["state"] == "executed" and "observation" not in result

@@ -354,6 +354,7 @@ def test_decimal_sum_check_catches_high_confidence_wrong_fee(field_rig, delivery
         {
             "package": PACKAGE,
             "evidence_text": "商品 ¥19\n包装 ¥1.50\n旧配送 ¥5.40\n实际配送 ¥2.40\n实付 ¥22.90",
+            "currency": "CNY",
             "fields": [{"name": n, "instructions": n} for n in spans],
             "sum_check": {"total": "total", "add": ["items", "packing", "delivery"]},
         },

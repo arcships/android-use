@@ -186,13 +186,15 @@ uv run android-use scroll_until '{"selector":{"text":"Display"},"direction":"up"
 
 Actions support optional postconditions. A timeout reports what happened and stops the batch; it does not repeat the action. Auto-scroll stops on a match, its limits, or repeated lack of progress. [Gestures, waits, batches, and the original tools →](docs/guide.md#cli-reference) · [Optional Jev setup and benchmarks →](docs/jev.md)
 
-## Source update: structured actions and checkout fields
+## Source update: safer actions and automatic OCR
 
-**Not yet included in the released v0.4.0 ZIP.** Updated source compacts large-page context and chooses the operation and target in one request. The new read-only standard MCP tool `aua_read_fields` batches fee/coupon judgments, preserves printed amounts and checks totals in code. Reload your MCP connection after updating source. The source regression suite currently passes **209 Python tests**.
+**Not in the released v0.4.0 ZIP yet.** Source retains every MCP tool and adds page-based AX / local OCR routing to read-only `aua_read_fields`. Healthy text stays on the tree path; missing text or requested labels triggers a device ROI capture and local recognition, then one Jev request judges multiple fields. Acknowledged actions wait for an effect without repeating writes. Money keeps printed signs, grouping and currency.
 
-Physical acceptance resumed known HEYTEA stores: **¥22.9 on Meituan, ¥21.8 on Taobao**. Meituan used accessibility text; Taobao still needed Agent screenshot actions and Agent-provided OCR. No order/payment was made; temporary items were removed. This is neither an exhaustive cheapest-price result nor a matched whole-task speed benchmark.
+During development acceptance, Meituan AX and OCR both produced **19 + 1.5 + 2.4 = ¥22.9**; Taobao automatically routed its empty semantic tree to OCR and produced **24 + 1.5 + 2.3 − 6 = ¥21.8**. The Agent independently inspected checkout and emptied temporary carts; no order or payment was made. Failed ROI, animation and missing-field attempts are retained. This is neither a whole-task speed benchmark nor an exhaustive cheapest-price result. Subsequent guard refinements were tested offline; phone testing stopped at the user's request.
 
-[Field tool and provenance](docs/jev.md#structured-decisions-and-field-judgments-source-update-unreleased) · [Live evidence and retained failures](docs/benchmarks/real-app-jev-v5.md) · [Planned automatic OCR / visual routing — 中文](docs/visual-routing.zh-CN.md)
+Source passes **276 Python tests and 17 UI tests**. Built-in OCR currently requires macOS and Xcode Command Line Tools. Automatic visual grounding/clicking remains future work. Reconnect MCP after updating source.
+
+[Field tool and parameters](docs/jev.md#automatic-read-only-ocr-source-update-unreleased) · [Live acceptance and retained failures](docs/benchmarks/real-app-ocr-v6.md) · [Implementation boundaries and roadmap — 中文](docs/visual-routing.zh-CN.md)
 
 ## Measured, with clear limits
 

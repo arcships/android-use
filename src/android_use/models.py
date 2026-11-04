@@ -165,6 +165,7 @@ class ExecuteGoalArgs(StrictModel):
     min_margin: Annotated[float, Field(ge=0, le=1)] = 0.1
     observe: Literal["none", "tree"] = "tree"
     input_macros: bool = True
+    effect_timeout_seconds: Annotated[float, Field(ge=0.1, le=3)] = 1.0
 
 
 class FieldQuestion(StrictModel):
@@ -196,13 +197,26 @@ class ReadFieldsArgs(StrictModel):
     # Explicit provenance: supplied OCR is never represented as a direct phone read.
     evidence_text: Annotated[str, Field(min_length=1, max_length=12000)] | None = None
     region: Region | None = None
+    source: Literal["auto", "tree", "screen_ocr"] = "auto"
+    expected_labels: Annotated[
+        list[Annotated[str, Field(min_length=1, max_length=100)]], Field(max_length=12)
+    ] = Field(default_factory=list)
+    currency: Literal["CNY", "JPY", "USD", "HKD", "EUR", "GBP", "CAD", "AUD"] | None = None
+    ocr_masks: Annotated[list[Region], Field(max_length=8)] = Field(default_factory=list)
     timeout_seconds: Annotated[float, Field(gt=0, le=60)] = 20.0
+    min_ocr_confidence: Annotated[float, Field(ge=0, le=1)] = 0.0
     min_probability: Annotated[float, Field(ge=0, le=1)] = 0.65
     min_margin: Annotated[float, Field(ge=0, le=1)] = 0.1
     sum_check: FieldSumCheck | None = None
 
     @model_validator(mode="after")
     def unique_fields(self):
+        if self.evidence_text is not None and (
+            self.source != "auto" or self.region or self.ocr_masks
+        ):
+            raise ValueError("Caller text cannot claim a device source, ROI or masks")
+        if self.ocr_masks and self.source == "tree":
+            raise ValueError("OCR masks require auto or screen_ocr source")
         if len({f.name for f in self.fields}) != len(self.fields):
             raise ValueError("Field names must be unique")
         if self.sum_check:

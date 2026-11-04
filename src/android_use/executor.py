@@ -21,7 +21,7 @@ class DecisionPolicy(Protocol):
     def close(self) -> None: ...
 
 
-def snapshot(runtime, package):
+def snapshot(runtime, package, *, allow_empty=False):
     before = runtime._checked_context()
     nodes = runtime._nodes()
     after = runtime._checked_context()
@@ -33,7 +33,7 @@ def snapshot(runtime, package):
     if any(n["password"] for n in visible):
         raise UseError("authentication_required", "Pause for user authentication before continuing")
     owned = [n for n in visible if n["package"] == package]
-    if not owned:
+    if not owned and not allow_empty:
         raise UseError("goal_empty_tree", "No visible app-owned accessibility nodes")
     # A foreign dialog/keyboard can cover the app. Do not target through it.
     if any(
@@ -155,6 +155,16 @@ def candidates(snap, args):
     return result
 
 
+def effect_fingerprint(snap):
+    # Empty layout animation is not evidence that a business action had an effect.
+    content = [
+        {k: v for k, v in n.items() if k not in {"id", "parent", "rect"}} for n in snap["nodes"]
+    ]
+    return hashlib.sha256(
+        json.dumps(content, sort_keys=True, ensure_ascii=False).encode()
+    ).hexdigest()
+
+
 def completed(snap, args):
     if args.completion is None:
         return False
@@ -267,12 +277,13 @@ def execute(runtime, args, policy: DecisionPolicy):
     history = []
     snap = None
     stale, unchanged, reads, actions = 0, 0, 0.0, 0.0
+    consumed = set()
 
-    def read():
+    def read(*, allow_empty=False):
         nonlocal reads
         began = time.monotonic()
         try:
-            return snapshot(runtime, args.package)
+            return snapshot(runtime, args.package, allow_empty=allow_empty)
         finally:
             reads += time.monotonic() - began
 
@@ -394,6 +405,17 @@ def execute(runtime, args, policy: DecisionPolicy):
                 raise UseError("goal_scope_changed", "App or display changed before action")
             if time.monotonic() >= deadline:
                 return finish("timeout")
+            signature = hashlib.sha256(
+                json.dumps(
+                    [effect_fingerprint(fresh), selected["op"], selected["args"]],
+                    sort_keys=True,
+                    ensure_ascii=False,
+                ).encode()
+            ).hexdigest()
+            if selected["op"] not in {"wait_local", "swipe"} and signature in consumed:
+                audit["state"] = "handoff"
+                return finish("duplicate_action")
+            consumed.add(signature)
             entry = {"op": selected["op"], "candidate": choice, "state": "attempted"}
             trace.append(entry)
             audit["state"] = "consumed"
@@ -431,7 +453,33 @@ def execute(runtime, args, policy: DecisionPolicy):
             finally:
                 actions += max(0.0, time.monotonic() - began - (reads - read_before))
             # Record the action before reading, so a read failure cannot erase it.
-            next_snap = read() if next_snap is None else next_snap
+            if selected["op"] not in {"wait_local", "swipe"}:
+                # ACK only proves dispatch. Allow rendering to catch up without a
+                # second model decision or a repeated mutation.
+                effect_start = time.monotonic()
+                effect_deadline = min(deadline, effect_start + args.effect_timeout_seconds)
+                next_snap = read(allow_empty=True) if next_snap is None else next_snap
+                while not next_snap["nodes"] or (
+                    effect_fingerprint(next_snap) == effect_fingerprint(fresh)
+                    and not completed(next_snap, args)
+                ):
+                    if time.monotonic() >= effect_deadline:
+                        entry["effect"] = {
+                            "observed": False,
+                            "wait_seconds": time.monotonic() - effect_start,
+                        }
+                        snap = next_snap
+                        return finish("uncertain_effect")
+                    time.sleep(min(0.1, max(0, effect_deadline - time.monotonic())))
+                    # A transition can briefly expose no app nodes. Retry only
+                    # observation within this budget; keep all auth/scope guards.
+                    next_snap = read(allow_empty=True)
+                entry["effect"] = {
+                    "observed": True,
+                    "wait_seconds": time.monotonic() - effect_start,
+                }
+            else:
+                next_snap = read() if next_snap is None else next_snap
             unchanged = unchanged + 1 if next_snap["fingerprint"] == snap["fingerprint"] else 0
             snap = next_snap
     except UseError as exc:
