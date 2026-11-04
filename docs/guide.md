@@ -291,6 +291,8 @@ Manual preview gestures remain tap and directional swipe. Precision drag, long p
 
 Video uses `screenrecord → H.264 → ffmpeg → in-memory frames`, independent of screenshot/XML polling. After the last visible viewer stops renewing its lease for 5 seconds, capture stops. Authentication pause clears the frames and stops capture. A live sidebar is not a substitute for the agent explicitly observing the screen when needed.
 
+**Source update (not in the v0.4.0 ZIP):** `screenrecord` is renewed about every 170 seconds. The panel now reports automatic recovery during that transition or a transient frame-request failure, rather than asking you to reconnect immediately. It resumes Live only after a valid frame; stream rollover requires a new sequence. After 5 seconds without recovery it shows video unavailable and continues retrying. Device disconnection and authentication pause still clear the image and disable phone controls. Reload the screen after updating its UI; restarting the whole client is unnecessary.
+
 ## CLI reference
 
 MCP tools use the same operation names prefixed with `aua_`. All following examples run in the repository root. Screen labels and coordinates are illustrative; replace them with values from a current observation.
@@ -446,6 +448,7 @@ Restart/reconnect the MCP server or reload tools/start a new chat. A direct MCP 
 | `service_not_started` | Run `setup` with `action=start`, then verify READY. |
 | `phone_locked` / `screen_off` | Wake/unlock on the phone, then READY. |
 | `preview_dependency_missing` | Install ffmpeg and expose it to the client process. |
+| Video briefly says it is recovering | Wait for automatic recovery. Normal encoder renewal does not disconnect ADB or restart the phone-control service. If it persists, check connection/unlock/ffmpeg, then Reconnect. |
 | Control works but video does not | Check connection/unlock/ffmpeg, then Reconnect; do not repeat business actions. |
 | Copy failed | Use an image-clipboard-capable browser/host and allow clipboard writing. |
 | `ambiguous_target` / missing control | Inspect candidates/current screenshot and occlusion; do not blindly select the first. |

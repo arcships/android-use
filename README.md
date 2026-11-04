@@ -171,6 +171,8 @@ Look for **`ready=true`**. With multiple devices, [select the target explicitly]
 
 The preview URL is a private local video endpoint, **not a remote MCP endpoint**. Remote-only MCP clients cannot connect to this stdio service. Client configuration examples are documented; full end-to-end acceptance has not been completed for every client/version.
 
+Source fix: live preview now recovers automatically across encoder renewal and transient frame-request failures. [Recovery behavior and troubleshooting →](docs/guide.md#live-screen) (not yet in the v0.4.0 ZIP).
+
 ## A smaller loop, with explicit outcomes
 
 ```bash

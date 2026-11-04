@@ -22,6 +22,8 @@ const app=standalone?undefined:new App({name:'Android Use Screen',version:'0.4.0
 let preview:Preview|undefined,seq=0,stream='',disposed=false,inFlight=false,acting=false;
 let suspended=false,timer:ReturnType<typeof setTimeout>|undefined;
 let currentSource='',generation=0,initialized=false;
+const recoveryGraceMs=5000;
+let interruptedAt:number|undefined,waitingAfterSeq:number|undefined;
 let noticeTimer:ReturnType<typeof setTimeout>|undefined;
 type JevStatus={ok:boolean;enabled:boolean;configured:boolean;has_saved_key:boolean;key_source:string;model:string;base_url:string;tested?:boolean;latency_ms?:number;demo?:boolean;error?:{code:string;status?:number}};
 const settingsButton=document.querySelector<HTMLButtonElement>('#settings')!;
@@ -104,16 +106,32 @@ document.querySelector<HTMLButtonElement>('#settings-close')!.onclick=()=>settin
 settingsDialog.addEventListener('close',()=>{keyInput.value='';});
 settingsDialog.addEventListener('cancel',event=>{if(settingsBusy)event.preventDefault();});
 keyInput.oninput=()=>{if(jevStatus)renderJev(jevStatus);};
+function clearFrame(){
+  generation++;frame.removeAttribute('src');currentSource='';seq=0;
+}
+function recovering(message:string){
+  interruptedAt??=performance.now();
+  const expired=performance.now()-interruptedAt>=recoveryGraceMs;
+  setState(expired?'offline':'connecting',expired?'视频暂不可用':message,
+    expired?'正在自动重试，也可点击「重连」':'正在自动恢复，无需手动重连');
+}
 function apply(data:Preview){
+  if(!data?.ok)throw new Error('preview_unreachable');
   preview=data;document.querySelector('#model')!.textContent=data.device?.model||'Android';
-  if(stream!==data.stream_id){stream=data.stream_id;seq=0;generation++;}
+  if(stream!==data.stream_id){stream=data.stream_id;clearFrame();waitingAfterSeq=undefined;}
   if(data.paused){
     // Remove even the previously decoded frame from the DOM during authentication.
-    generation++;frame.removeAttribute('src');currentSource='';
+    clearFrame();waitingAfterSeq=undefined;interruptedAt=undefined;
     setState('paused','请在手机上接管操作',data.pause_reason==='device_locked'?'手机已锁定，解锁后自动恢复':'认证完成后由 agent 恢复预览');return;
   }
-  if(!data.connected){setState('offline','手机未连接','请检查 USB 或无线 ADB 连接');return;}
-  if(data.error){setState('offline','视频连接暂不可用',data.error==='preview_dependency_missing'?'请安装 ffmpeg 后重连':'点击「重连」恢复视频');return;}
+  if(!data.connected){clearFrame();setState('offline','手机未连接','请检查 USB 或无线 ADB 连接');return;}
+  if(data.error==='video_stream_ended'){
+    // screenrecord has a bounded lifetime. The daemon restarts it automatically;
+    // require a newly captured frame rather than presenting the cached one as live.
+    waitingAfterSeq??=data.seq;clearFrame();recovering('视频接续中…');return;
+  }
+  if(data.error){clearFrame();setState('offline','视频连接暂不可用',data.error==='preview_dependency_missing'?'请安装 ffmpeg 后重连':'正在自动重试，也可点击「重连」');return;}
+  if(waitingAfterSeq!==undefined&&data.seq<=waitingAfterSeq){recovering('正在等待新画面…');return;}
   const picture=data.frame;
   if(picture&&picture.seq>seq&&picture.data&&picture.width>0&&picture.height>0){
     seq=picture.seq;const expected=++generation;
@@ -123,9 +141,10 @@ function apply(data:Preview){
       currentSource=source;frame.src=source;device.style.aspectRatio=`${picture.width}/${picture.height}`;
       root.style.setProperty('--screen-ratio',String(picture.width/picture.height));
       root.dataset.orientation=picture.width>picture.height?'landscape':'portrait';
-      root.dataset.frameSeq=String(seq);setState('live');
+      root.dataset.frameSeq=String(seq);interruptedAt=undefined;waitingAfterSeq=undefined;setState('live');
     };image.onerror=()=>setState('offline','画面解码失败','点击「重连」重试');image.src=source;
-  }else if(data.frame_available&&currentSource){setState('live');}
+  }else if(data.frame_available&&currentSource){interruptedAt=undefined;setState('live');}
+  else if(interruptedAt!==undefined)recovering('正在等待新画面…');
   else setState('connecting','正在连接视频…','通过 ADB 视频通道传输');
 }
 const visible=()=>!disposed&&!suspended&&document.visibilityState!=='hidden';
@@ -134,7 +153,7 @@ async function poll(){
   if(!visible()||inFlight)return;
   inFlight=true;const started=generation;
   try{const data=await call('frame',{after_seq:seq});if(visible()&&started===generation)apply(data);}
-  catch{if(visible())setState('offline','视频连接已断开','点击「重连」恢复');}
+  catch{if(visible()&&started===generation){clearFrame();recovering('视频连接恢复中…');}}
   finally{inFlight=false;schedule(preview?.paused?500:root.dataset.state==='offline'?1000:150);}
 }
 async function action(action:string,args:Record<string,unknown>={}){

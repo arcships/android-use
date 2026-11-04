@@ -162,3 +162,27 @@ def test_rotation_restarts_encoder_with_new_geometry(monkeypatch, tmp_path):
         assert old.closed and hub.pipeline.size == [2400, 1080]
     finally:
         hub.close()
+
+
+def test_rollover_restarts_automatically_and_error_clears_only_on_new_frame(monkeypatch, tmp_path):
+    hub, _ = make_hub(monkeypatch, tmp_path)
+    hub.start()
+    try:
+        hub.frame()
+        until(lambda: hub.frame_data is not None)
+        old, seq = hub.pipeline, hub.seq
+        # The replacement encoder starts but initially has no decoded output.
+        monkeypatch.setattr(Video, "start", lambda self: None)
+        hub._failed(old)
+        data = hub.frame(after_seq=seq)
+        assert data["connected"] and data["error"] == "video_stream_ended"
+        assert data["frame_available"] and old.closed
+        hub._publish(old, b"late", (54, 120))
+        assert hub.seq == seq
+        until(lambda: hub.pipeline is not None)
+        assert hub.frame()["error"] == "video_stream_ended"
+        hub._publish(hub.pipeline, b"new", (54, 120))
+        data = hub.frame(after_seq=seq)
+        assert data["error"] is None and data["seq"] > seq and data["frame"]
+    finally:
+        hub.close()

@@ -9,7 +9,7 @@ const sample=()=>({ok:true,stream_id:'one',seq:1,frame:{seq:1,data:png,mimeType:
 const jevSample=()=>({ok:true,enabled:false,configured:false,has_saved_key:false,key_source:'none',model:'jev-1.14.0',base_url:'https://api.typesafe.ai/v1'});
 
 async function standalone(page,initial=sample()){
-  let state=initial,calls=[],jev=jevSample(),settingsFailure=null;
+  let state=initial,calls=[],jev=jevSample(),settingsFailure=null,frameFailure=false;
   await page.addInitScript(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{write:async(items)=>{
     const png=await items[0].getType('image/png');const bytes=new Uint8Array(await png.arrayBuffer());
     window.copiedImage={type:png.type,signature:[...bytes.slice(0,8)]};
@@ -18,6 +18,7 @@ async function standalone(page,initial=sample()){
     const request=route.request();
     if(request.method()==='GET')return route.fulfill({contentType:'text/html',body:raw.replace('<!--__MODE__-->','<script>window.__ANDROID_USE_STANDALONE__=true</script>')});
     const args=request.postDataJSON();calls.push({url:request.url(),args});
+    if(request.url().endsWith('/frame')&&frameFailure)return route.abort('connectionreset');
     if(args.action?.startsWith('jev_')){
       if(args.action==='jev_save'&&settingsFailure)return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify(settingsFailure)});
       if(args.action==='jev_save')jev={...jev,enabled:true,configured:true,has_saved_key:true,key_source:'local'};
@@ -30,8 +31,63 @@ async function standalone(page,initial=sample()){
   });
   await page.goto('https://preview.test/token/');
   await expect(page.locator('#app')).toHaveAttribute('data-state','live');
-  return {set:value=>{state=value},calls,failSettings:value=>{settingsFailure=value}};
+  return {set:value=>{state=value},calls,failSettings:value=>{settingsFailure=value},failFrames:value=>{frameFailure=value}};
 }
+
+test('video rollover waits for a new frame and recovers without manual reconnect',async({page})=>{
+  const api=await standalone(page);
+  api.set({...sample(),error:'video_stream_ended',capturing:false,frame:null});
+  await expect(page.locator('#app')).toHaveAttribute('data-state','connecting');
+  await expect(page.locator('#overlay-text')).toHaveText('视频接续中…');
+  await expect(page.locator('#frame')).not.toHaveAttribute('src',/.+/);
+  await expect(page.locator('#home')).toBeDisabled();
+  // An encoder starting with the same cached frame does not prove recovery.
+  api.set(sample());
+  await expect(page.locator('#overlay-text')).toHaveText('正在等待新画面…');
+  api.set({...sample(),seq:2,frame:{...sample().frame,seq:2}});
+  await expect(page.locator('#app')).toHaveAttribute('data-state','live');
+  expect(api.calls.some(c=>c.url.endsWith('/refresh'))).toBeFalsy();
+});
+test('a transient frame request failure clears the frame and automatically recovers',async({page})=>{
+  const api=await standalone(page);
+  api.failFrames(true);
+  await expect(page.locator('#app')).toHaveAttribute('data-state','connecting');
+  await expect(page.locator('#frame')).not.toHaveAttribute('src',/.+/);
+  await expect(page.locator('#copy')).toBeDisabled();
+  api.failFrames(false);
+  // The same cached sequence must be fetched again after removing its image.
+  await expect(page.locator('#app')).toHaveAttribute('data-state','live');
+  await expect(page.locator('#frame')).toHaveAttribute('src',/^data:/);
+});
+test('persistent transport failure becomes offline but keeps retrying',async({page})=>{
+  const api=await standalone(page);
+  api.failFrames(true);
+  await expect(page.locator('#app')).toHaveAttribute('data-state','connecting');
+  await expect(page.locator('#app')).toHaveAttribute('data-state','offline',{timeout:8000});
+  await expect(page.locator('#overlay-detail')).toContainText('正在自动重试');
+  api.failFrames(false);
+  await expect(page.locator('#app')).toHaveAttribute('data-state','live');
+});
+test('a stalled encoder cannot keep the cached frame live indefinitely',async({page})=>{
+  const api=await standalone(page);
+  api.set({...sample(),error:'video_stream_ended',frame:null});
+  await expect(page.locator('#app')).toHaveAttribute('data-state','connecting');
+  // Clearing the error without a higher sequence still does not prove recovery.
+  api.set(sample());
+  await expect(page.locator('#app')).toHaveAttribute('data-state','offline',{timeout:8000});
+  await expect(page.locator('#frame')).not.toHaveAttribute('src',/.+/);
+  api.set({...sample(),seq:2,frame:{...sample().frame,seq:2}});
+  await expect(page.locator('#app')).toHaveAttribute('data-state','live');
+});
+test('authentication during video recovery keeps the frame cleared',async({page})=>{
+  const api=await standalone(page);
+  api.set({...sample(),error:'video_stream_ended',frame:null});
+  await expect(page.locator('#app')).toHaveAttribute('data-state','connecting');
+  api.set({...sample(),paused:true,pause_reason:'authentication',frame:null,frame_available:false});
+  await expect(page.locator('#app')).toHaveAttribute('data-state','paused');
+  await expect(page.locator('#frame')).not.toHaveAttribute('src',/.+/);
+  await expect(page.locator('#home')).toBeDisabled();
+});
 
 test('renders live device and maps pointer to Android pixels',async({page})=>{
   const {calls}=await standalone(page);
@@ -96,6 +152,7 @@ test('disconnection shows offline and refresh reconnects',async({page})=>{
   const api=await standalone(page);
   api.set({...sample(),connected:false,frame:null,frame_available:false});
   await expect(page.locator('#app')).toHaveAttribute('data-state','offline');
+  await expect(page.locator('#frame')).not.toHaveAttribute('src',/.+/);
   api.set({...sample(),seq:2,frame:{...sample().frame,seq:2}});
   await page.locator('#refresh').click();
   await expect(page.locator('#app')).toHaveAttribute('data-state','live');

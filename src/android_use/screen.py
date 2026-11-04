@@ -237,6 +237,8 @@ class ScreenHub:
                 self.seq += 1
                 self.frame_data, self.frame_size = raw, size
                 self.received = time.monotonic()
+                # Starting an encoder is not recovery: only a decoded frame is.
+                self.error = None
 
     def _failed(self, pipeline):
         with self.lock:
@@ -298,7 +300,6 @@ class ScreenHub:
                         )
                         self.pipeline = pipeline
                         pipeline.start()
-                        self.error = None
                     except Exception as exc:
                         self._stop_video()
                         self.error = exc.code if isinstance(exc, UseError) else "video_start_failed"
