@@ -42,6 +42,28 @@ public class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        if (getIntent().getBooleanExtra("video", false)) {
+            getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            LinearLayout root = benchmarkRoot("Android Use / preview continuity fixture");
+            TextView counter = label("");
+            counter.setTextSize(28);
+            root.addView(counter);
+            handler.post(new Runnable() {
+                private int frame;
+                private long previous;
+                @Override public void run() {
+                    long now = android.os.SystemClock.elapsedRealtime();
+                    if (previous != 0 && now - previous > 500) {
+                        android.util.Log.i("AndroidUsePreview", "UI_CALLBACK_GAP_MS=" + (now - previous));
+                    }
+                    previous = now;
+                    counter.setText("SAMPLE_FRAME=" + (++frame));
+                    counter.setBackgroundColor(frame % 2 == 0 ? 0xffb8edd4 : 0xffc8def8);
+                    handler.postDelayed(this, 100);
+                }
+            });
+            return;
+        }
         if (getIntent().getBooleanExtra("benchmark", false)) {
             benchmarkMenu();
             return;

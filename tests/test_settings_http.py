@@ -23,6 +23,9 @@ def preview(monkeypatch):
         def close(self):
             self.last_activity = 0
 
+        def require_interaction_ready(self):
+            raise UseError("preview_buffering", "Display geometry unavailable")
+
     servers, calls = [], []
 
     def make_server(*args):
@@ -95,3 +98,19 @@ def test_provider_error_has_safe_status_without_echoing_secret(preview):
         )
     assert reply.status_code == 503 and reply.json()["error"]["status"] == 401
     assert "rejected-secret" not in reply.text
+
+
+@pytest.mark.parametrize("action", ["tap", "swipe"])
+def test_preview_coordinate_actions_require_geometry_even_for_old_clients(
+    preview, monkeypatch, action
+):
+    url, _ = preview
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("A phone action ran while preview geometry was unavailable")
+
+    monkeypatch.setattr(preview_daemon.Runtime, "call", forbidden)
+    with httpx.Client(trust_env=False) as client:
+        reply = client.post(url + "api/action", json={"action": action})
+    assert reply.status_code == 503
+    assert reply.json()["error"]["code"] == "preview_buffering"

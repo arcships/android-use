@@ -8,7 +8,7 @@
     <a href="#mcp-客户端支持"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="标准 stdio MCP" /></a>
   </p>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
-  <p><a href="#快速开始"><strong>开始使用 →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.5.0">下载 v0.5.0</a> · <a href="#在屏幕中启用-jev">配置 Jev</a> · <a href="docs/guide.zh-CN.md">使用指南</a> · <a href="https://github.com/JackCaow/android-use/issues">反馈问题</a></p>
+  <p><a href="#快速开始"><strong>开始使用 →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.5.1">下载 v0.5.1</a> · <a href="#在屏幕中启用-jev">配置 Jev</a> · <a href="docs/guide.zh-CN.md">使用指南</a> · <a href="https://github.com/JackCaow/android-use/issues">反馈问题</a></p>
 </div>
 
 ## 把 Android 接入你的 Agent 工作流
@@ -170,7 +170,7 @@ uv run android-use ready
 
 视频预览 URL 是私有的本机画面地址，**不是远程 MCP 端点**；仅支持远程 URL 的客户端不能直接接入本版。各客户端已有配置示例，但尚未对所有客户端 / 版本完成端到端验收。
 
-v0.5.0 修复：视频接续和画面请求短暂失败时自动恢复，不再立即要求手动重连。[恢复行为与排查说明 →](docs/guide.zh-CN.md#实时屏幕与图片复制)。
+v0.5.1：支持的设备连续录屏，旧系统换段复用连接与解码器；短暂恢复保留画面。[恢复行为与排查说明 →](docs/guide.zh-CN.md#实时屏幕与图片复制)。
 
 ## 更短的操作循环，明确的执行结果
 
@@ -187,6 +187,12 @@ uv run android-use scroll_until '{"selector":{"text":"显示与亮度"},"directi
 
 可选决策集成与原有工具配合使用：[Agent + Jev 配置、分工和对比测试 →](docs/jev.zh-CN.md)。
 
+## v0.5.1：连续实时预览
+
+支持的设备不再每 170 秒重启录屏；旧系统分段共用一条 ADB 管道和一个解码器。短暂恢复保留画面，显示信息读取失败时只暂停控制，不中断健康视频；认证接管和真实掉线仍清屏。
+
+Android 16 真机 **190 秒连续采集通过**，始终一个编码器/连接/解码器，最长采样间隔 1.422 秒。模拟器的偶发停顿仍待定位；兼容测试保留了脚本人为注入恢复状态导致的失败记录。[验收、失败与边界 →](docs/preview-continuity.md)
+
 ## v0.5.0：动作防重放与自动 OCR
 
 **已纳入 v0.5.0 插件 ZIP。** 保留全部 MCP 工具，新增按当前页面自动选择 AX / 本地 OCR 的只读 `aua_read_fields`。树有目标文字就直接用树，缺少文字或指定标签时才截取 ROI，在本机识别，再由 Jev 一次判断多项字段。动作执行增加效果等待和重复动作拦截；金额保留负号、千位分隔及币种。
@@ -201,9 +207,10 @@ v0.5.0 通过 **277 项 Python 测试、17 项界面测试**。内置 OCR 目前
 
 已记录 **18 次源码对照**和 **12 次实时 Agent / Agent + Jev 对比**；实时两组各完成 6/6。动态流程减少了宿主往返，已知批处理路径没有提速。采样复用减少重复查询，输入宏减少决策，但该轮未额外降低耗时。[方法、原始数据与保留的失败记录 →](docs/benchmarks/optimizations-v4.md)
 
+
 ## 项目状态
 
-**v0.5.0 · MIT · 277 项 Python 测试 · 17 项浏览器测试。** 模拟器验收覆盖 15 项真实 stdio MCP 场景；已有 Android 16 / Xiaomi 15 Ultra 真机验收。新增 Jev 设置和机身界面在本机/模拟器验证，其他厂商、宿主版本及系统的覆盖范围另见[验证记录](docs/validation.md)。
+**v0.5.1 · MIT · 289 项 Python 测试 · 19 项浏览器测试。** 模拟器验收覆盖 15 项真实 stdio MCP 场景；已有 Android 16 / Xiaomi 15 Ultra 真机验收。新增 Jev 设置和机身界面在本机/模拟器验证，其他厂商、宿主版本及系统的覆盖范围另见[验证记录](docs/validation.md)。
 
 多指手势、任意轨迹、精细文本选区及自绘编辑器输入兜底尚未实现。UI 条件满足仅证明该条件，Agent 仍需验收业务结果。控制和预览运行于本机，工具结果由你选择的客户端与模型处理。
 

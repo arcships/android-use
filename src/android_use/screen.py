@@ -24,6 +24,12 @@ LEASE_SECONDS = 5
 MAX_FRAME_BYTES = 3 * 1024 * 1024
 # Replace older daemons so their browser UI/recovery behavior is upgraded too.
 PREVIEW_PROTOCOL_VERSION = 3
+PREVIEW_IMPLEMENTATION_VERSION = 2
+
+
+def unlimited_recording(help_text):
+    """Only enable the documented capability, not an Android-version guess."""
+    return bool(re.search(r"set to 0\s+to remove the time limit", help_text, re.I))
 
 
 def device_paths(key):
@@ -59,11 +65,14 @@ class JPEGParser:
 
 
 class VideoPipeline:
-    def __init__(self, serial, publish, failed, size=None):
+    def __init__(self, serial, publish, failed, size=None, time_limit=170):
+        if type(time_limit) is not int or not 0 <= time_limit <= 170:
+            raise ValueError("Invalid recording limit")
         self.serial, self.publish, self.failed = serial, publish, failed
         self.adb = self.decoder = None
         self.stopped = threading.Event()
         self.size = size or [1080, 2400]
+        self.time_limit = time_limit
         self.pid_path = "/data/local/tmp/android-use-video-" + uuid.uuid4().hex + ".pid"
         self.decoded_frames = 0
         self.bytes_received = 0
@@ -78,12 +87,30 @@ class VideoPipeline:
         # Bound bandwidth while retaining display aspect ratio. No video files are written.
         scale = min(1, 1200 / max(self.size))
         width, height = [max(2, int(n * scale) // 2 * 2) for n in self.size]
+        # Keep the ADB pipe and decoder alive even on legacy screenrecord builds.
+        # Each segment supplies new SPS/PPS/keyframes on the same Annex-B stream.
         script = (
+            "p=; cleanup() { trap - EXIT; "
+            'if [ -n "$p" ] && '
+            '[ "$(cat /proc/$p/comm 2>/dev/null)" = screenrecord ] && '
+            '[ "$(cut -d " " -f 4 /proc/$p/stat 2>/dev/null)" = "$$" ]; '
+            'then kill "$p" 2>/dev/null; wait "$p" 2>/dev/null; fi; '
+            f"rm -f {self.pid_path} {self.pid_path}.owner; }}; "
+            "trap cleanup EXIT; trap 'exit 0' HUP INT TERM; "
+            's=$(cut -d " " -f 22 /proc/$$/stat); '
+            f'printf "%s %s\\n" "$$" "$s" > {self.pid_path}.owner; '
+            "while :; do "
+            "read u rest < /proc/uptime; began=${u%.*}; "
             f"screenrecord --output-format=h264 --bit-rate 2000000 --size {width}x{height} "
-            "--time-limit 170 - & p=$!; "
+            f"--time-limit {self.time_limit} - & p=$!; "
             's=$(cut -d " " -f 22 /proc/$p/stat); '
             f'printf "%s %s\\n" "$p" "$s" > {self.pid_path}; '
-            f'wait "$p"; rm -f {self.pid_path}'
+            'wait "$p"; r=$?; p=; [ "$r" -eq 0 ] || exit "$r"; '
+            "read u rest < /proc/uptime; ended=${u%.*}; "
+            # An immediate successful exit is still a failed capture. Avoid a
+            # device-side spawn loop; let the host's bounded backoff handle it.
+            f"[ {self.time_limit} -gt 0 ] && "
+            f'[ "$((ended - began))" -ge {max(1, self.time_limit - 1)} ] || exit 1; done'
         )
         self.adb = subprocess.Popen(
             [
@@ -111,12 +138,20 @@ class VideoPipeline:
                     "0",
                     "-flags",
                     "low_delay",
+                    # Decoder frame threading otherwise queues sparse screen
+                    # updates behind multiple frames on high-core-count hosts.
+                    "-threads",
+                    "1",
                     "-f",
                     "h264",
                     "-i",
                     "pipe:0",
                     "-vf",
-                    "select=isnan(prev_selected_t)+gte(t-prev_selected_t\\,0.1),scale=out_range=full",
+                    # Raw Annex-B can have synthetic 25fps timestamps even if
+                    # content changes at 10fps. Sample decoder arrival time,
+                    # never manufacture duplicate frames to fill a clock gap.
+                    "select=if(gte(time(0)-ld(0)\\,0.1)+lt(time(0)\\,ld(0))"
+                    "\\,st(0\\,time(0))*0+1\\,0),scale=out_range=full",
                     "-pix_fmt",
                     "yuvj420p",
                     "-threads",
@@ -169,12 +204,20 @@ class VideoPipeline:
         adb = os.environ.get("ANDROID_USE_ADB") or shutil.which("adb")
         if self.adb is not None and adb:
             cleanup = (
+                # Stop the owner first so no new segment can be launched while
+                # cleaning up its last child. PID/start-time checks prevent reuse.
+                f"if [ -r {self.pid_path}.owner ]; then read p s < {self.pid_path}.owner; "
+                'case "$p:$s" in *[!0-9:]*|:*) exit 0;; esac; '
+                'if [ -n "$p" ] && [ -n "$s" ] && [ "$p" -gt 1 ] && '
+                '[ "$(cat /proc/$p/comm 2>/dev/null)" = sh ] && '
+                '[ "$(cut -d " " -f 22 /proc/$p/stat 2>/dev/null)" = "$s" ]; '
+                'then kill "$p"; fi; fi; '
                 f"if [ -r {self.pid_path} ]; then read p s < {self.pid_path}; "
                 'case "$p:$s" in *[!0-9:]*|:*) exit 0;; esac; '
                 'if [ -n "$p" ] && [ -n "$s" ] && [ "$p" -gt 1 ] && '
                 '[ "$(cat /proc/$p/comm 2>/dev/null)" = screenrecord ] && '
                 '[ "$(cut -d " " -f 22 /proc/$p/stat 2>/dev/null)" = "$s" ]; '
-                f'then kill "$p"; fi; rm -f {self.pid_path}; fi'
+                f'then kill "$p"; fi; fi; rm -f {self.pid_path} {self.pid_path}.owner'
             )
             try:
                 subprocess.run(
@@ -201,7 +244,15 @@ class VideoPipeline:
 
 
 class ScreenHub:
-    def __init__(self, serial, key, *, backend=None, pipeline_factory=VideoPipeline):
+    def __init__(
+        self,
+        serial,
+        key,
+        *,
+        backend=None,
+        pipeline_factory=VideoPipeline,
+        recording_time_limit=None,
+    ):
         self.serial, self.key = serial, key
         self.backend = backend or Backend(serial)
         self.pipeline_factory = pipeline_factory
@@ -223,6 +274,14 @@ class ScreenHub:
         self.error = None
         self.model = "Android"
         self.viewport = None
+        self.geometry_ready = False
+        self.recording_time_limit = recording_time_limit
+        self.failures = 0
+        self.pipeline_starts = 0
+        self.health_failures = 0
+        self.metadata_failures = 0
+        self.last_health_failure = None
+        self.stream_failures = 0
 
     def start(self):
         threading.Thread(target=self._watch, daemon=True, name="android-use-preview-watch").start()
@@ -231,6 +290,7 @@ class ScreenHub:
         with self.lock:
             if (
                 pipeline is self.pipeline
+                and not self.closed.is_set()
                 and not self.pause_path.exists()
                 and not self.locked
                 and time.monotonic() < self.lease_until
@@ -240,12 +300,16 @@ class ScreenHub:
                 self.received = time.monotonic()
                 # Starting an encoder is not recovery: only a decoded frame is.
                 self.error = None
+                self.failures = 0
 
     def _failed(self, pipeline):
         with self.lock:
             if pipeline is self.pipeline:
+                self.stream_failures += 1
                 self.error = "video_stream_ended"
-                self.retry_at = time.monotonic() + 1
+                # First recovery is prompt; repeated start failures remain bounded.
+                self.retry_at = time.monotonic() + min(3, 0.1 * 2 ** min(self.failures, 5))
+                self.failures += 1
                 self._stop_video(clear=False)
 
     def _stop_video(self, *, clear=True):
@@ -258,6 +322,23 @@ class ScreenHub:
     def _health(self):
         try:
             locked = self.backend.locked()
+        except Exception:
+            with self.lock:
+                self.health_failures += 1
+                self.last_health_failure = "lock_state"
+                self.connected = False
+                self.geometry_ready = False
+                self.last_health = time.monotonic()
+            return
+        if locked:
+            with self.lock:
+                self.locked, self.connected = True, True
+                self.geometry_ready = False
+                self._stop_video()
+                self.last_health = time.monotonic()
+            return
+        size = None
+        try:
             # These are display/device metadata reads, never UiAutomator snapshots.
             raw = self.backend.shell(["wm", "size"], timeout=2)
             sizes = re.findall(r"(\d+)x(\d+)", raw)
@@ -267,21 +348,37 @@ class ScreenHub:
             )
             if size and rotation and int(rotation[1]) % 2:
                 size.reverse()
-            model = (
-                self.model
-                if self.model != "Android"
-                else self.backend.shell(["getprop", "ro.product.model"], timeout=2)
-            )
-            with self.lock:
-                if size != self.viewport:
-                    self._stop_video()
-                self.locked, self.connected, self.viewport = locked, True, size
-                self.model = model or "Android"
-                self.last_health = time.monotonic()
+            if not size or not rotation or int(rotation[1]) not in range(4):
+                raise ValueError("Unknown display geometry")
         except Exception:
             with self.lock:
-                self.connected = False
-                self.last_health = time.monotonic()
+                self.metadata_failures += 1
+                self.last_health_failure = "display_metadata"
+            size = None
+        if self.model == "Android":
+            try:
+                self.model = (
+                    self.backend.shell(["getprop", "ro.product.model"], timeout=2) or self.model
+                )
+            except Exception:
+                pass  # A missing label cannot disconnect a healthy video stream.
+        if self.recording_time_limit is None:
+            try:
+                # AOSP prints usage on stderr; redirect it on the device.
+                help_text = self.backend.shell(["sh", "-c", "screenrecord --help 2>&1"], timeout=2)
+            except Exception:
+                help_text = ""
+            self.recording_time_limit = 0 if unlimited_recording(help_text) else 170
+        with self.lock:
+            if size is not None and size != self.viewport:
+                self._stop_video()
+            if size is not None:
+                self.viewport = size
+                self.last_health_failure = None
+            # A geometry timeout does not mean USB disconnected. Preserve the
+            # video, but disable pixel-based controls until metadata recovers.
+            self.locked, self.connected, self.geometry_ready = False, True, size is not None
+            self.last_health = time.monotonic()
 
     def _watch(self):
         while not self.closed.is_set():
@@ -292,14 +389,27 @@ class ScreenHub:
             if active and not paused and now - self.last_health > 1:
                 self._health()
             with self.lock:
+                # A health probe may finish after close(), pause or lease expiry.
+                # Recheck under the lock before starting any new capture child.
+                if self.closed.is_set():
+                    self._stop_video()
+                    break
+                now = time.monotonic()
+                active = now < self.lease_until
+                paused = self.pause_path.exists()
                 if paused or not active or self.locked or not self.connected:
                     self._stop_video()
-                elif self.pipeline is None and now >= self.retry_at:
+                elif self.pipeline is None and self.geometry_ready and now >= self.retry_at:
                     try:
                         pipeline = self.pipeline_factory(
-                            self.serial, self._publish, self._failed, size=self.viewport
+                            self.serial,
+                            self._publish,
+                            self._failed,
+                            size=self.viewport,
+                            time_limit=self.recording_time_limit,
                         )
                         self.pipeline = pipeline
+                        self.pipeline_starts += 1
                         pipeline.start()
                     except Exception as exc:
                         self._stop_video()
@@ -339,12 +449,25 @@ class ScreenHub:
                 if self.locked and self.connected
                 else None,
                 "connected": self.connected,
+                "interaction_ready": self.geometry_ready
+                and self.connected
+                and not self.locked
+                and not paused,
                 "capturing": self.pipeline is not None,
                 "device": {"model": self.model},
                 "viewport": self.viewport,
                 "error": self.error,
                 "transport": "adb-screenrecord-h264",
                 "video": {
+                    "pipeline_starts": self.pipeline_starts,
+                    "health_failures": self.health_failures,
+                    "metadata_failures": self.metadata_failures,
+                    "last_health_failure": self.last_health_failure,
+                    "stream_failures": self.stream_failures,
+                    "recording_time_limit_seconds": self.recording_time_limit,
+                    "recording_mode": "unlimited"
+                    if self.recording_time_limit == 0
+                    else "continuous_segments",
                     "decoded_frames": getattr(self.pipeline, "decoded_frames", 0),
                     "bytes_received": getattr(self.pipeline, "bytes_received", 0),
                 },
@@ -353,6 +476,19 @@ class ScreenHub:
     def stop_capture(self):
         with self.lock:
             self._stop_video()
+
+    def require_interaction_ready(self):
+        with self.lock:
+            if (
+                not self.geometry_ready
+                or not self.connected
+                or self.locked
+                or self.pause_path.exists()
+                or self.pipeline is None
+                or self.frame_data is None
+                or self.error
+            ):
+                raise UseError("preview_buffering", "Wait for current video and display geometry")
 
     def save_frame(self):
         with self.lock:
@@ -419,7 +555,12 @@ class ScreenClient:
                         or status.get("device_key") != self.key
                     ):
                         raise UseError("preview_identity_mismatch", "Preview identity changed")
-                    if status.get("protocol_version") == PREVIEW_PROTOCOL_VERSION:
+                    revision = status.get("preview_revision")
+                    if (
+                        status.get("protocol_version") == PREVIEW_PROTOCOL_VERSION
+                        and type(revision) is int
+                        and revision >= PREVIEW_IMPLEMENTATION_VERSION
+                    ):
                         if self.info["serial"] != self.serial:
                             changed = self.request("switch_serial", {"serial": self.serial})
                             if not changed.get("ok"):
@@ -464,7 +605,10 @@ class ScreenClient:
                 if self._load() and self.info.get("pid") == process.pid:
                     try:
                         status = self.request("status")
-                        if status.get("protocol_version") == PREVIEW_PROTOCOL_VERSION:
+                        if (
+                            status.get("protocol_version") == PREVIEW_PROTOCOL_VERSION
+                            and status.get("preview_revision") == PREVIEW_IMPLEMENTATION_VERSION
+                        ):
                             return self.url
                     except UseError:
                         pass

@@ -4,7 +4,7 @@ declare global { interface Window { __ANDROID_USE_STANDALONE__?: boolean } }
 type Size = [number, number];
 type Frame = {seq:number; data:string; mimeType:string; width:number; height:number};
 type Preview = {ok:boolean; stream_id:string; seq:number; frame:Frame|null; frame_available:boolean;
-  connected:boolean; capturing:boolean; paused:boolean; pause_reason:string|null;
+  connected:boolean; capturing:boolean; paused:boolean; pause_reason:string|null; interaction_ready?:boolean;
   device:{model:string}; viewport:Size|null; error:string|null};
 const root=document.querySelector<HTMLElement>('#app')!;
 const frame=document.querySelector<HTMLImageElement>('#frame')!;
@@ -17,7 +17,7 @@ const notice=document.querySelector<HTMLElement>('#notice')!;
 const pointer=document.querySelector<HTMLElement>('#pointer')!;
 const buttons=Object.fromEntries(['refresh','back','home','copy'].map(id=>[id,document.getElementById(id) as HTMLButtonElement]));
 const standalone=window.__ANDROID_USE_STANDALONE__===true;
-const app=standalone?undefined:new App({name:'Android Use Screen',version:'0.5.0'},
+const app=standalone?undefined:new App({name:'Android Use Screen',version:'0.5.1'},
   {availableDisplayModes:['fullscreen']},{autoResize:false});
 let preview:Preview|undefined,seq=0,stream='',disposed=false,inFlight=false,acting=false;
 let suspended=false,timer:ReturnType<typeof setTimeout>|undefined;
@@ -35,7 +35,7 @@ const testJev=document.querySelector<HTMLButtonElement>('#jev-test')!;
 const disableJev=document.querySelector<HTMLButtonElement>('#jev-disable')!;
 const clearJev=document.querySelector<HTMLButtonElement>('#jev-clear')!;
 let jevStatus:JevStatus|undefined,settingsBusy=false;
-const labels:Record<string,string>={connecting:'连接中',live:'Live',paused:'已暂停',offline:'未连接'};
+const labels:Record<string,string>={connecting:'连接中',live:'Live',buffering:'缓冲中',paused:'已暂停',offline:'未连接'};
 
 function showNotice(message:string,detail=''){
   if(noticeTimer)clearTimeout(noticeTimer);
@@ -45,7 +45,7 @@ function showNotice(message:string,detail=''){
 
 function setState(state:string,message?:string,detail?:string){
   root.dataset.state=state;statusText.textContent=labels[state];
-  overlay.hidden=state==='live';
+  overlay.hidden=state==='live'||state==='buffering';
   if(!overlay.hidden){overlayText.textContent=message??'正在连接手机…';overlayDetail.textContent=detail??'实时视频将在这里显示';}
   for(const id of ['home','back','copy']) buttons[id].disabled=acting||state!=='live';
   buttons.refresh.disabled=acting;
@@ -109,9 +109,11 @@ keyInput.oninput=()=>{if(jevStatus)renderJev(jevStatus);};
 function clearFrame(){
   generation++;frame.removeAttribute('src');currentSource='';seq=0;
 }
-function recovering(message:string){
+function recovering(message:string,keepFrame=false){
   interruptedAt??=performance.now();
   const expired=performance.now()-interruptedAt>=recoveryGraceMs;
+  if(!expired&&keepFrame&&currentSource){setState('buffering');return;}
+  if(expired)clearFrame();
   setState(expired?'offline':'connecting',expired?'视频暂不可用':message,
     expired?'正在自动重试，也可点击「重连」':'正在自动恢复，无需手动重连');
 }
@@ -126,12 +128,13 @@ function apply(data:Preview){
   }
   if(!data.connected){clearFrame();setState('offline','手机未连接','请检查 USB 或无线 ADB 连接');return;}
   if(data.error==='video_stream_ended'){
-    // screenrecord has a bounded lifetime. The daemon restarts it automatically;
-    // require a newly captured frame rather than presenting the cached one as live.
-    waitingAfterSeq??=data.seq;clearFrame();recovering('视频接续中…');return;
+    // Unexpected encoder exits recover in the daemon; normal segment boundaries
+    // stay on one pipe. Require a new picture before re-enabling phone controls.
+    if(waitingAfterSeq===undefined){waitingAfterSeq=data.seq;generation++;}
+    recovering('正在恢复视频…',true);return;
   }
   if(data.error){clearFrame();setState('offline','视频连接暂不可用',data.error==='preview_dependency_missing'?'请安装 ffmpeg 后重连':'正在自动重试，也可点击「重连」');return;}
-  if(waitingAfterSeq!==undefined&&data.seq<=waitingAfterSeq){recovering('正在等待新画面…');return;}
+  if(waitingAfterSeq!==undefined&&data.seq<=waitingAfterSeq){recovering('正在等待新画面…',true);return;}
   const picture=data.frame;
   if(picture&&picture.seq>seq&&picture.data&&picture.width>0&&picture.height>0){
     seq=picture.seq;const expected=++generation;
@@ -141,9 +144,16 @@ function apply(data:Preview){
       currentSource=source;frame.src=source;device.style.aspectRatio=`${picture.width}/${picture.height}`;
       root.style.setProperty('--screen-ratio',String(picture.width/picture.height));
       root.dataset.orientation=picture.width>picture.height?'landscape':'portrait';
-      root.dataset.frameSeq=String(seq);interruptedAt=undefined;waitingAfterSeq=undefined;setState('live');
+      root.dataset.frameSeq=String(seq);interruptedAt=undefined;waitingAfterSeq=undefined;
+      setState(preview?.interaction_ready===false?'buffering':'live');
     };image.onerror=()=>setState('offline','画面解码失败','点击「重连」重试');image.src=source;
-  }else if(data.frame_available&&currentSource){interruptedAt=undefined;setState('live');}
+  }else if(data.frame_available&&currentSource){interruptedAt=undefined;setState(data.interaction_ready===false?'buffering':'live');}
+  else if(currentSource){
+    // Rotation, a refreshed encoder or returning to a hidden viewer may need a
+    // first frame. Keep the last picture visible, with interactions disabled.
+    if(waitingAfterSeq===undefined){waitingAfterSeq=data.seq;generation++;}
+    recovering('正在等待新画面…',true);
+  }
   else if(interruptedAt!==undefined)recovering('正在等待新画面…');
   else setState('connecting','正在连接视频…','通过 ADB 视频通道传输');
 }

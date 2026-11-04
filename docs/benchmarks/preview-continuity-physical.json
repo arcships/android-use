@@ -1,0 +1,100 @@
+{
+  "kind": "Physical phone source preview acceptance",
+  "device": {
+    "model": "25019PNF3C",
+    "android": "16"
+  },
+  "source_commit": "da4781a99bdc9c4b12e81dc2baa78b686524ba98",
+  "fixture_keep_screen_on": true,
+  "no_screen_pixels_saved": true,
+  "phases": {
+    "native": {
+      "duration_seconds": 190.187,
+      "mode": "unlimited",
+      "recording_limit_seconds": 0,
+      "first_frame_seconds": 3.043,
+      "frames": 1198,
+      "distinct_pictures": 1198,
+      "adb_pipelines": 1,
+      "decoder_processes": 1,
+      "encoder_processes_observed": 1,
+      "frame_gap_median_seconds": 0.136,
+      "frame_gap_max_seconds": 1.422,
+      "publisher_gap_max_seconds": 1.146,
+      "health_failures": 0,
+      "metadata_failures": 0,
+      "stream_failures": 0,
+      "errors": [],
+      "offline_responses_after_first_frame": 0,
+      "pictures_with_controls_blocked": 0,
+      "passed": true
+    },
+    "legacy": {
+      "duration_seconds": 25.054,
+      "mode": "continuous_segments",
+      "recording_limit_seconds": 2,
+      "first_frame_seconds": 0.043,
+      "frames": 154,
+      "distinct_pictures": 154,
+      "adb_pipelines": 1,
+      "decoder_processes": 1,
+      "encoder_processes_observed": 12,
+      "frame_gap_median_seconds": 0.139,
+      "frame_gap_max_seconds": 0.723,
+      "publisher_gap_max_seconds": 0.732,
+      "health_failures": 0,
+      "metadata_failures": 0,
+      "stream_failures": 0,
+      "errors": [
+        "video_stream_ended"
+      ],
+      "offline_responses_after_first_frame": 0,
+      "pictures_with_controls_blocked": 0,
+      "passed": false
+    }
+  },
+  "fixture_ui_gaps_over_500ms": [],
+  "passed": false,
+  "fixture_uninstalled": true,
+  "original_foreground_restored": true,
+  "installed_preview_restored": true,
+  "fixture_delta_from_source_commit": {
+    "file": "tests/device_app/MainActivity.java",
+    "change": "Video fixture adds FLAG_KEEP_SCREEN_ON only while the test Activity is foreground; does not change system timeout settings.",
+    "source_sha256": "466031c221c7b6982a5b2e57832d977d0bdce00efde1f7a4bb15bf98355ec17f"
+  },
+  "interpretation": {
+    "native_continuity": "Passed the same <2-second consumer/publisher gap target, beyond the former 170-second cutoff.",
+    "legacy_raw_harness_failure": "The controller deliberately set hub.error=video_stream_ended immediately before switching to the legacy phase. Its errors set includes this seeded transition state. Stream failures remained zero and only one ADB pipe/decoder ran during the phase. Keep the raw failed result; do not claim a clean full-suite pass.",
+    "emulator_limit": "The earlier emulator native run still failed with a 4.147-second picture gap; physical success does not erase that failure.",
+    "runtime": "Temporarily ran the source preview HTTP service. The installed v0.5.0 preview service was restored; plugin files and user settings were not replaced."
+  },
+  "browser_observations": {
+    "scope": "Three point-in-time DOM inspections of the source preview, not a continuous UI-state trace.",
+    "samples": [
+      {
+        "frame_seq": 461,
+        "state": "live",
+        "overlay_hidden": true,
+        "image_ready": true
+      },
+      {
+        "frame_seq": 1306,
+        "state": "live",
+        "overlay_hidden": true
+      },
+      {
+        "frame_seq": 1628,
+        "state": "live",
+        "overlay_hidden": true
+      }
+    ],
+    "network_sample": {
+      "frame_responses": 93,
+      "http_errors": 0,
+      "loading_failures": 0,
+      "truncated": true,
+      "note": "CDP buffer truncated; this sample cannot establish zero frontend failures across the entire run."
+    }
+  }
+}
