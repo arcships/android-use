@@ -1,0 +1,968 @@
+{
+  "scope": "Development acceptance of continuous preview, not physical-device coverage or a statistical benchmark. Different trials used different source stages and emulator rendering settings.",
+  "environment": {
+    "android_api": 35,
+    "emulator": "Android Emulator 35.6.11.0, arm64, four virtual cores, 2 GiB guest RAM",
+    "host": "macOS Apple Silicon (Apple M4)",
+    "rendering": "Original AVD GPU disabled; final runs override with -gpu host. No unrelated host processes were stopped.",
+    "physical_device_used": false
+  },
+  "acceptance": {
+    "moving_fixture_update_ms": 100,
+    "long_run_seconds": 190,
+    "forced_legacy_segment_seconds": 2,
+    "motion_gap_target_seconds": 2,
+    "passed_requires": "More than one distinct decoded picture per second, exactly one ADB process and decoder, no reported errors, consumer/publisher gaps below 2 seconds; forced legacy observes at least three encoder PIDs, native mode must detect unlimited capability.",
+    "browser_checks": "Bounded known-health recovery keeps image and hides overlay; disables phone actions until a new sequence. Persistent recovery, disconnection and authentication clear it."
+  },
+  "retained_unserialized_failures": [
+    {
+      "stage": "Initial probe",
+      "result": "Help stderr was not included; fallback capture replaced host pipelines across the 170-second boundary. Corrected stderr probe and close-during-health race."
+    },
+    {
+      "stage": "Direct AVIO experiment",
+      "result": "No decoded first frame within 15 seconds; failed and removed -avioflags direct. No JSON report was produced."
+    },
+    {
+      "stage": "Raw packet-size hypothesis ruled out",
+      "result": "A paced 60-access-unit / 1856-byte synthetic H.264 stream produced its first decoded frame at 0.104 seconds with the default 1024-byte raw packet size and 0.107 seconds with 128; both continued at about 0.1-second intervals. Packet-size tuning was not added to production."
+    }
+  ],
+  "trials": [
+    {
+      "id": "continuous-preview-short",
+      "notes": "Initial segment implementation; synthetic-time sampling.",
+      "result": {
+        "kind": "emulator moving-frame continuity acceptance",
+        "unlimited": {
+          "mode": "unlimited",
+          "recording_limit_seconds": 0,
+          "duration_seconds": 10.021,
+          "first_frame_seconds": 1.41,
+          "frames": 29,
+          "distinct_pictures": 29,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 1,
+          "frame_gap_median_seconds": 0.302,
+          "frame_gap_max_seconds": 0.373,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        },
+        "legacy": {
+          "mode": "continuous_segments",
+          "recording_limit_seconds": 2,
+          "duration_seconds": 12.002,
+          "first_frame_seconds": 0.591,
+          "frames": 35,
+          "distinct_pictures": 35,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 5,
+          "frame_gap_median_seconds": 0.298,
+          "frame_gap_max_seconds": 0.928,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        }
+      }
+    },
+    {
+      "id": "continuous-preview-acceptance-final",
+      "notes": "Observer ran synchronously; retained failed trial and diagnostic sampling flaw.",
+      "result": {
+        "kind": "emulator moving-frame continuity acceptance",
+        "unlimited": {
+          "mode": "unlimited",
+          "recording_limit_seconds": 0,
+          "duration_seconds": 190.028,
+          "first_frame_seconds": 1.171,
+          "frames": 623,
+          "distinct_pictures": 623,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 1,
+          "frame_gap_median_seconds": 0.301,
+          "frame_gap_max_seconds": 0.581,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        },
+        "legacy": {
+          "mode": "continuous_segments",
+          "recording_limit_seconds": 2,
+          "duration_seconds": 25.022,
+          "first_frame_seconds": 0.729,
+          "frames": 73,
+          "distinct_pictures": 73,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 11,
+          "frame_gap_median_seconds": 0.304,
+          "frame_gap_max_seconds": 2.141,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": false
+        }
+      }
+    },
+    {
+      "id": "continuous-preview-observer-fixed",
+      "notes": "Observer moved off viewer sampling thread.",
+      "result": {
+        "kind": "emulator moving-frame continuity acceptance",
+        "unlimited": {
+          "mode": "unlimited",
+          "recording_limit_seconds": 0,
+          "duration_seconds": 10.01,
+          "first_frame_seconds": 1.023,
+          "frames": 30,
+          "distinct_pictures": 30,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 1,
+          "frame_gap_median_seconds": 0.305,
+          "frame_gap_max_seconds": 0.349,
+          "publisher_gap_max_seconds": 0.338,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        },
+        "legacy": {
+          "mode": "continuous_segments",
+          "recording_limit_seconds": 2,
+          "duration_seconds": 25.016,
+          "first_frame_seconds": 0.56,
+          "frames": 81,
+          "distinct_pictures": 81,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 12,
+          "frame_gap_median_seconds": 0.304,
+          "frame_gap_max_seconds": 0.453,
+          "publisher_gap_max_seconds": 0.452,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        }
+      }
+    },
+    {
+      "id": "continuous-preview-long-final",
+      "notes": "Retained motion-gap failure before arrival-clock sampling.",
+      "result": {
+        "kind": "emulator moving-frame continuity acceptance",
+        "unlimited": {
+          "mode": "unlimited",
+          "recording_limit_seconds": 0,
+          "duration_seconds": 190.015,
+          "first_frame_seconds": 1.0,
+          "frames": 592,
+          "distinct_pictures": 592,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 1,
+          "frame_gap_median_seconds": 0.304,
+          "frame_gap_max_seconds": 2.739,
+          "publisher_gap_max_seconds": 2.763,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": false
+        },
+        "legacy": {
+          "mode": "continuous_segments",
+          "recording_limit_seconds": 2,
+          "duration_seconds": 25.025,
+          "first_frame_seconds": 0.763,
+          "frames": 77,
+          "distinct_pictures": 77,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 11,
+          "frame_gap_median_seconds": 0.304,
+          "frame_gap_max_seconds": 1.451,
+          "publisher_gap_max_seconds": 1.458,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        }
+      }
+    },
+    {
+      "id": "continuous-preview-arrival-short",
+      "notes": "Input wallclock timestamp experiment; did not improve frame rate.",
+      "result": {
+        "kind": "emulator moving-frame continuity acceptance",
+        "unlimited": {
+          "mode": "unlimited",
+          "recording_limit_seconds": 0,
+          "duration_seconds": 10.031,
+          "first_frame_seconds": 1.053,
+          "frames": 30,
+          "distinct_pictures": 30,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 1,
+          "frame_gap_median_seconds": 0.301,
+          "frame_gap_max_seconds": 0.342,
+          "publisher_gap_max_seconds": 0.329,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        },
+        "legacy": {
+          "mode": "continuous_segments",
+          "recording_limit_seconds": 2,
+          "duration_seconds": 25.035,
+          "first_frame_seconds": 0.598,
+          "frames": 80,
+          "distinct_pictures": 80,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 12,
+          "frame_gap_median_seconds": 0.303,
+          "frame_gap_max_seconds": 0.355,
+          "publisher_gap_max_seconds": 0.335,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        }
+      }
+    },
+    {
+      "id": "continuous-preview-arrival-long",
+      "notes": "Input wallclock timestamp experiment; not used in final implementation.",
+      "result": {
+        "kind": "emulator moving-frame continuity acceptance",
+        "unlimited": {
+          "mode": "unlimited",
+          "recording_limit_seconds": 0,
+          "duration_seconds": 190.006,
+          "first_frame_seconds": 1.003,
+          "frames": 617,
+          "distinct_pictures": 617,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 1,
+          "frame_gap_median_seconds": 0.304,
+          "frame_gap_max_seconds": 1.318,
+          "publisher_gap_max_seconds": 1.323,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        },
+        "legacy": {
+          "mode": "continuous_segments",
+          "recording_limit_seconds": 2,
+          "duration_seconds": 25.02,
+          "first_frame_seconds": 0.853,
+          "frames": 72,
+          "distinct_pictures": 72,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 11,
+          "frame_gap_median_seconds": 0.303,
+          "frame_gap_max_seconds": 0.839,
+          "publisher_gap_max_seconds": 0.818,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        }
+      }
+    },
+    {
+      "id": "continuous-preview-clock-short",
+      "notes": "Arrival-clock frame selection.",
+      "result": {
+        "kind": "emulator moving-frame continuity acceptance",
+        "unlimited": {
+          "mode": "unlimited",
+          "recording_limit_seconds": 0,
+          "duration_seconds": 10.022,
+          "first_frame_seconds": 2.026,
+          "frames": 43,
+          "distinct_pictures": 43,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 1,
+          "frame_gap_median_seconds": 0.158,
+          "frame_gap_max_seconds": 0.712,
+          "publisher_gap_max_seconds": 0.7,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        },
+        "legacy": {
+          "mode": "continuous_segments",
+          "recording_limit_seconds": 2,
+          "duration_seconds": 15.021,
+          "first_frame_seconds": 2.402,
+          "frames": 78,
+          "distinct_pictures": 78,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 6,
+          "frame_gap_median_seconds": 0.171,
+          "frame_gap_max_seconds": 0.343,
+          "publisher_gap_max_seconds": 0.335,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        }
+      }
+    },
+    {
+      "id": "continuous-preview-clock-final",
+      "notes": "Retained long motion-gap failure with one pipeline and no health errors.",
+      "result": {
+        "kind": "emulator moving-frame continuity acceptance",
+        "unlimited": {
+          "mode": "unlimited",
+          "recording_limit_seconds": 0,
+          "duration_seconds": 190.022,
+          "first_frame_seconds": 2.187,
+          "frames": 959,
+          "distinct_pictures": 959,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 1,
+          "frame_gap_median_seconds": 0.168,
+          "frame_gap_max_seconds": 2.495,
+          "publisher_gap_max_seconds": 2.516,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": false
+        },
+        "legacy": {
+          "mode": "continuous_segments",
+          "recording_limit_seconds": 2,
+          "duration_seconds": 25.009,
+          "first_frame_seconds": 1.869,
+          "frames": 95,
+          "distinct_pictures": 95,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 10,
+          "frame_gap_median_seconds": 0.168,
+          "frame_gap_max_seconds": 1.939,
+          "publisher_gap_max_seconds": 1.948,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        }
+      }
+    },
+    {
+      "id": "continuous-preview-decoder-short",
+      "notes": "Single input decoder thread.",
+      "result": {
+        "kind": "emulator moving-frame continuity acceptance",
+        "unlimited": {
+          "mode": "unlimited",
+          "recording_limit_seconds": 0,
+          "duration_seconds": 20.011,
+          "first_frame_seconds": 2.694,
+          "frames": 87,
+          "distinct_pictures": 87,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 1,
+          "frame_gap_median_seconds": 0.165,
+          "frame_gap_max_seconds": 0.977,
+          "publisher_gap_max_seconds": 0.973,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        },
+        "legacy": {
+          "mode": "continuous_segments",
+          "recording_limit_seconds": 2,
+          "duration_seconds": 15.006,
+          "first_frame_seconds": 4.708,
+          "frames": 34,
+          "distinct_pictures": 34,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 5,
+          "frame_gap_median_seconds": 0.176,
+          "frame_gap_max_seconds": 1.064,
+          "publisher_gap_max_seconds": 1.036,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        }
+      }
+    },
+    {
+      "id": "continuous-preview-decoder-final",
+      "notes": "Retained unhealthy software-rendered emulator trial; capability fallback, five health failures and source-UI stalls.",
+      "result": {
+        "kind": "emulator moving-frame continuity acceptance",
+        "unlimited": {
+          "mode": "continuous_segments",
+          "recording_limit_seconds": 170,
+          "duration_seconds": 190.029,
+          "first_frame_seconds": 13.331,
+          "frames": 600,
+          "distinct_pictures": 600,
+          "adb_pipelines": 5,
+          "decoder_processes": 5,
+          "encoder_processes_observed": 5,
+          "frame_gap_median_seconds": 0.172,
+          "frame_gap_max_seconds": 11.937,
+          "publisher_gap_max_seconds": 11.933,
+          "errors": [],
+          "health_failures": 5,
+          "stream_failures": 0,
+          "passed": false
+        },
+        "legacy": {
+          "mode": "continuous_segments",
+          "recording_limit_seconds": 2,
+          "duration_seconds": 25.027,
+          "first_frame_seconds": 0.798,
+          "frames": 134,
+          "distinct_pictures": 134,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 11,
+          "frame_gap_median_seconds": 0.165,
+          "frame_gap_max_seconds": 0.859,
+          "publisher_gap_max_seconds": 0.858,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        },
+        "fixture_ui_gaps_over_500ms": [
+          1626,
+          739,
+          715,
+          754,
+          902,
+          1547,
+          604,
+          536,
+          863,
+          1306,
+          533,
+          881,
+          589,
+          518,
+          670,
+          750,
+          702,
+          611,
+          1221,
+          1260,
+          1333,
+          681,
+          520,
+          550,
+          1247,
+          1305
+        ]
+      }
+    },
+    {
+      "id": "continuous-preview-gpu-short",
+      "notes": "Same implementation; emulator restarted with explicit host GPU rendering.",
+      "result": {
+        "kind": "emulator moving-frame continuity acceptance",
+        "unlimited": {
+          "mode": "unlimited",
+          "recording_limit_seconds": 0,
+          "duration_seconds": 20.033,
+          "first_frame_seconds": 1.626,
+          "frames": 92,
+          "distinct_pictures": 92,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 1,
+          "frame_gap_median_seconds": 0.164,
+          "frame_gap_max_seconds": 0.872,
+          "publisher_gap_max_seconds": 0.86,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        },
+        "legacy": {
+          "mode": "continuous_segments",
+          "recording_limit_seconds": 2,
+          "duration_seconds": 15.025,
+          "first_frame_seconds": 2.107,
+          "frames": 74,
+          "distinct_pictures": 74,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 6,
+          "frame_gap_median_seconds": 0.169,
+          "frame_gap_max_seconds": 0.77,
+          "publisher_gap_max_seconds": 0.779,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        },
+        "fixture_ui_gaps_over_500ms": [
+          1328
+        ]
+      }
+    },
+    {
+      "id": "continuous-preview-gpu-final",
+      "notes": "Host GPU; retained long motion-gap failure despite exactly one encoder/ADB/decoder and no health/stream failures. Legacy transitions passed. The source fixture also logged scheduling stalls; these do not explain every capture gap.",
+      "result": {
+        "kind": "emulator moving-frame continuity acceptance",
+        "unlimited": {
+          "mode": "unlimited",
+          "recording_limit_seconds": 0,
+          "duration_seconds": 190.029,
+          "first_frame_seconds": 2.372,
+          "frames": 1045,
+          "distinct_pictures": 1045,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 1,
+          "frame_gap_median_seconds": 0.167,
+          "frame_gap_max_seconds": 2.918,
+          "publisher_gap_max_seconds": 2.913,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": false
+        },
+        "legacy": {
+          "mode": "continuous_segments",
+          "recording_limit_seconds": 2,
+          "duration_seconds": 25.028,
+          "first_frame_seconds": 0.729,
+          "frames": 161,
+          "distinct_pictures": 161,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 12,
+          "frame_gap_median_seconds": 0.137,
+          "frame_gap_max_seconds": 0.302,
+          "publisher_gap_max_seconds": 0.309,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        },
+        "fixture_ui_gaps_over_500ms": [
+          811,
+          714,
+          697,
+          1277,
+          548,
+          568,
+          684,
+          501
+        ]
+      }
+    },
+    {
+      "id": "continuous-preview-diagnostic-acceptance",
+      "notes": "One-off in-memory raw-transport observer (adds a Python pipe pump). UI regression tests also ran during part of this diagnostic. Not an uninstrumented timing benchmark. The long run failed after one health check stopped and replaced the pipeline; within each capture process, raw and decoded arrival gaps stayed below 1.2 seconds. This motivated separating optional display metadata from lock-state health.",
+      "result": {
+        "kind": "emulator moving-frame continuity acceptance",
+        "unlimited": {
+          "mode": "unlimited",
+          "recording_limit_seconds": 0,
+          "duration_seconds": 190.015,
+          "first_frame_seconds": 1.328,
+          "frames": 1130,
+          "distinct_pictures": 1130,
+          "adb_pipelines": 2,
+          "decoder_processes": 2,
+          "encoder_processes_observed": 2,
+          "frame_gap_median_seconds": 0.17,
+          "frame_gap_max_seconds": 5.063,
+          "publisher_gap_max_seconds": 5.112,
+          "errors": [],
+          "health_failures": 1,
+          "stream_failures": 0,
+          "passed": false
+        },
+        "legacy": {
+          "mode": "continuous_segments",
+          "recording_limit_seconds": 2,
+          "duration_seconds": 25.026,
+          "first_frame_seconds": 0.568,
+          "frames": 147,
+          "distinct_pictures": 147,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 12,
+          "frame_gap_median_seconds": 0.168,
+          "frame_gap_max_seconds": 0.454,
+          "publisher_gap_max_seconds": 0.441,
+          "errors": [],
+          "health_failures": 0,
+          "stream_failures": 0,
+          "passed": true
+        },
+        "fixture_ui_gaps_over_500ms": [
+          1061,
+          573,
+          562,
+          535
+        ]
+      },
+      "transport_diagnostic": [
+        {
+          "limit": 0,
+          "raw_bytes": 2201160,
+          "raw_count": 553,
+          "raw_largest_gaps": [
+            {
+              "at": 44.811,
+              "gap": 0.483
+            },
+            {
+              "at": 56.328,
+              "gap": 0.414
+            },
+            {
+              "at": 0.757,
+              "gap": 0.356
+            },
+            {
+              "at": 45.134,
+              "gap": 0.323
+            },
+            {
+              "at": 33.791,
+              "gap": 0.202
+            },
+            {
+              "at": 27.11,
+              "gap": 0.133
+            },
+            {
+              "at": 36.867,
+              "gap": 0.128
+            },
+            {
+              "at": 8.935,
+              "gap": 0.127
+            }
+          ],
+          "published_count": 357,
+          "published_largest_gaps": [
+            {
+              "at": 44.82,
+              "gap": 0.486
+            },
+            {
+              "at": 56.334,
+              "gap": 0.416
+            },
+            {
+              "at": 45.145,
+              "gap": 0.326
+            },
+            {
+              "at": 0.766,
+              "gap": 0.315
+            },
+            {
+              "at": 56.608,
+              "gap": 0.274
+            },
+            {
+              "at": 8.945,
+              "gap": 0.231
+            },
+            {
+              "at": 36.872,
+              "gap": 0.229
+            },
+            {
+              "at": 6.903,
+              "gap": 0.223
+            }
+          ]
+        },
+        {
+          "limit": 0,
+          "raw_bytes": 5062547,
+          "raw_count": 1255,
+          "raw_largest_gaps": [
+            {
+              "at": 51.699,
+              "gap": 1.159
+            },
+            {
+              "at": 92.391,
+              "gap": 0.953
+            },
+            {
+              "at": 5.777,
+              "gap": 0.682
+            },
+            {
+              "at": 33.644,
+              "gap": 0.463
+            },
+            {
+              "at": 53.815,
+              "gap": 0.453
+            },
+            {
+              "at": 79.977,
+              "gap": 0.45
+            },
+            {
+              "at": 50.54,
+              "gap": 0.437
+            },
+            {
+              "at": 111.518,
+              "gap": 0.393
+            }
+          ],
+          "published_count": 773,
+          "published_largest_gaps": [
+            {
+              "at": 51.068,
+              "gap": 0.976
+            },
+            {
+              "at": 92.404,
+              "gap": 0.96
+            },
+            {
+              "at": 5.8,
+              "gap": 0.691
+            },
+            {
+              "at": 51.729,
+              "gap": 0.661
+            },
+            {
+              "at": 53.829,
+              "gap": 0.51
+            },
+            {
+              "at": 79.737,
+              "gap": 0.501
+            },
+            {
+              "at": 33.651,
+              "gap": 0.463
+            },
+            {
+              "at": 111.583,
+              "gap": 0.452
+            }
+          ]
+        },
+        {
+          "limit": 2,
+          "raw_bytes": 1067616,
+          "raw_count": 241,
+          "raw_largest_gaps": [
+            {
+              "at": 12.863,
+              "gap": 0.392
+            },
+            {
+              "at": 18.359,
+              "gap": 0.341
+            },
+            {
+              "at": 13.425,
+              "gap": 0.319
+            },
+            {
+              "at": 6.84,
+              "gap": 0.22
+            },
+            {
+              "at": 17.748,
+              "gap": 0.218
+            },
+            {
+              "at": 24.25,
+              "gap": 0.211
+            },
+            {
+              "at": 15.588,
+              "gap": 0.203
+            },
+            {
+              "at": 2.437,
+              "gap": 0.201
+            }
+          ],
+          "published_count": 147,
+          "published_largest_gaps": [
+            {
+              "at": 18.37,
+              "gap": 0.441
+            },
+            {
+              "at": 12.876,
+              "gap": 0.397
+            },
+            {
+              "at": 13.452,
+              "gap": 0.34
+            },
+            {
+              "at": 24.256,
+              "gap": 0.301
+            },
+            {
+              "at": 2.442,
+              "gap": 0.3
+            },
+            {
+              "at": 15.592,
+              "gap": 0.299
+            },
+            {
+              "at": 17.753,
+              "gap": 0.295
+            },
+            {
+              "at": 22.083,
+              "gap": 0.276
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "continuous-preview-metadata-final",
+      "notes": "Final source after separating display metadata from lock-state health. Native run still failed the strict motion-gap threshold without any pipeline restart or health/metadata error; this remains unresolved. Legacy turnover passed.",
+      "result": {
+        "kind": "emulator moving-frame continuity acceptance",
+        "unlimited": {
+          "mode": "unlimited",
+          "recording_limit_seconds": 0,
+          "duration_seconds": 190.027,
+          "first_frame_seconds": 2.361,
+          "frames": 1104,
+          "distinct_pictures": 1104,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 1,
+          "frame_gap_median_seconds": 0.159,
+          "frame_gap_max_seconds": 4.147,
+          "publisher_gap_max_seconds": 4.136,
+          "errors": [],
+          "health_failures": 0,
+          "metadata_failures": 0,
+          "last_health_failure": null,
+          "stream_failures": 0,
+          "passed": false
+        },
+        "legacy": {
+          "mode": "continuous_segments",
+          "recording_limit_seconds": 2,
+          "duration_seconds": 25.024,
+          "first_frame_seconds": 0.567,
+          "frames": 149,
+          "distinct_pictures": 149,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 11,
+          "frame_gap_median_seconds": 0.136,
+          "frame_gap_max_seconds": 1.329,
+          "publisher_gap_max_seconds": 1.337,
+          "errors": [],
+          "health_failures": 0,
+          "metadata_failures": 0,
+          "last_health_failure": null,
+          "stream_failures": 0,
+          "passed": true
+        },
+        "fixture_ui_gaps_over_500ms": [
+          664,
+          791,
+          1397,
+          853,
+          525
+        ]
+      }
+    },
+    {
+      "id": "continuous-preview-display-fault",
+      "notes": "Final source, controlled display metadata fault during seconds 5-8. Three failed display probes did not stop capture; 20 distinct decoded pictures arrived with controls blocked, then controls recovered. Both short phases passed. This does not supersede the retained native long-run motion-gap failure.",
+      "result": {
+        "kind": "emulator moving-frame continuity acceptance",
+        "unlimited": {
+          "mode": "unlimited",
+          "recording_limit_seconds": 0,
+          "duration_seconds": 15.03,
+          "first_frame_seconds": 3.256,
+          "frames": 57,
+          "distinct_pictures": 57,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 1,
+          "frame_gap_median_seconds": 0.17,
+          "frame_gap_max_seconds": 0.684,
+          "publisher_gap_max_seconds": 0.693,
+          "errors": [],
+          "health_failures": 0,
+          "metadata_failures": 3,
+          "last_health_failure": null,
+          "injected_display_failure": true,
+          "pictures_with_controls_blocked": 20,
+          "interaction_ready_at_end": true,
+          "stream_failures": 0,
+          "passed": true
+        },
+        "legacy": {
+          "mode": "continuous_segments",
+          "recording_limit_seconds": 2,
+          "duration_seconds": 10.0,
+          "first_frame_seconds": 0.991,
+          "frames": 40,
+          "distinct_pictures": 40,
+          "adb_pipelines": 1,
+          "decoder_processes": 1,
+          "encoder_processes_observed": 4,
+          "frame_gap_median_seconds": 0.171,
+          "frame_gap_max_seconds": 1.387,
+          "publisher_gap_max_seconds": 1.379,
+          "errors": [],
+          "health_failures": 0,
+          "metadata_failures": 0,
+          "last_health_failure": null,
+          "injected_display_failure": false,
+          "pictures_with_controls_blocked": 0,
+          "interaction_ready_at_end": true,
+          "stream_failures": 0,
+          "passed": true
+        },
+        "fixture_ui_gaps_over_500ms": []
+      }
+    }
+  ]
+}

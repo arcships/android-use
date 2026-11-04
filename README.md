@@ -200,6 +200,8 @@ v0.5.0 passes **277 Python tests and 17 UI tests**. Built-in OCR currently requi
 
 Development comparisons include **18 source-level trials** and **12 live Agent / Agent + Jev trials**. Both live arms completed 6/6 tasks. Dynamic workflows needed fewer host replies with Jev; familiar batch paths did not improve. Sampling reduced repeated state queries, while input macros reduced decisions without an additional timing win in that sample. [Methodology, raw records and retained failures →](docs/benchmarks/optimizations-v4.md)
 
+Source preview improvement: remove the forced 170-second restart on supported devices, keep legacy segments on one decoder, and retain the picture during bounded recovery. [Implementation and emulator acceptance](docs/preview-continuity.md). Long-run motion stalls remain under investigation; this source change is not in the v0.5.0 ZIP.
+
 ## Project status
 
 **v0.5.0 · MIT · 277 Python tests · 17 browser tests.** Emulator acceptance covers 15 real stdio MCP scenarios. Earlier physical-device acceptance covers Android 16 / Xiaomi 15 Ultra. New Jev setup and frame changes have local/emulator validation; other manufacturers, host versions and operating systems have different coverage. [Validation evidence →](docs/validation.md)

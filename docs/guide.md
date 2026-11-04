@@ -295,6 +295,8 @@ Video uses `screenrecord → H.264 → ffmpeg → in-memory frames`, independent
 
 **Included in v0.5.0:** `screenrecord` is renewed about every 170 seconds. The panel now reports automatic recovery during that transition or a transient frame-request failure, rather than asking you to reconnect immediately. It resumes Live only after a valid frame; stream rollover requires a new sequence. After 5 seconds without recovery it shows video unavailable and continues retrying. Device disconnection and authentication pause still clear the image and disable phone controls. Reload the screen after updating its UI; restarting the whole client is unnecessary.
 
+Source update after v0.5.0: [continuous capture and bounded picture retention](preview-continuity.md) remove the unconditional periodic reconnect. Read its validation and device limits before treating the change as universal seamless motion.
+
 ## CLI reference
 
 MCP tools use the same operation names prefixed with `aua_`. All following examples run in the repository root. Screen labels and coordinates are illustrative; replace them with values from a current observation.
