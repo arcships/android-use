@@ -23,6 +23,8 @@
 <input id="jev-key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="4096" placeholder="粘贴你的 API Key">
 <p class="settings-hint">Key 保存在此电脑，保存后不再回显。</p>
 <p id="jev-provider" class="settings-hint"></p>
+<label class="settings-toggle" for="jev-images"><input id="jev-images" type="checkbox" disabled><span>允许发送截图（视觉定位）</span></label>
+<p class="settings-hint">默认关闭，与启用 Jev 分开设置。开启后，视觉定位和视觉点击会把当前屏幕截图（遮罩区域已涂白）发送给 TypeSafe；密码和验证码页面不会截图。</p>
 <p class="settings-disclosure">启用后，任务目标与界面文字会发送给 TypeSafe。设置对新任务生效。</p>
 <p id="jev-message" role="status" aria-live="polite"></p>
 <button id="jev-enable" class="primary" type="submit" disabled>验证并启用</button>

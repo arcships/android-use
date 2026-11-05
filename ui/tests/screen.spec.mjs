@@ -24,6 +24,7 @@ async function standalone(page,initial=sample()){
       if(args.action==='jev_save')jev={...jev,enabled:true,configured:true,has_saved_key:true,key_source:'local'};
       if(args.action==='jev_disable')jev={...jev,enabled:false};
       if(args.action==='jev_clear')jev=jevSample();
+      if(args.action==='jev_images_on'||args.action==='jev_images_off')jev={...jev,images_enabled:args.action==='jev_images_on'};
       return route.fulfill({contentType:'application/json',body:JSON.stringify({...jev,...(['jev_save','jev_test'].includes(args.action)?{tested:true,latency_ms:120}:{})})});
     }
     if(request.url().endsWith('/action')&&actionFailure)return route.fulfill({status:503,body:'Unavailable'});
@@ -131,7 +132,6 @@ test('a stalled encoder cannot keep the cached frame live indefinitely',async({p
   api.set({...sample(),seq:2,frame:{...sample().frame,seq:2}});
   await expect(page.locator('#app')).toHaveAttribute('data-state','live');
 });
-test('authentication during video recovery keeps the frame cleared',async({page})=>{
 test('a device without screenrecord explains the limit instead of retrying',async({page})=>{
   const api=await standalone(page);
   api.set({...sample(),error:'preview_unsupported_device',frame:null,frame_available:false,capturing:false});
@@ -145,6 +145,7 @@ test('a device without screenrecord explains the limit instead of retrying',asyn
   await expect(page.locator('#frame')).not.toHaveAttribute('src',/.+/);
   await expect(page.locator('#home')).toBeDisabled();
 });
+test('authentication during video recovery keeps the frame cleared',async({page})=>{
   const api=await standalone(page);
   api.set({...sample(),error:'video_stream_ended',frame:null});
   await expect(page.locator('#app')).toHaveAttribute('data-state','buffering');
@@ -267,6 +268,19 @@ test('Jev setup validates, enables, tests, disables and removes without retainin
   await expect(page.locator('#jev-state')).toHaveText('已配置 Key，Jev 未启用');
   await page.getByRole('button',{name:'移除本机 Key'}).click();
   await expect(page.locator('#jev-state')).toHaveText('尚未配置，填入 Key 即可开始');
+});
+test('Screenshot sending is a separate opt-in that starts off',async({page})=>{
+  const api=await standalone(page);
+  await page.getByRole('button',{name:'Jev 设置'}).click();
+  const images=page.getByRole('checkbox',{name:'允许发送截图（视觉定位）'});
+  await expect(images).not.toBeChecked();await expect(images).toBeEnabled();
+  await images.click();
+  await expect(page.locator('#jev-message')).toHaveText('已允许发送截图');
+  await expect(images).toBeChecked();
+  await expect(page.locator('#jev-state')).toHaveText('尚未配置，填入 Key 即可开始');
+  await images.click();
+  await expect(page.locator('#jev-message')).toHaveText('已关闭截图发送');
+  expect(api.calls.filter(c=>c.args.action?.startsWith('jev_images')).map(c=>c.args.action)).toEqual(['jev_images_on','jev_images_off']);
 });
 test('Jev invalid-key feedback keeps the dialog usable and closing clears the input',async({page})=>{
   const api=await standalone(page);

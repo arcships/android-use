@@ -80,6 +80,24 @@ OCR 推理后再次读取同一 ROI，比较精确像素哈希；变化就丢弃
 
 `aua_execute_goal` 另新增 `effect_timeout_seconds`（默认 1，范围 0.1–3 秒）。点击/输入确认后只观察，等待非空语义变化或完成条件；无效果交回 `uncertain_effect`，同一调用回到已消费的状态与动作则交回 `duplicate_action`。几何动画和过渡空树不算效果。ACK 仍记为 executed，不代表业务成功；`wait` 与有界列表滑动保留原有无进展限制。该机制不是跨调用去重，Agent 仍需根据返回记录恢复，不能重新提交整个目标。
 
+## Jev Box 视觉定位（截图需单独开启）
+
+有些目标在控件树里没有可用节点：Canvas/游戏界面、WebView 图片、无标签图标。`aua_locate` 让 Jev Box（需 `jev-1.14` 及以上）判断描述的元素在哪；`aua_tap` / `aua_long_press` / `aua_double_tap` 也接受同样参数的 `visual`，代替 `selector` 或 `x`/`y`。
+
+这是唯一会**上传截图**的功能，因此有独立开关，和启用 Jev 分开，**默认关闭**。在 Jev 设置中勾选「允许发送截图（视觉定位）」，或为服务进程设置 `ANDROID_USE_JEV_IMAGES=1`；本机保存的选择优先于环境变量。未开启时两个调用都在读取手机前返回 `jev_images_disabled`。
+
+```json
+{"package": "com.example.shop", "description": "右上角的购物车图标",
+ "region": {"x": 0, "y": 192, "width": 1080, "height": 2016}}
+```
+
+- 每次请求发送一张 `region`（默认全屏）的 JPEG，等比缩放到每边 280–1568 px，同时问三个问题：Noul 是否存在、none/one/several 的 Choice 匹配数量、Box 位置。约 3,900 输入 token（≈$0.00016），模型耗时约 0.4 秒。若首轮在缩小后的图上不确定（存在概率在 0.3 与门槛之间，或置信度偏低），会在首个框周围裁出至少 560 px 的原分辨率区域再问一次；`refined` 返回该窗口，`model_calls` 变为 2。
+- 仅当存在概率 ≥ `min_presence`（默认 0.7）、恰好一个匹配、框置信度 ≥ `min_confidence`（默认 0.5）时 `status=located`；否则为 `not_found`、`ambiguous`、`low_confidence` 或 `masked`（框中心落在遮罩内）。`box=[x,y,宽,高]`、`tap=[x,y]` 为显示像素；只有 `located` 才给出 `tap`。
+- 最多 8 个 `masks` 在上传前涂白。不需要状态栏时用 `region` 排除通知内容。
+- 设备暂停、可见密码框或树中出现验证码/PIN 提示时不截图。安全窗口（全黑截图）直接返回 `screen_capture_blocked`，不调用模型。只画在像素里的自定义认证无法识别，应先 pause。
+- 视觉点击依次执行：定位，重新读取上下文并再次截图，比较框外扩区域像素；变化像素超过 1% 返回 `stale_visual_target`。通过后在框中心**只点一次**，支持 `wait_for`/`observe`。未确认的目标返回 `visual_target_not_found`、`ambiguous_target` 或 `visual_low_confidence` 并附定位结果，不会点击。`batch` 中不允许视觉点击。
+- 定位框是模型判断，不是验收。能用控件树选择器时优先使用，结果以设备实际界面为准。
+
 ## 配置
 
 ### 推荐：在屏幕中配置

@@ -58,7 +58,7 @@ The server checks the connection and saves the key on this computer. New tasks p
 
 <img src="docs/images/jev-settings.jpg" alt="Jev settings with a write-only API key field and Verify and enable button" width="340" />
 
-Enabling Jev sends the subgoal, visible UI text and supplied input values to TypeSafe for decisions. The server never returns the saved key to the UI.
+Enabling Jev sends the subgoal, visible UI text and supplied input values to TypeSafe for decisions. The server never returns the saved key to the UI. Screenshots are sent only for visual location (`aua_locate`), after you separately turn on 「允许发送截图（视觉定位）」.
 
 </details>
 
@@ -68,6 +68,7 @@ Enabling Jev sends the subgoal, visible UI text and supplied input values to Typ
 | --- | --- |
 | **Understand the screen** | Accessibility trees, screenshots, selectors and bounded waits. |
 | **Act precisely** | Tap, long press, double tap, swipe, drag, launch apps and use system buttons. |
+| **See what the tree misses** | Opt-in Jev Box locates canvas, image and unlabeled targets; a visual tap rechecks pixels and taps once. |
 | **Reduce round trips** | Combine action, wait and observation. Search lists with bounded auto-scroll. |
 | **Input with verification** | Unicode/emoji, replace/append and native text readback. A stable field can offer one focus → input → readback decision. |
 | **Keep control clear** | User takeover for authentication, partial/uncertain action ledgers and no automatic replay. |

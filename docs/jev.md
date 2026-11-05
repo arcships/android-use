@@ -94,6 +94,24 @@ The overall deadline defaults to 20 seconds, maximum 60. Cold helper compilation
 
 `aua_execute_goal` adds `effect_timeout_seconds` (default 1; 0.1–3 seconds). After an acknowledged tap/input it only observes until nonempty semantic evidence changes or the completion condition is met. No effect hands off as `uncertain_effect`; revisiting the same consumed state/action within this call hands off as `duplicate_action`. Geometry animation and transient empty trees do not count as effects. ACK stays recorded as executed, not business success. Wait/list-swipe no-progress limits remain. This is not cross-call idempotency: inspect the returned ledger rather than resubmitting a whole goal.
 
+## Visual location with Jev Box (opt-in screenshots)
+
+Some targets have no usable tree node: canvas and game UIs, WebView images, unlabeled icons. `aua_locate` asks Jev Box (`jev-1.14` or newer) where the described element is, and `aua_tap` / `aua_long_press` / `aua_double_tap` accept `visual` with the same arguments in place of `selector` or `x`/`y`.
+
+This is the only feature that **uploads a screenshot**, so it has its own opt-in, separate from enabling Jev and **off by default**. Turn on 「允许发送截图（视觉定位）」 in the Jev settings panel, or set `ANDROID_USE_JEV_IMAGES=1` for the server process. A saved choice overrides the environment. Otherwise both calls return `jev_images_disabled` before reading the phone.
+
+```json
+{"package": "com.example.shop", "description": "the cart icon at the top right",
+ "region": {"x": 0, "y": 192, "width": 1080, "height": 2016}}
+```
+
+- One request carries one JPEG of `region` (default: full display), scaled to 280–1568 px per side, with three questions: Noul presence, a Choice of none/one/several, and a Box. It costs about 3,900 input tokens (≈$0.00016) and about 0.4 s of model time. If the first answer is uncertain (presence between 0.3 and the threshold, or low confidence) on a downscaled image, it asks once more on a native-resolution crop of at least 560 px around the first box. `refined` reports that crop window, and `model_calls` becomes 2.
+- `status` is `located` only when presence ≥ `min_presence` (default 0.7), exactly one match, and box confidence ≥ `min_confidence` (default 0.5). Otherwise it is `not_found`, `ambiguous`, `low_confidence`, or `masked` (the box center falls in a mask). `box` is `[x, y, width, height]` and `tap` is `[x, y]`, both in display pixels. `tap` is null unless the status is `located`.
+- Up to 8 `masks` are whitened before upload. Exclude the status bar (notifications) with `region` when it is not needed.
+- Nothing is captured on a paused device, a visible password field, or an OTP/PIN prompt in the tree. A secure window (all-black capture) returns `screen_capture_blocked` without a model call. Other custom authentication drawn only in pixels cannot be detected; pause first.
+- A visual tap locates, reads the context again, captures again, and compares pixels around the padded box. More than 1% changed pixels returns `stale_visual_target`. It then taps the box center **once** and supports `wait_for`/`observe`. Unconfirmed targets return `visual_target_not_found`, `ambiguous_target` or `visual_low_confidence` with the locate result, and nothing is tapped. Visual taps are rejected in `batch`.
+- A located box is a model judgment, not verification. Prefer tree selectors whenever they work, and verify the outcome from the device.
+
 ## Configure
 
 ### Recommended: screen settings

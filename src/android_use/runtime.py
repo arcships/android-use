@@ -26,6 +26,7 @@ from .tree import compact, in_viewport, matches, parse_tree, tap_point
 # Host-decider sessions: idle lifetime between aua_goal_decide calls, and how many may wait.
 GOAL_SESSION_SECONDS = 300
 GOAL_SESSION_LIMIT = 8
+TAP_OPS = {"tap", "long_press", "double_tap"}
 
 
 class Runtime:
@@ -236,6 +237,9 @@ class Runtime:
                         (s.op, ARG_MODELS[s.op].model_validate(s.args).model_dump()) for s in steps
                     ]
                 }
+                if any(step.get("visual") for _, step in args["steps"]):
+                    # A paid, screenshot-sending location is never queued behind other actions.
+                    raise ValueError("Visual taps are not allowed in batch")
             goal_config = session = None
             if op in {"execute_goal", "read_fields"}:
                 from .jev import JevConfig
@@ -249,6 +253,13 @@ class Runtime:
                 if decider == "jev":
                     # Fail before discovering or reading a phone.
                     goal_config = JevConfig.from_env()
+            visual = op == "locate" or (op in TAP_OPS and args.get("visual") is not None)
+            if visual:
+                from .jev import JevConfig
+                from .vision import require_images
+
+                goal_config = JevConfig.from_env()
+                require_images(goal_config)
             if op == "goal_decide":
                 session = self._take_goal_session(args["token"], args["choice"])
             self._connect()
@@ -277,6 +288,18 @@ class Runtime:
                     from .jev import JevPolicy
 
                     return read_fields(self, args, JevPolicy(goal_config))
+                if visual:
+                    from .jev import JevPolicy
+
+                    policy = JevPolicy(goal_config)
+                    try:
+                        if op == "locate":
+                            from .vision import locate
+
+                            return locate(self, args, policy)
+                        return self._visual_tap(op, args, policy)
+                    finally:
+                        policy.close()
                 if op == "batch":
                     return self._batch(**args)
                 result = self._dispatch(op, args)
@@ -426,7 +449,8 @@ class Runtime:
                 "installed_verified": True,
                 "scope": "Third-party packages; query matches package ID",
             }
-        if op in {"tap", "long_press", "double_tap"}:
+        if op in TAP_OPS:
+            args = {k: v for k, v in args.items() if k != "visual"}
             return self._tap(kind=op, **args)
         if op == "drag":
             return self._drag(**args)
@@ -622,6 +646,17 @@ class Runtime:
         else:
             self._write(self.backend.tap, x, y)
         return self._after(observe, wait_for)
+
+    def _visual_tap(self, op, args, policy):
+        from .vision import visual_point
+
+        self._check_observation(args["observation_id"])
+        located = visual_point(self, args["visual"], policy)
+        x, y = located["tap"]
+        rest = {k: v for k, v in args.items() if k not in {"visual", "selector", "x", "y"}}
+        result = self._tap(kind=op, selector=None, x=x, y=y, **{**rest, "observation_id": None})
+        result["visual"] = located
+        return result
 
     def _drag(self, start, end, duration, observation_id, observe, wait_for=None):
         self._check_observation(observation_id)

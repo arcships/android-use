@@ -29,7 +29,7 @@ def test_real_stdio_handshake_schemas_and_error(tmp_path):
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 tools = (await session.list_tools()).tools
-                assert len(tools) == 25
+                assert len(tools) == 26
                 assert "aua_read_fields" in {t.name for t in tools}
                 assert next(
                     t for t in tools if t.name == "aua_read_fields"

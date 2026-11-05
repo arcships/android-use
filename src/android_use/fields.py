@@ -1,6 +1,5 @@
 """Read-only closed-set field judgments; code owns every extracted numeric span."""
 
-import re
 import time
 from decimal import Decimal
 
@@ -9,7 +8,7 @@ from .decision_context import check_budget, encoded_size
 from .executor import snapshot
 from .models import ReadFieldsArgs
 from .money import MONEY, parse_money
-from .ocr import VisionOCR, capture, visual_rows
+from .ocr import AUTH_TEXT, VisionOCR, capture, visual_rows
 
 
 def row_evidence(nodes):
@@ -176,15 +175,7 @@ def read_fields(runtime, values, policy):
             lines = [row["text"] for row in rows]
             source = "device_screen_ocr"
             freshness = "roi_pixels_checked"
-            if any(
-                re.search(
-                    r"验证码|输入.{0,12}(?:密码|PIN)|enter.{0,40}(?:password|pin)|"
-                    r"verification code|one[- ]time (?:password|code)",
-                    line,
-                    re.I,
-                )
-                for line in lines
-            ):
+            if any(AUTH_TEXT.search(line) for line in lines):
                 raise UseError(
                     "authentication_required",
                     "OCR indicates authentication; hand off before inference",

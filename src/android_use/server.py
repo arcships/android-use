@@ -69,6 +69,8 @@ SCHEMAS.update(
                         "jev_test",
                         "jev_disable",
                         "jev_clear",
+                        "jev_images_on",
+                        "jev_images_off",
                     ],
                 },
                 # Private validation avoids SDK schema errors echoing the secret value.
@@ -105,6 +107,15 @@ DESCRIPTIONS = {
     "min_ocr_confidence is optional uncalibrated provider telemetry, not accuracy. Declare currency "
     "for ambiguous symbols. Optional sum_check validates same-currency Decimal sums in code; "
     "no device actions. verified=false always requires Agent business verification.",
+    "locate": "Read-only Jev Box location for elements the accessibility tree lacks (canvas, "
+    "games, WebView images, icons without labels). Sends one masked screenshot of region (default "
+    "full display) to TypeSafe, so it needs Jev plus the separate images opt-in "
+    "(允许发送截图（视觉定位） in screen settings, or ANDROID_USE_JEV_IMAGES=1); otherwise "
+    "jev_images_disabled. Refuses password/OTP screens and paused devices. One request asks "
+    "presence, match count and a box; status is located, not_found, ambiguous, low_confidence "
+    "or masked. box=[x,y,width,height] and tap=[x,y] are display pixels; tap is set only when "
+    "located. masks blank sensitive areas before upload. Prefer trees/selectors when they work; "
+    "a located box is a model judgment, not verification.",
     "execute_goal": "Agent plans, a decision policy selects candidate IDs, Android Use executes. "
     "decider=auto uses Jev when enabled (TypeSafe key in screen settings, or "
     "ANDROID_USE_JEV_ENABLED=1 / TYPESAFE_API_KEY; sends visible app UI text to TypeSafe), "
@@ -136,7 +147,9 @@ DESCRIPTIONS = {
     "pixels; image pixels multiplied by pixel_to_device give action coordinates.",
     "find": "Find exact text/description/resource_id/class_name/package or substring text/description. "
     "Multiple targets require an explicit 0-based index; bounds don't prove unobstructed access.",
-    "tap": "Tap once by selector OR x/y display pixels. Ambiguity returns candidates and a screenshot. "
+    "tap": "Tap once by selector OR x/y display pixels OR visual (aua_locate args: Jev Box with "
+    "the images opt-in). visual taps the box center only when located, after rechecking the "
+    "pixels around the box, never in batch. Ambiguity returns candidates and a screenshot. "
     "Optional wait_for waits for visible/gone selector after action; timeout never replays it. "
     "Optional observation_id checks same runtime/app/display context. No automatic replay.",
     "long_press": "Long press once by selector OR x/y display pixels for duration seconds (0.5..3). "
@@ -191,7 +204,8 @@ def create_server(runtime=None):
         "observation when planning the next step instead of immediately reading it again. "
         "On handoff inspect steps and current state, then continue with existing tools; do not "
         "repeat the original goal blindly. Jev does not replace the host agent. "
-        "Use trees first, screenshots for visual content/failures. "
+        "Use trees first, screenshots for visual content/failures; aua_locate or tap visual "
+        "only when no tree target exists and the user opted in to sending screenshots. "
         "Actions accept wait_for={selector,state:visible|gone,timeout_seconds}; "
         "use scroll_until for bounded list search. An unmet condition never replays the action. "
         "Execute actions once; do not replay uncertain mutations. "
@@ -201,7 +215,7 @@ def create_server(runtime=None):
 
     @server.list_tools()
     async def list_tools():
-        reads = {"doctor", "observe", "find", "wait", "apps", "ready", "read_fields"}
+        reads = {"doctor", "observe", "find", "wait", "apps", "ready", "read_fields", "locate"}
         tools = [
             Tool(
                 name="aua_" + name,

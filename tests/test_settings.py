@@ -162,3 +162,27 @@ def test_status_rejects_credential_bearing_provider_url_without_echo(provider, m
     monkeypatch.setenv("TYPESAFE_BASE_URL", "https://user:private-password@example.test/v1")
     result = Runtime().call("screen_action", action="jev_status")
     assert not result["ok"] and "private-password" not in json.dumps(result)
+
+
+def test_images_opt_in_is_separate_from_jev_and_off_by_default(provider, monkeypatch):
+    monkeypatch.delenv("ANDROID_USE_JEV_IMAGES", raising=False)
+    settings_action("jev_save", {"api_key": "settings-secret-key"})
+    assert settings_action("jev_status", {})["images_enabled"] is False
+    assert JevConfig.from_env().images is False
+    result = settings_action("jev_images_on", {})
+    assert result["images_enabled"] and result["enabled"] and not provider[1:]
+    assert JevConfig.from_env().images is True
+    # Disabling or re-saving Jev never changes the images choice silently.
+    settings_action("jev_disable", {})
+    assert settings_action("jev_status", {})["images_enabled"] is True
+    assert settings_action("jev_images_off", {})["images_enabled"] is False
+    assert read_jev_settings()["images"] is False
+    with pytest.raises(UseError):
+        settings_action("jev_images_on", {"api_key": "x"})
+
+
+def test_images_env_default_and_saved_override(provider, monkeypatch):
+    monkeypatch.setenv("ANDROID_USE_JEV_IMAGES", "1")
+    assert settings_action("jev_status", {})["images_enabled"] is True
+    settings_action("jev_images_off", {})
+    assert settings_action("jev_status", {})["images_enabled"] is False
