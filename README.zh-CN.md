@@ -43,7 +43,7 @@ Android Use 通过**标准 MCP**，让 Agent 操作你自己的 Android 手机�
 | **Jev · 可选** | 根据当前界面，选择代码提供的下一步候选。 |
 | **Android Use** | 读屏、校验范围与过期状态、执行原生动作、控制预算和暂停。 |
 
-已知路径使用 `batch`、动作加等待或 `scroll_until`。下一步依赖新界面的短流程可交给 `aua_execute_goal`；遇到不确定情况就带着动作账本和安全上下文交回 Agent。[分工、边界与示例 →](docs/jev.zh-CN.md)
+已知路径使用 `batch`、动作加等待或 `scroll_until`。下一步依赖新界面的短流程可交给 `aua_execute_goal`。没有 TypeSafe Key 时自动使用宿主决策模式：由你的 Agent 通过 `aua_goal_decide` 逐步选择代码生成的候选，Android Use 照样做过期、效果与防重放检查。遇到不确定情况就带着动作账本和安全上下文交回 Agent。[分工、边界与示例 →](docs/jev.zh-CN.md)
 
 ## 在屏幕中启用 Jev
 

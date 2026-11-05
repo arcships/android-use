@@ -166,6 +166,13 @@ class ExecuteGoalArgs(StrictModel):
     observe: Literal["none", "tree"] = "tree"
     input_macros: bool = True
     effect_timeout_seconds: Annotated[float, Field(ge=0.1, le=3)] = 1.0
+    # auto: Jev when enabled with a key, otherwise the host Agent via goal_decide.
+    decider: Literal["auto", "jev", "host"] = "auto"
+
+
+class GoalDecideArgs(StrictModel):
+    token: Annotated[str, Field(pattern=r"^[0-9a-f]{32}$")]
+    choice: Annotated[str, Field(min_length=1, max_length=40)]
 
 
 class FieldQuestion(StrictModel):
@@ -247,6 +254,7 @@ class BatchStep(StrictModel):
 ARG_MODELS = {
     "read_fields": ReadFieldsArgs,
     "execute_goal": ExecuteGoalArgs,
+    "goal_decide": GoalDecideArgs,
     "tap": TapArgs,
     "long_press": LongPressArgs,
     "double_tap": DoubleTapArgs,

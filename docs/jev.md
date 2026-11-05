@@ -6,6 +6,16 @@
 
 Inspired by [browser-use/jev-ultrafast](https://github.com/browser-use/jev-ultrafast), this independent Android implementation observes accessibility trees, builds code-owned action candidates, asks Jev to select an ID, executes it once, then observes again. It does not install the browser project or need a text-generating model at runtime.
 
+## No key: host decider
+
+`decider` defaults to `auto`: Jev when it is enabled with a key, otherwise `host`. Force either with `"decider": "jev"` or `"decider": "host"`. In host mode nothing leaves your computer:
+
+1. `aua_execute_goal` returns `status=decision_required` with the compact `state`, the `options` (candidate IDs plus `DONE` / `BLOCKED`) and a one-time `token`.
+2. Your Agent calls `aua_goal_decide` with `{"token": ..., "choice": "a3"}`.
+3. Android Use reads the UI again. If it changed, the choice is discarded and a fresh decision returns with `previous_choice_stale=true`. Otherwise the candidate runs once, its effect is checked, and the next decision, completion or handoff is returned.
+
+Tokens are single-use, kept in memory for 5 idle minutes and tied to the running MCP server process; the one-shot CLI cannot resume them. An unknown option ID keeps the token. `timeout_seconds` counts device time only, so Agent thinking time does not spend it. Host mode trades round trips for zero setup; Jev remains the faster path for long decision loops.
+
 ## Agent + Jev
 
 Routing prioritizes end-to-end completion speed, success rate and fewer host-model round trips. Jev token cost is treated as secondary telemetry, not a routing constraint. Delegate coherent local decision loops and reuse safe returned observations; keep host planning, recovery and business verification.

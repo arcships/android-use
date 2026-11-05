@@ -105,9 +105,11 @@ DESCRIPTIONS = {
     "min_ocr_confidence is optional uncalibrated provider telemetry, not accuracy. Declare currency "
     "for ambiguous symbols. Optional sum_check validates same-currency Decimal sums in code; "
     "no device actions. verified=false always requires Agent business verification.",
-    "execute_goal": "Agent plans, Jev selects candidate IDs, Android Use executes. Optional local "
-    "decision loop; enable with a TypeSafe key in screen settings, or through "
-    "ANDROID_USE_JEV_ENABLED=1 / TYPESAFE_API_KEY. Sends visible app UI text to TypeSafe. "
+    "execute_goal": "Agent plans, a decision policy selects candidate IDs, Android Use executes. "
+    "decider=auto uses Jev when enabled (TypeSafe key in screen settings, or "
+    "ANDROID_USE_JEV_ENABLED=1 / TYPESAFE_API_KEY; sends visible app UI text to TypeSafe), "
+    "otherwise host: no key, nothing sent externally. Host mode returns status=decision_required "
+    "with compact state, option IDs and a one-time token; choose with aua_goal_decide. "
     "Caller supplies goal, foreground package, exact input texts and optional completion selector. "
     "Compact semantic state and parallel operation/target questions share one Jev request per step. "
     "input_macros=true can combine stable-field focus and exact input with native readback; "
@@ -116,6 +118,13 @@ DESCRIPTIONS = {
     "effect_timeout_seconds bounds observation after acknowledged mutations; unresolved effects "
     "hand off without another mutation. Geometry-only changes do not prove an effect. "
     "Keep existing tools for planning, unsupported controls and recovery. Password screens hand off.",
+    "goal_decide": "Host-decider step of aua_execute_goal: send one option ID from the latest "
+    "decision_required result with its one-time token. Android Use reads the UI again; if it "
+    "changed, the choice is discarded and a fresh decision is returned "
+    "(previous_choice_stale=true). Otherwise it executes that candidate once, checks its effect "
+    "and returns the next decision, completion or handoff. An unknown option ID keeps the token; "
+    "any other outcome consumes it. Tokens expire after 5 idle minutes and need the same MCP "
+    "server process. timeout_seconds counts device time only, not host thinking time.",
     "doctor": "Read local ADB device inventory and configuration. Does not start a phone service.",
     "setup": "First use: status/discover, start once if needed, then ready. configure selects a serial. "
     "start pushes a pinned JAR and reuses/starts UiAutomator without root or keyboard APK.",
@@ -170,12 +179,13 @@ def create_server(runtime=None):
         version=__version__,
         instructions="First call aua_setup(status), start if absent, then aua_ready. "
         "The host agent owns task understanding, planning, exact text composition, recovery and "
-        "final business verification. When enabled, use aua_execute_goal for a short local UI "
-        "subgoal: Jev decides the next candidate; Android Use alone executes actions. "
+        "final business verification. Use aua_execute_goal for a short local UI subgoal: Jev, when "
+        "enabled, decides the next candidate; otherwise you decide each step with "
+        "aua_goal_decide. Android Use alone executes actions. "
         "Known paths should still use batch. "
         "Optimize end-to-end completion time and success rate, reducing host-model round trips. "
-        "Do not route based on Jev token cost. Delegate a coherent local decision loop rather "
-        "than asking the host to approve every low-level choice. Reuse a safe returned "
+        "Do not route based on Jev token cost. With Jev, delegate a coherent local decision loop "
+        "rather than asking the host to approve every low-level choice. Reuse a safe returned "
         "observation when planning the next step instead of immediately reading it again. "
         "On handoff inspect steps and current state, then continue with existing tools; do not "
         "repeat the original goal blindly. Jev does not replace the host agent. "

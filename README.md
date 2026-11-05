@@ -43,7 +43,7 @@ The actual UI, rendered with synthetic phone content for documentation. The fram
 | **Jev · optional** | Choose a code-owned candidate from the current UI. |
 | **Android Use** | Observe, check scope and freshness, execute native actions, enforce bounds and pause. |
 
-Known paths use `batch`, action-plus-wait or `scroll_until`. Delegate short workflows whose next action depends on new UI to `aua_execute_goal`. On uncertainty, control returns to the Agent with a step ledger and safe context. [Architecture and examples →](docs/jev.md)
+Known paths use `batch`, action-plus-wait or `scroll_until`. Delegate short workflows whose next action depends on new UI to `aua_execute_goal`. Without a TypeSafe key it runs in host-decider mode: your Agent picks each code-owned candidate with `aua_goal_decide`, and Android Use applies the same freshness, effect and no-replay checks. On uncertainty, control returns to the Agent with a step ledger and safe context. [Architecture and examples →](docs/jev.md)
 
 ## Enable Jev from the screen
 

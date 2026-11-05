@@ -56,16 +56,11 @@ def test_opt_in_and_config_fail_before_device(monkeypatch):
 
     monkeypatch.setattr("android_use.runtime.choose_serial", forbidden)
     monkeypatch.delenv("ANDROID_USE_JEV_ENABLED", raising=False)
-    assert (
-        Runtime().call("execute_goal", goal="hello", package=PACKAGE)["error"]["code"]
-        == "jev_disabled"
-    )
+    goal = {"goal": "hello", "package": PACKAGE, "decider": "jev"}
+    assert Runtime().call("execute_goal", **goal)["error"]["code"] == "jev_disabled"
     monkeypatch.setenv("ANDROID_USE_JEV_ENABLED", "1")
     monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
-    assert (
-        Runtime().call("execute_goal", goal="hello", package=PACKAGE)["error"]["code"]
-        == "jev_configuration"
-    )
+    assert Runtime().call("execute_goal", **goal)["error"]["code"] == "jev_configuration"
 
 
 def test_completed_without_model(goal_rig):

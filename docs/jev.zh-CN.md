@@ -6,6 +6,16 @@
 
 参考 [browser-use/jev-ultrafast](https://github.com/browser-use/jev-ultrafast) 独立实现 Android 版本：读取可访问性树 → 本地生成动作候选 → Jev 选 ID → 执行一次 → 再观察。不需要安装浏览器项目，不依赖文本生成模型。
 
+## 无 Key：宿主决策模式
+
+`decider` 默认 `auto`：已启用且配置 Key 时用 Jev，否则用 `host`。也可显式传 `"decider": "jev"` 或 `"decider": "host"`。宿主模式下不向外发送任何数据：
+
+1. `aua_execute_goal` 返回 `status=decision_required`，附带精简的 `state`、`options`（候选 ID 以及 `DONE` / `BLOCKED`）和一次性 `token`。
+2. Agent 调用 `aua_goal_decide`，传入 `{"token": ..., "choice": "a3"}`。
+3. Android Use 重新读屏。界面变化则丢弃该选择，返回新的决策请求并标记 `previous_choice_stale=true`；否则执行该候选一次、检查效果，再返回下一步决策、完成或交回结果。
+
+令牌只能用一次，空闲 5 分钟过期，保存在当前 MCP 服务进程内存中，一次性 CLI 进程无法续接。无效的选项 ID 不会消耗令牌。`timeout_seconds` 只计设备时间，不计 Agent 思考时间。宿主模式用更多往返换来零配置；长决策循环仍是 Jev 更快。
+
 ## Agent + Jev 的分工
 
 路由按端到端完成速度、成功率和减少宿主大模型往返优先。Jev token 费用只作辅助记录，不作为路由约束。连续的局部决策交给同一次调用内的 Jev 循环处理，安全返回的观察用于后续规划，Agent 保留规划、恢复和业务验收职责。
