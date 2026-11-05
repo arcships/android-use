@@ -88,7 +88,7 @@ The overall deadline defaults to 20 seconds, maximum 60. Cold helper compilation
 
 ### Recommended: screen settings
 
-Open the live phone view, click the settings gear, paste your TypeSafe API Key, and choose **验证并启用** (Verify & enable). This makes one fixed connection-test request without reading phone UI, then saves and enables the key for new tasks. You can test the saved connection, disable Jev, or remove the locally saved key in the same panel. The key field clears after saving and when closing the dialog.
+Open the live phone view, click the **Jev** button, paste your TypeSafe API Key, and choose **验证并启用** (Verify & enable). This makes one fixed connection-test request without reading phone UI, then saves and enables the key for new tasks. You can test the saved connection, disable Jev, or remove the locally saved key in the same panel. The key field clears after saving and when closing the dialog.
 
 Settings are shared by the local browser, native MCP App and later CLI/MCP calls. They take effect for **new tasks without restarting the server**; an in-progress bounded goal keeps the configuration it started with. The local file is `~/.local/share/android-use/jev.json` (or `ANDROID_USE_STATE_DIR/jev.json`), written atomically with POSIX mode `0600`. It is never included in packages or returned to the UI.
 

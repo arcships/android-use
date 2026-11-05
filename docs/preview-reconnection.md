@@ -1,6 +1,6 @@
-# Preview reconnection (source fix after v0.5.1)
+# Preview reconnection (v0.5.2)
 
-This is an unreleased source/local hotfix. The published v0.5.1 ZIP does not include it.
+Included in v0.5.2. The older v0.5.1 ZIP does not include this fix.
 
 ## Why plugging the phone back in did not recover the panel
 
@@ -25,10 +25,10 @@ A standalone browser cannot launch an OS process. After an OS restart or manual 
 - Actual browser-button acceptance observed **缓冲中 / 正在重连… → Live**, a decoded picture and a hidden blocking overlay. No order, text entry or App navigation was involved.
 - [Sanitized acceptance metadata](benchmarks/preview-reconnect.json). This trial does not resolve the separately retained emulator motion-gap failure documented for v0.5.1.
 
-The local cache and local marketplace source received a backed-up hotfix; package metadata still reads v0.5.1. Existing desktop MCP processes can retain the old Python methods until their next reload; the new resident preview daemon and updated browser UI were exercised immediately. No new GitHub release is implied by this local hotfix.
+Before release, the local cache and local marketplace source received a backed-up hotfix while package metadata still read v0.5.1. The new resident daemon and updated UI were exercised immediately. The fix is distributed in v0.5.2; existing installations must update and reload their MCP processes, then reopen the preview. Publication alone does not upgrade a running installation.
 
 ## 中文
 
 这次问题出在本地预览入口：手机已经连接，但旧页面请求的服务地址已失效，按钮只重试旧地址。热修复让入口保持可用，闲置时只停止录屏；正常重启尽量沿用原地址，MCP 读图失败时自动恢复服务，收到新画面后才提示连接成功。点击、输入等手机动作不会因重连自动重放。
 
-源码通过 305 项 Python、21 项界面测试；真机已验证服务重启后 URL 不变、MCP 读图恢复，以及实际按钮从“正在重连”恢复为 Live。本机已应用有备份的热修复，尚未发布新版本；已加载的桌面 MCP Python 方法在下次重载后更新。操作系统重启、手动结束服务或端口被占用时，浏览器本身不能启动 Python，需要 Agent 重新打开屏幕。
+源码通过 305 项 Python、21 项界面测试；真机已验证服务重启后 URL 不变、MCP 读图恢复，以及实际按钮从“正在重连”恢复为 Live。验收时本机先应用有备份的热修复，修复现纳入 v0.5.2；已有用户更新安装后重载 MCP 进程，再打开预览。发布本身不会升级正在运行的本机插件。操作系统重启、手动结束服务或端口被占用时，浏览器本身不能启动 Python，需要 Agent 重新打开屏幕。
