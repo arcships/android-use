@@ -186,6 +186,8 @@ uv run android-use scroll_until '{"selector":{"text":"Display"},"direction":"up"
 
 Actions support optional postconditions. A timeout reports what happened and stops the batch; it does not repeat the action. Auto-scroll stops on a match, its limits, or repeated lack of progress. [Gestures, waits, batches, and the original tools →](docs/guide.md#cli-reference) · [Optional Jev setup and benchmarks →](docs/jev.md)
 
+Unreleased reconnect hardening keeps the idle preview endpoint alive and waits for fresh video before reporting success. [Lifecycle, recovery and local acceptance →](docs/preview-reconnection.md)
+
 ## New in v0.5.1: continuous live preview
 
 Supported devices no longer restart recording every 170 seconds. Older devices reuse one ADB pipe and decoder across bounded segments. Brief known-health recovery retains the picture; display-metadata failures pause controls without dropping healthy video. Authentication and real disconnection still clear the image.

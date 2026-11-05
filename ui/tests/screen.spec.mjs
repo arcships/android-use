@@ -51,6 +51,28 @@ test('short video recovery preserves the picture without a blocking overlay',asy
   await expect(page.locator('#home')).toBeEnabled();
   expect(api.calls.some(c=>c.url.endsWith('/refresh'))).toBeFalsy();
 });
+test('refresh reports success only after a newly decoded picture arrives',async({page})=>{
+  const api=await standalone(page);
+  api.set({...sample(),frame:null,frame_available:false,capturing:false});
+  await page.locator('#refresh').click();
+  await expect(page.locator('#notice')).toHaveText('正在重连…');
+  await expect(page.locator('#app')).toHaveAttribute('data-state','buffering');
+  api.set(sample()); // A successful HTTP response with the old cache is insufficient.
+  await expect.poll(()=>api.calls.filter(c=>c.url.endsWith('/frame')).length).toBeGreaterThan(3);
+  await expect(page.locator('#app')).toHaveAttribute('data-state','buffering');
+  await expect(page.locator('#notice')).not.toHaveText('已重新连接');
+  api.set({...sample(),seq:2,frame:{...sample().frame,seq:2}});
+  await expect(page.locator('#app')).toHaveAttribute('data-state','live');
+  await expect(page.locator('#notice')).toHaveText('已重新连接');
+});
+test('refresh cannot claim a disconnected phone is connected',async({page})=>{
+  const api=await standalone(page);
+  api.set({...sample(),connected:false,frame:null,frame_available:false});
+  await expect(page.locator('#app')).toHaveAttribute('data-state','offline');
+  await page.locator('#refresh').click();
+  await expect(page.locator('#app')).toHaveAttribute('data-state','offline');
+  await expect(page.locator('#notice')).not.toHaveText('已重新连接');
+});
 test('encoder restart or rotation holds the picture until fresh geometry arrives',async({page})=>{
   const api=await standalone(page);
   const source=await page.locator('#frame').getAttribute('src');
@@ -93,6 +115,7 @@ test('persistent transport failure becomes offline but keeps retrying',async({pa
   await expect(page.locator('#app')).toHaveAttribute('data-state','connecting');
   await expect(page.locator('#app')).toHaveAttribute('data-state','offline',{timeout:8000});
   await expect(page.locator('#overlay-detail')).toContainText('正在自动重试');
+  await expect(page.locator('#overlay-detail')).toContainText('重新打开手机屏幕');
   api.failFrames(false);
   await expect(page.locator('#app')).toHaveAttribute('data-state','live');
 });

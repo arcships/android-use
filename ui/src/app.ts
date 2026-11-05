@@ -22,6 +22,7 @@ const app=standalone?undefined:new App({name:'Android Use Screen',version:'0.5.1
 let preview:Preview|undefined,seq=0,stream='',disposed=false,inFlight=false,acting=false;
 let suspended=false,timer:ReturnType<typeof setTimeout>|undefined;
 let currentSource='',generation=0,initialized=false;
+let reconnectRequested=false;
 const recoveryGraceMs=5000;
 let interruptedAt:number|undefined,waitingAfterSeq:number|undefined;
 let noticeTimer:ReturnType<typeof setTimeout>|undefined;
@@ -109,13 +110,18 @@ keyInput.oninput=()=>{if(jevStatus)renderJev(jevStatus);};
 function clearFrame(){
   generation++;frame.removeAttribute('src');currentSource='';seq=0;
 }
-function recovering(message:string,keepFrame=false){
+function recovering(message:string,keepFrame=false,serviceUnavailable=false){
   interruptedAt??=performance.now();
   const expired=performance.now()-interruptedAt>=recoveryGraceMs;
   if(!expired&&keepFrame&&currentSource){setState('buffering');return;}
   if(expired)clearFrame();
-  setState(expired?'offline':'connecting',expired?'视频暂不可用':message,
-    expired?'正在自动重试，也可点击「重连」':'正在自动恢复，无需手动重连');
+  setState(expired?'offline':'connecting',expired?(serviceUnavailable?'本地预览服务未响应':'视频暂不可用'):message,
+    expired?(serviceUnavailable?'正在自动重试；若持续失败，请让 Agent 重新打开手机屏幕':'正在自动重试，也可点击「重连」'):'正在自动恢复，无需手动重连');
+}
+function showPictureState(){
+  const state=preview?.interaction_ready===false?'buffering':'live';
+  setState(state);
+  if(state==='live'&&reconnectRequested){reconnectRequested=false;showNotice('已重新连接');}
 }
 function apply(data:Preview){
   if(!data?.ok)throw new Error('preview_unreachable');
@@ -145,9 +151,9 @@ function apply(data:Preview){
       root.style.setProperty('--screen-ratio',String(picture.width/picture.height));
       root.dataset.orientation=picture.width>picture.height?'landscape':'portrait';
       root.dataset.frameSeq=String(seq);interruptedAt=undefined;waitingAfterSeq=undefined;
-      setState(preview?.interaction_ready===false?'buffering':'live');
+      showPictureState();
     };image.onerror=()=>setState('offline','画面解码失败','点击「重连」重试');image.src=source;
-  }else if(data.frame_available&&currentSource){interruptedAt=undefined;setState(data.interaction_ready===false?'buffering':'live');}
+  }else if(data.frame_available&&currentSource){interruptedAt=undefined;showPictureState();}
   else if(currentSource){
     // Rotation, a refreshed encoder or returning to a hidden viewer may need a
     // first frame. Keep the last picture visible, with interactions disabled.
@@ -163,17 +169,24 @@ async function poll(){
   if(!visible()||inFlight)return;
   inFlight=true;const started=generation;
   try{const data=await call('frame',{after_seq:seq});if(visible()&&started===generation)apply(data);}
-  catch{if(visible()&&started===generation){clearFrame();recovering('视频连接恢复中…');}}
+  catch{if(visible()&&started===generation){clearFrame();recovering('视频连接恢复中…',false,true);}}
   finally{inFlight=false;schedule(preview?.paused?500:root.dataset.state==='offline'?1000:150);}
 }
 async function action(action:string,args:Record<string,unknown>={}){
   if(acting||preview?.paused)return;
   acting=true;notice.textContent='';for(const b of Object.values(buttons))b.disabled=true;
+  if(action==='refresh'){
+    reconnectRequested=true;waitingAfterSeq=seq;generation++;
+    showNotice('正在重连…');
+  }
   try{const result=await call(action==='refresh'?'refresh':'action',{action,...args});
     if(!result?.ok)throw new Error(result?.error?.code||'action_failed');
-    if(action==='refresh'){seq=0;apply(result);}
-    showNotice(action==='refresh'?'已重新连接':'操作已执行');
-  }catch(error){showNotice(String(error).includes('device_busy')?'手机正在操作，请稍后再试':'请查看手机当前状态');}
+    if(action==='refresh')apply(result);
+    else showNotice('操作已执行');
+  }catch(error){
+    if(action==='refresh')reconnectRequested=false;
+    showNotice(String(error).includes('device_busy')?'手机正在操作，请稍后再试':action==='refresh'?'重连尚未完成，请让 Agent 重新打开手机屏幕':'请查看手机当前状态');
+  }
   finally{acting=false;setState(root.dataset.state||'connecting');schedule(50);}
 }
 buttons.refresh.onclick=()=>{if(preview?.paused){showNotice('接管期间保持暂停');return;}void action('refresh');};

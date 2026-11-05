@@ -1,0 +1,24 @@
+{
+  "expected_revision": 3,
+  "phone_writes_performed": false,
+  "upgrade_kept_url": true,
+  "initial_live_picture": true,
+  "same_url_after_restart": true,
+  "owner_replaced": true,
+  "preview_revision": 3,
+  "fresh_stream": true,
+  "recovery_seconds": 5.419,
+  "connected": true,
+  "frame_seq": 2,
+  "metric_definition": "recovery_seconds starts at the recovery read, after a separate 0.7-second settling delay following SIGTERM",
+  "phone_writes_definition": "No phone UI or business mutation; ADB recording processes were stopped/started",
+  "manual_browser_refresh": {
+    "initial_state": "buffering",
+    "initial_notice": "正在重连…",
+    "final_state": "live",
+    "frame_seq": 140,
+    "decoded_picture": true,
+    "overlay_hidden": true
+  },
+  "published_release_created": false
+}
