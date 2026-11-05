@@ -9,7 +9,7 @@ const sample=()=>({ok:true,stream_id:'one',seq:1,frame:{seq:1,data:png,mimeType:
 const jevSample=()=>({ok:true,enabled:false,configured:false,has_saved_key:false,key_source:'none',model:'jev-1.14.0',base_url:'https://api.typesafe.ai/v1'});
 
 async function standalone(page,initial=sample()){
-  let state=initial,calls=[],jev=jevSample(),settingsFailure=null,frameFailure=false;
+  let state=initial,calls=[],jev=jevSample(),settingsFailure=null,frameFailure=false,actionFailure=false;
   await page.addInitScript(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{write:async(items)=>{
     const png=await items[0].getType('image/png');const bytes=new Uint8Array(await png.arrayBuffer());
     window.copiedImage={type:png.type,signature:[...bytes.slice(0,8)]};
@@ -26,12 +26,13 @@ async function standalone(page,initial=sample()){
       if(args.action==='jev_clear')jev=jevSample();
       return route.fulfill({contentType:'application/json',body:JSON.stringify({...jev,...(['jev_save','jev_test'].includes(args.action)?{tested:true,latency_ms:120}:{})})});
     }
+    if(request.url().endsWith('/action')&&actionFailure)return route.fulfill({status:503,body:'Unavailable'});
     return route.fulfill({contentType:'application/json',body:JSON.stringify(request.url().endsWith('/action')?
       {ok:true,saved_path:'/tmp/saved.jpg'}:state)});
   });
   await page.goto('https://preview.test/token/');
   await expect(page.locator('#app')).toHaveAttribute('data-state','live');
-  return {set:value=>{state=value},calls,failSettings:value=>{settingsFailure=value},failFrames:value=>{frameFailure=value}};
+  return {set:value=>{state=value},calls,failSettings:value=>{settingsFailure=value},failFrames:value=>{frameFailure=value},failActions:value=>{actionFailure=value}};
 }
 
 test('short video recovery preserves the picture without a blocking overlay',async({page})=>{
@@ -148,6 +149,25 @@ test('renders live device and maps pointer to Android pixels',async({page})=>{
   const click=calls.find(c=>c.args.action==='tap');
   expect(click.args.x).toBeGreaterThan(0);expect(click.args.x).toBeLessThan(1080);
   expect(click.args.y).toBeGreaterThan(0);expect(click.args.y).toBeLessThan(2400);
+});
+test('ordinary actions stay quiet on success and failure without retrying',async({page})=>{
+  const api=await standalone(page);
+  for(const fail of [false,true]){
+    api.failActions(fail);
+    for(const action of ['home','back','tap','swipe']){
+      const before=api.calls.filter(c=>c.args.action===action).length;
+      if(action==='home'||action==='back')await page.locator('#'+action).click();
+      else if(action==='tap')await page.locator('#frame').click({position:{x:50,y:100}});
+      else{
+        const box=await page.locator('#frame').boundingBox();
+        await page.mouse.move(box.x+50,box.y+160);await page.mouse.down();
+        await page.mouse.move(box.x+50,box.y+60);await page.mouse.up();
+      }
+      await expect(page.locator('#home')).toBeEnabled();
+      expect(api.calls.filter(c=>c.args.action===action)).toHaveLength(before+1);
+      await expect(page.locator('#notice')).toBeEmpty();
+    }
+  }
 });
 for(const viewport of [{width:390,height:844},{width:280,height:600},{width:720,height:420}]){
   test(`phone shell preserves screen coordinates and fits ${viewport.width}x${viewport.height}`,async({page})=>{

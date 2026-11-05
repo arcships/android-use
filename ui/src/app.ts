@@ -182,10 +182,11 @@ async function action(action:string,args:Record<string,unknown>={}){
   try{const result=await call(action==='refresh'?'refresh':'action',{action,...args});
     if(!result?.ok)throw new Error(result?.error?.code||'action_failed');
     if(action==='refresh')apply(result);
-    else showNotice('操作已执行');
   }catch(error){
-    if(action==='refresh')reconnectRequested=false;
-    showNotice(String(error).includes('device_busy')?'手机正在操作，请稍后再试':action==='refresh'?'重连尚未完成，请让 Agent 重新打开手机屏幕':'请查看手机当前状态');
+    if(action==='refresh'){
+      reconnectRequested=false;
+      showNotice(String(error).includes('device_busy')?'手机正在操作，请稍后再试':'重连尚未完成，请让 Agent 重新打开手机屏幕');
+    }
   }
   finally{acting=false;setState(root.dataset.state||'connecting');schedule(50);}
 }
