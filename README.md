@@ -8,7 +8,7 @@
     <a href="#mcp-client-support"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="Standard stdio MCP" /></a>
   </p>
   <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
-  <p><a href="#quick-start"><strong>Get started →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.5.2">Download v0.5.2</a> · <a href="#enable-jev-from-the-screen">Set up Jev</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/JackCaow/android-use/issues">Report an issue</a></p>
+  <p><a href="#quick-start"><strong>Get started →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.6.0">Download v0.6.0</a> · <a href="#enable-jev-from-the-screen">Set up Jev</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/JackCaow/android-use/issues">Report an issue</a></p>
 </div>
 
 ## Bring Android into your agent workflow
@@ -187,6 +187,10 @@ uv run android-use scroll_until '{"selector":{"text":"Display"},"direction":"up"
 
 Actions support optional postconditions. A timeout reports what happened and stops the batch; it does not repeat the action. Auto-scroll stops on a match, its limits, or repeated lack of progress. [Gestures, waits, batches, and the original tools →](docs/guide.md#cli-reference) · [Optional Jev setup and benchmarks →](docs/jev.md)
 
+## New in v0.6.0: no-key decisions and visual location
+
+`aua_execute_goal` works without a TypeSafe key: your Agent picks each code-owned candidate through `aua_goal_decide`, with the same freshness, effect and no-replay checks. With Jev, verified emoji input is no longer retyped, each step makes fewer phone reads, and a goal head can stop once the goal is visibly achieved. New opt-in Jev Box (`aua_locate`, `visual` taps) finds canvas, image and unlabeled targets, and sends screenshots only after you turn on 「允许发送截图（视觉定位）」. Devices without `screenrecord` now say so instead of retrying the preview. [Host decider and Box →](docs/jev.md)
+
 ## New in v0.5.2: reliable reconnection
 
 The preview entry point stays available when idle, MCP frame reads recover a stopped service, and Refresh waits for fresh video before reporting success. Jev settings now have a clearly labeled sparkle button. [Recovery behavior, validation and limits →](docs/preview-reconnection.md)
@@ -214,7 +218,7 @@ Development comparisons include **18 source-level trials** and **12 live Agent /
 
 ## Project status
 
-**v0.5.2 · MIT · 305 Python tests · 22 browser tests.** Emulator acceptance covers 15 real stdio MCP scenarios. Earlier physical-device acceptance covers Android 16 / Xiaomi 15 Ultra. New Jev setup and frame changes have local/emulator validation; other manufacturers, host versions and operating systems have different coverage. [Validation evidence →](docs/validation.md)
+**v0.6.0 · MIT · 362 Python tests · 24 browser tests.** Emulator acceptance covers 15 real stdio MCP scenarios. Earlier physical-device acceptance covers Android 16 / Xiaomi 15 Ultra. New Jev setup and frame changes have local/emulator validation; other manufacturers, host versions and operating systems have different coverage. [Validation evidence →](docs/validation.md)
 
 Multi-touch, arbitrary gesture paths, fine-grained text selection and custom-editor input fallbacks are not implemented. A matched UI condition proves that condition; the Agent must verify business outcomes. Control and preview run locally, and tool results are handled by your chosen client/model.
 

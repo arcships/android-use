@@ -1,6 +1,6 @@
 [project]
 name = "android-use"
-version = "0.5.2"
+version = "0.6.0"
 requires-python = ">=3.11"
 description = "Local Android device control for coding agents over MCP and ADB"
 license = "MIT"
