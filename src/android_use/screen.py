@@ -24,7 +24,8 @@ LEASE_SECONDS = 5
 MAX_FRAME_BYTES = 3 * 1024 * 1024
 # Replace older daemons so their browser UI/recovery behavior is upgraded too.
 PREVIEW_PROTOCOL_VERSION = 3
-PREVIEW_IMPLEMENTATION_VERSION = 2
+PREVIEW_IMPLEMENTATION_VERSION = 3
+PREVIEW_BOOTSTRAP_ENV = "ANDROID_USE_PREVIEW_BOOTSTRAP"
 
 
 def unlimited_recording(help_text):
@@ -543,11 +544,18 @@ class ScreenClient:
             ) as r:
                 return json.load(r)
         except (OSError, ValueError, urllib.error.URLError) as exc:
-            raise UseError("preview_unreachable", "Live preview process is unavailable") from exc
+            raise UseError(
+                "preview_unreachable",
+                "Live preview process is unavailable",
+                uncertain=endpoint == "action"
+                and (arguments or {}).get("action") in {"tap", "swipe", "home", "back"},
+            ) from exc
 
     def ensure(self):
         with device_lock(self.key + "-preview-start"):
+            previous = None
             if self._load():
+                previous = dict(self.info)
                 try:
                     status = self.request("status")
                     if (
@@ -599,6 +607,21 @@ class ScreenClient:
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 start_new_session=True,
+                # An older owner can remove its info file during shutdown. Pass
+                # the authenticated endpoint independently so upgrades keep the
+                # same browser URL. The child consumes this private value once.
+                env={
+                    **{k: v for k, v in os.environ.items() if k != PREVIEW_BOOTSTRAP_ENV},
+                    **(
+                        {
+                            PREVIEW_BOOTSTRAP_ENV: json.dumps(
+                                {**previous, "serial": self.serial, "device_key": self.key}
+                            )
+                        }
+                        if previous
+                        else {}
+                    ),
+                },
             )
             deadline = time.monotonic() + 8
             while time.monotonic() < deadline:
