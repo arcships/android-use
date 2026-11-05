@@ -36,7 +36,7 @@ const testJev=document.querySelector<HTMLButtonElement>('#jev-test')!;
 const disableJev=document.querySelector<HTMLButtonElement>('#jev-disable')!;
 const clearJev=document.querySelector<HTMLButtonElement>('#jev-clear')!;
 let jevStatus:JevStatus|undefined,settingsBusy=false;
-const labels:Record<string,string>={connecting:'连接中',live:'Live',buffering:'缓冲中',paused:'已暂停',offline:'未连接'};
+const labels:Record<string,string>={connecting:'连接中',live:'Live',buffering:'缓冲中',paused:'已暂停',offline:'未连接',unsupported:'不支持预览'};
 
 function showNotice(message:string,detail=''){
   if(noticeTimer)clearTimeout(noticeTimer);
@@ -142,6 +142,10 @@ function apply(data:Preview){
   if(data.error){clearFrame();setState('offline','视频连接暂不可用',data.error==='preview_dependency_missing'?'请安装 ffmpeg 后重连':'正在自动重试，也可点击「重连」');return;}
   if(waitingAfterSeq!==undefined&&data.seq<=waitingAfterSeq){recovering('正在等待新画面…',true);return;}
   const picture=data.frame;
+  if(data.error==='preview_unsupported_device'){
+    // Permanent device capability, not a transient failure: don't promise a retry.
+    clearFrame();setState('unsupported','此手机不支持实时预览','系统未提供 screenrecord；截图、读屏和操作仍可正常使用');return;
+  }
   if(picture&&picture.seq>seq&&picture.data&&picture.width>0&&picture.height>0){
     seq=picture.seq;const expected=++generation;
     const source=`data:${picture.mimeType};base64,${picture.data}`;

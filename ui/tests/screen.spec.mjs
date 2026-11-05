@@ -132,6 +132,19 @@ test('a stalled encoder cannot keep the cached frame live indefinitely',async({p
   await expect(page.locator('#app')).toHaveAttribute('data-state','live');
 });
 test('authentication during video recovery keeps the frame cleared',async({page})=>{
+test('a device without screenrecord explains the limit instead of retrying',async({page})=>{
+  const api=await standalone(page);
+  api.set({...sample(),error:'preview_unsupported_device',frame:null,frame_available:false,capturing:false});
+  // The phone is connected; only the video capability is missing.
+  await expect(page.locator('#app')).toHaveAttribute('data-state','unsupported');
+  await expect(page.locator('#status')).toContainText('不支持预览');
+  await expect(page.locator('#status')).not.toContainText('未连接');
+  await expect(page.locator('#overlay-text')).toHaveText('此手机不支持实时预览');
+  await expect(page.locator('#overlay-detail')).toContainText('screenrecord');
+  await expect(page.locator('#overlay-detail')).not.toContainText('重试');
+  await expect(page.locator('#frame')).not.toHaveAttribute('src',/.+/);
+  await expect(page.locator('#home')).toBeDisabled();
+});
   const api=await standalone(page);
   api.set({...sample(),error:'video_stream_ended',frame:null});
   await expect(page.locator('#app')).toHaveAttribute('data-state','buffering');
