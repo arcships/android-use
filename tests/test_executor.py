@@ -407,3 +407,61 @@ def test_effect_wait_keeps_authentication_and_scope_guards(goal_rig, kind):
     result = run(runtime, Policy())
     assert not result["ok"] and len(backend.actions) == 1
     assert result["steps"][0]["state"] == "executed" and "observation" not in result
+
+
+FIELD_XML = """<hierarchy><node package="demo.app" class="android.widget.EditText"
+resource-id="demo:id/name" text="" focused="true" enabled="true" focusable="true"
+bounds="[0,100][900,200]"/><node package="demo.app" class="android.widget.Button" text="Apply"
+enabled="true" clickable="true" bounds="[0,300][300,400]"/></hierarchy>"""
+
+
+class Chooser(Policy):
+    """Picks the first option of an action, then BLOCKED; records what it was shown."""
+
+    def __init__(self, *actions):
+        super().__init__()
+        self.actions = list(actions)
+
+    def decide(self, state, criteria, timeout):
+        self.metrics["model_calls"] += 1
+        self.states.append((state, criteria))
+        action = self.actions.pop(0) if self.actions else None
+        choice = next(
+            (k for k, v in criteria.items() if isinstance(v, dict) and v["action"] == action),
+            "BLOCKED",
+        )
+        return {"choice": choice, "probability": 0.99, "margin": 0.9}
+
+
+def test_verified_emoji_input_is_not_reoffered_and_is_in_history(goal_rig):
+    runtime, backend = goal_rig
+    backend.xml, backend.sanitize_non_bmp = FIELD_XML, True
+    policy = Chooser("type_text")
+    result = run(runtime, policy, texts=["宏动作🐻"], completion={"text": "never"})
+    assert result["steps"][0]["state"] == "executed" and len(backend.actions) == 1
+    state, criteria = policy.states[1]
+    # The tree shows dots, but the verified write is done: no retype is offered.
+    assert state["ui"][0]["text"] == "宏动作.."
+    assert not any(
+        isinstance(v, dict) and v["action"] in {"type_text", "focus_type_text"}
+        for v in criteria.values()
+    )
+    assert state["history"][-1]["verified_exact_text"] == "宏动作🐻"
+    assert result["stop_reason"] == "model_blocked"
+
+
+def test_changed_field_offers_the_verified_text_again(goal_rig):
+    runtime, backend = goal_rig
+    backend.xml = FIELD_XML.replace('text=""', 'text="宏动作.."')
+    args = ExecuteGoalArgs(goal="type", package=PACKAGE, texts=["宏动作🐻"])
+    field = ("android.widget.EditText", "demo:id/name", "")
+    snap = snapshot(runtime, PACKAGE)
+
+    def typed(verified):
+        return [v for v in candidates(snap, args, verified).values() if v["op"] == "type_text"]
+
+    assert typed({field: ("宏动作🐻", "宏动作..")}) == []
+    # Edited since the write (different tree text) or a different value: offered again.
+    assert len(typed({field: ("宏动作🐻", "other")})) == 1
+    assert len(typed({field: ("其他", "宏动作..")})) == 1
+    assert len(typed({})) == 1
