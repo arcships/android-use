@@ -213,7 +213,7 @@ Development comparisons include **18 source-level trials** and **12 live Agent /
 
 ## Project status
 
-**v0.5.2 · MIT · 305 Python tests · 21 browser tests.** Emulator acceptance covers 15 real stdio MCP scenarios. Earlier physical-device acceptance covers Android 16 / Xiaomi 15 Ultra. New Jev setup and frame changes have local/emulator validation; other manufacturers, host versions and operating systems have different coverage. [Validation evidence →](docs/validation.md)
+**v0.5.2 · MIT · 305 Python tests · 22 browser tests.** Emulator acceptance covers 15 real stdio MCP scenarios. Earlier physical-device acceptance covers Android 16 / Xiaomi 15 Ultra. New Jev setup and frame changes have local/emulator validation; other manufacturers, host versions and operating systems have different coverage. [Validation evidence →](docs/validation.md)
 
 Multi-touch, arbitrary gesture paths, fine-grained text selection and custom-editor input fallbacks are not implemented. A matched UI condition proves that condition; the Agent must verify business outcomes. Control and preview run locally, and tool results are handled by your chosen client/model.
 
