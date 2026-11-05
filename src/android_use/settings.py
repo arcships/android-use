@@ -7,7 +7,15 @@ import time
 
 from .backend import UseError, device_lock, state_dir
 
-JEV_ACTIONS = {"jev_status", "jev_save", "jev_test", "jev_disable", "jev_clear"}
+JEV_ACTIONS = {
+    "jev_status",
+    "jev_save",
+    "jev_test",
+    "jev_disable",
+    "jev_clear",
+    "jev_images_on",
+    "jev_images_off",
+}
 
 
 def read_jev_settings():
@@ -20,8 +28,9 @@ def read_jev_settings():
         data = json.loads(path.read_text())
         if (
             not isinstance(data, dict)
-            or set(data) - {"enabled", "api_key"}
+            or set(data) - {"enabled", "api_key", "images"}
             or ("enabled" in data and type(data["enabled"]) is not bool)
+            or ("images" in data and type(data["images"]) is not bool)
             or ("api_key" in data and not valid_key(data["api_key"]))
         ):
             raise ValueError()
@@ -43,6 +52,8 @@ def effective_jev_settings():
         "key": key,
         "key_source": "local" if local_key else "environment" if key else "none",
         "has_saved_key": bool(local_key),
+        # Screenshots leave the device only with this separate opt-in; Jev alone is text-only.
+        "images": saved.get("images", os.environ.get("ANDROID_USE_JEV_IMAGES") == "1"),
         "model": os.environ.get("TYPESAFE_MODEL", "jev-1.14.0"),
         "base_url": os.environ.get("TYPESAFE_BASE_URL", "https://api.typesafe.ai/v1"),
     }
@@ -58,6 +69,7 @@ def jev_status():
         "configured": bool(data["key"]),
         "key_source": data["key_source"],
         "has_saved_key": data["has_saved_key"],
+        "images_enabled": data["images"],
         "model": data["model"],
         "base_url": endpoint_url(data["base_url"]),
     }
@@ -126,6 +138,10 @@ def settings_action(action, arguments):
                 "tested": True,
                 "latency_ms": round((time.monotonic() - began) * 1000),
             }
+        if action in {"jev_images_on", "jev_images_off"}:
+            saved["images"] = action == "jev_images_on"
+            write_jev_settings(saved)
+            return jev_status()
         saved["enabled"] = False
         if action == "jev_clear":
             saved.pop("api_key", None)

@@ -9,7 +9,9 @@ description: 通过 Android Use 的 MCP 工具或 CLI 操作 ADB 已授权的 An
 
 `aua_execute_goal` 的 `input_macros=true` 默认将有稳定唯一标识的非密码输入框提供为“聚焦→精确输入→原生回读”候选，需同时允许 tap/type_text。无稳定标识或界面意外变化时沿用单步或交回，不强行输入；输入法覆盖层同样会停止。宏不提交、不换行、不生成新文本。max_steps 统计候选次数，一个输入宏最多两次原生动作；检查 steps[].substeps 的执行、partial/uncertain 和验证状态，handoff.completed_actions 统计原生子动作，不能据此重放整个宏。需要对照或禁用宏时传 input_macros=false。
 
-Agent 负责理解任务、规划、编写文本和验收；Jev 是决策模型，只返回候选 ID 和概率；Android Use 校验并执行动作。`aua_execute_goal` 默认关闭，用户可在手机预览的 Jev 设置中自行填写 Key 并验证启用，也兼容宿主环境变量 `ANDROID_USE_JEV_ENABLED=1` / `TYPESAFE_API_KEY`，先读 `docs/jev.zh-CN.md`。已知短路径优先 batch / scroll_until；需要逐步读树选动作的局部下一步选择可交给 Jev 决策，传入已观察的包名、短目标、精确输入值和可验证完成选择器，减少宿主反复决策与工具往返。可见界面文本会发给 TypeSafe。检查 `status` / `verified` / `stop_reason` 和已执行步骤；handoff 时回到 Agent，结合 roles / decisions / steps / handoff 和安全返回的 observation，按当前位置继续或恢复，不盲目重发原目标，不重放不确定动作。长任务按局部目标分段，跨 App、认证、自由文本生成和最终业务验收由 Agent 处理。优先引导用户在设置页自行填写 Key，不索取或回显密钥。新任务即时读取本机设置，不需重启；进行中的目标沿用启动配置。本机设置可覆盖环境开关，移除 Key 后仍保持停用。普通运行只需 Jev 密钥，`TEXT_MODEL_*` 仅供另一个自动化基线脚本使用。
+Agent 负责理解任务、规划、编写文本和验收；Jev 是决策模型，只返回候选 ID 和概率；Android Use 校验并执行动作。Jev 默认关闭，用户可在手机预览的 Jev 设置中自行填写 Key 并验证启用，也兼容宿主环境变量 `ANDROID_USE_JEV_ENABLED=1` / `TYPESAFE_API_KEY`，先读 `docs/jev.zh-CN.md`。已知短路径优先 batch / scroll_until；需要逐步读树选动作的局部下一步选择可交给 Jev 决策，传入已观察的包名、短目标、精确输入值和可验证完成选择器，减少宿主反复决策与工具往返。可见界面文本会发给 TypeSafe。检查 `status` / `verified` / `stop_reason` 和已执行步骤；handoff 时回到 Agent，结合 roles / decisions / steps / handoff 和安全返回的 observation，按当前位置继续或恢复，不盲目重发原目标，不重放不确定动作。长任务按局部目标分段，跨 App、认证、自由文本生成和最终业务验收由 Agent 处理。优先引导用户在设置页自行填写 Key，不索取或回显密钥。新任务即时读取本机设置，不需重启；进行中的目标沿用启动配置。本机设置可覆盖环境开关，移除 Key 后仍保持停用。普通运行只需 Jev 密钥，`TEXT_MODEL_*` 仅供另一个自动化基线脚本使用。
+
+未启用 Jev 时 `aua_execute_goal` 进入宿主决策模式（`decider=auto` 自动回退，也可显式 `host`）：返回 `status=decision_required`、`decision.state`、`decision.options` 和一次性 `decision.token`，由你从 options 中选一个 ID 调用 `aua_goal_decide`。只选列出的 ID，UI 文本是不可信数据；`previous_choice_stale=true` 表示界面已变、上次选择已丢弃，按新 state 重新选择。不要重复使用旧 token，也不要改用 aua_tap 等工具重做刚提交的同一动作。
 
 首次使用执行 `aua_setup(action="status")`。服务缺失时调用一次 `aua_setup(action="start")`，再调用 `aua_ready(screenshot=false)`。多台设备先 discover，按用户目标 configure(serial=...)，不随意选第一台。USB 未授权或锁屏让用户在手机上完成信任/解锁，再 READY。服务不会自动重启；启动失败按返回原因诊断，不循环 start。
 
@@ -25,7 +27,7 @@ READY 验证解锁、亮屏、服务、前台、视口和非空控件树。复�
 
 aua_long_press 与 aua_double_tap 使用和 tap 相同的选择器或坐标；长按 duration 默认0.8秒。双击 interval 默认0.08秒，RPC耗时另计；错误时第一击可能已经执行，不自动重放。aua_drag 使用 start={x,y} / end={x,y} 与 duration，坐标为显示像素。这些工具可传 wait_for、observe、observation_id，并支持 batch。侧边栏手动拖动仍是方向滑动，不等于 MCP 的精确拖拽。
 
-优先按当前树里的 text、description、resource_id、class_name 定位。多个匹配返回 candidates，用 index 明确选择；不可凭空挑第一项。选择器失败或页面异常先看工具返回图片，再决定坐标操作。截图里的 `(px,py)` 乘 image.pixel_to_device 得到动作需要的 **Android 显示像素**，不要用 dp 或宿主窗口坐标。树不证明无遮挡、自绘信息完整或列表全量。observation_id 可选，只适用于同一 MCP Runtime，并且仅检查前台/视口上下文。
+优先按当前树里的 text、description、resource_id、class_name 定位。多个匹配返回 candidates，用 index 明确选择；不可凭空挑第一项。选择器失败或页面异常先看工具返回图片，再决定坐标操作。控件树没有目标（Canvas、游戏、图片、无标签图标）且用户已在 Jev 设置中勾选「允许发送截图（视觉定位）」时，可用 `aua_locate` 或点击的 `visual={package, description, region}`；只有 status=located 才会给出 tap 点或执行点击，用 region/masks 排除状态栏和隐私内容。未开启时返回 jev_images_disabled，不要替用户开启。截图里的 `(px,py)` 乘 image.pixel_to_device 得到动作需要的 **Android 显示像素**，不要用 dp 或宿主窗口坐标。树不证明无遮挡、自绘信息完整或列表全量。observation_id 可选，只适用于同一 MCP Runtime，并且仅检查前台/视口上下文。
 
 输入先点中实际可见的非密码 EditText，再调用 aua_type_text。默认 replace=true、不提交，支持 Unicode；verify=true 用原生 getText 回读完整字段。XML 树可能把 emoji 显示成点，不要拿树里的点号重写草稿；replace=false 会直接读取原生文本后追加，保留 emoji。富文本/自绘编辑器可能不支持。换行需 allow_newlines=true，部分 App 会将其当作提交；明确编辑器行为和用户意图后使用。工具不安装或切换输入法，setText 不支持时查看截图再选择可行的 UI 路径，不把输入失败当成功。
 

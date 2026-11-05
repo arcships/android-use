@@ -29,7 +29,7 @@ def test_real_stdio_handshake_schemas_and_error(tmp_path):
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 tools = (await session.list_tools()).tools
-                assert len(tools) == 24
+                assert len(tools) == 26
                 assert "aua_read_fields" in {t.name for t in tools}
                 assert next(
                     t for t in tools if t.name == "aua_read_fields"
@@ -88,13 +88,19 @@ def test_real_stdio_handshake_schemas_and_error(tmp_path):
                 assert invalid.isError
                 disabled = await session.call_tool(
                     "aua_execute_goal",
-                    {
-                        "goal": "Show result",
-                        "package": "demo.app",
-                    },
+                    {"goal": "Show result", "package": "demo.app", "decider": "jev"},
                 )
                 assert disabled.isError
                 assert disabled.structuredContent["error"]["code"] == "jev_disabled"
+                # Without Jev, auto falls back to the host decider instead of refusing.
+                hosted = await session.call_tool(
+                    "aua_execute_goal", {"goal": "Show result", "package": "demo.app"}
+                )
+                assert hosted.structuredContent["error"]["code"] == "device_selection_required"
+                expired = await session.call_tool(
+                    "aua_goal_decide", {"token": "0" * 32, "choice": "a0"}
+                )
+                assert expired.structuredContent["error"]["code"] == "goal_session_expired"
                 absent = await session.call_tool("aua_ready", {})
                 assert absent.isError
                 assert absent.structuredContent["error"]["code"] == "device_selection_required"

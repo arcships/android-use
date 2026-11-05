@@ -23,6 +23,11 @@ from .backend import (
 from .models import ARG_MODELS, BatchStep, Selector, WaitCondition
 from .tree import compact, in_viewport, matches, parse_tree, tap_point
 
+# Host-decider sessions: idle lifetime between aua_goal_decide calls, and how many may wait.
+GOAL_SESSION_SECONDS = 300
+GOAL_SESSION_LIMIT = 8
+TAP_OPS = {"tap", "long_press", "double_tap"}
+
 
 class Runtime:
     def __init__(self, serial=None, backend_factory=Backend):
@@ -36,6 +41,7 @@ class Runtime:
         self._device_locked = False
         self._screen_client = None
         self._deadline = None
+        self.goal_sessions = {}
 
     def screen_client(self):
         from .screen import ScreenClient
@@ -103,6 +109,42 @@ class Runtime:
             self.backend = candidate
             self.device_key = key
         return self.backend
+
+    def _prune_goal_sessions(self):
+        now = time.monotonic()
+        for token in [t for t, s in self.goal_sessions.items() if s["expires"] <= now]:
+            del self.goal_sessions[token]
+
+    def _goal_result(self, result, policy, run):
+        if result.get("status") == "decision_required":
+            self._prune_goal_sessions()
+            while len(self.goal_sessions) >= GOAL_SESSION_LIMIT:
+                del self.goal_sessions[next(iter(self.goal_sessions))]  # Oldest first.
+            token = uuid.uuid4().hex
+            self.goal_sessions[token] = {
+                "policy": policy,
+                "run": run,
+                "device_key": self.device_key,
+                "options": set(result["decision"]["options"]),
+                "expires": time.monotonic() + GOAL_SESSION_SECONDS,
+            }
+            result["decision"].update(token=token, expires_in_seconds=GOAL_SESSION_SECONDS)
+        return result
+
+    def _take_goal_session(self, token, choice):
+        # Tokens are one-shot and in-memory: a CLI process or server restart cannot resume.
+        self._prune_goal_sessions()
+        session = self.goal_sessions.get(token)
+        if session is None or (self.device_key and session["device_key"] != self.device_key):
+            raise UseError(
+                "goal_session_expired", "Unknown or expired decision token; inspect and replan"
+            )
+        if choice not in session["options"]:
+            # Keep the token: nothing was read or executed for an invalid ID.
+            raise UseError("invalid_choice", "Choice must be one of the offered option IDs")
+        del self.goal_sessions[token]
+        session["policy"].answer = choice
+        return session
 
     def _pause_path(self):
         key = hashlib.sha256(self.device_key.encode()).hexdigest()[:24]
@@ -195,26 +237,69 @@ class Runtime:
                         (s.op, ARG_MODELS[s.op].model_validate(s.args).model_dump()) for s in steps
                     ]
                 }
+                if any(step.get("visual") for _, step in args["steps"]):
+                    # A paid, screenshot-sending location is never queued behind other actions.
+                    raise ValueError("Visual taps are not allowed in batch")
+            goal_config = session = None
             if op in {"execute_goal", "read_fields"}:
                 from .jev import JevConfig
 
-                goal_config = JevConfig.from_env()  # Fail before discovering or reading a phone.
+                decider = args["decider"] if op == "execute_goal" else "jev"
+                if decider == "auto":
+                    from .settings import effective_jev_settings
+
+                    jev = effective_jev_settings()
+                    decider = "jev" if jev["enabled"] and jev["key"] else "host"
+                if decider == "jev":
+                    # Fail before discovering or reading a phone.
+                    goal_config = JevConfig.from_env()
+            visual = op == "locate" or (op in TAP_OPS and args.get("visual") is not None)
+            if visual:
+                from .jev import JevConfig
+                from .vision import require_images
+
+                goal_config = JevConfig.from_env()
+                require_images(goal_config)
+            if op == "goal_decide":
+                session = self._take_goal_session(args["token"], args["choice"])
             self._connect()
             with self._guard():
                 if op == "resume":
                     self._pause_path().unlink(missing_ok=True)
                     return {"ok": True, "paused": False}
+                if op == "goal_decide":
+                    from .executor import execute
+
+                    # The executor's first read rechecks pause/lock/scope with the ledger kept.
+                    result = execute(self, None, session["policy"], session["run"])
+                    return self._goal_result(result, session["policy"], session["run"])
                 self._usable()
                 if op == "execute_goal":
-                    from .executor import execute
+                    from .executor import GoalRun, HostPolicy, execute
                     from .jev import JevPolicy
+                    from .models import ExecuteGoalArgs
 
-                    return execute(self, args, JevPolicy(goal_config))
+                    if goal_config is not None:
+                        return execute(self, args, JevPolicy(goal_config))
+                    run, policy = GoalRun(ExecuteGoalArgs.model_validate(args)), HostPolicy()
+                    return self._goal_result(execute(self, None, policy, run), policy, run)
                 if op == "read_fields":
                     from .fields import read_fields
                     from .jev import JevPolicy
 
                     return read_fields(self, args, JevPolicy(goal_config))
+                if visual:
+                    from .jev import JevPolicy
+
+                    policy = JevPolicy(goal_config)
+                    try:
+                        if op == "locate":
+                            from .vision import locate
+
+                            return locate(self, args, policy)
+                        return self._visual_tap(op, args, policy)
+                    finally:
+                        policy.close()
                 if op == "batch":
                     return self._batch(**args)
                 result = self._dispatch(op, args)
@@ -364,7 +449,8 @@ class Runtime:
                 "installed_verified": True,
                 "scope": "Third-party packages; query matches package ID",
             }
-        if op in {"tap", "long_press", "double_tap"}:
+        if op in TAP_OPS:
+            args = {k: v for k, v in args.items() if k != "visual"}
             return self._tap(kind=op, **args)
         if op == "drag":
             return self._drag(**args)
@@ -560,6 +646,17 @@ class Runtime:
         else:
             self._write(self.backend.tap, x, y)
         return self._after(observe, wait_for)
+
+    def _visual_tap(self, op, args, policy):
+        from .vision import visual_point
+
+        self._check_observation(args["observation_id"])
+        located = visual_point(self, args["visual"], policy)
+        x, y = located["tap"]
+        rest = {k: v for k, v in args.items() if k not in {"visual", "selector", "x", "y"}}
+        result = self._tap(kind=op, selector=None, x=x, y=y, **{**rest, "observation_id": None})
+        result["visual"] = located
+        return result
 
     def _drag(self, start, end, duration, observation_id, observe, wait_for=None):
         self._check_observation(observation_id)

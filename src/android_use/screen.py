@@ -24,8 +24,10 @@ LEASE_SECONDS = 5
 MAX_FRAME_BYTES = 3 * 1024 * 1024
 # Replace older daemons so their browser UI/recovery behavior is upgraded too.
 PREVIEW_PROTOCOL_VERSION = 3
-PREVIEW_IMPLEMENTATION_VERSION = 3
+PREVIEW_IMPLEMENTATION_VERSION = 4
 PREVIEW_BOOTSTRAP_ENV = "ANDROID_USE_PREVIEW_BOOTSTRAP"
+# Exit status is always 0, so a missing binary is distinguishable from an ADB failure.
+RECORDER_PROBE = ["sh", "-c", "command -v screenrecord || echo missing"]
 
 
 def unlimited_recording(help_text):
@@ -277,6 +279,7 @@ class ScreenHub:
         self.viewport = None
         self.geometry_ready = False
         self.recording_time_limit = recording_time_limit
+        self.recorder = None  # None until probed; False when the build lacks screenrecord.
         self.failures = 0
         self.pipeline_starts = 0
         self.health_failures = 0
@@ -363,7 +366,15 @@ class ScreenHub:
                 )
             except Exception:
                 pass  # A missing label cannot disconnect a healthy video stream.
-        if self.recording_time_limit is None:
+        if self.recorder is None:
+            try:
+                # Vendor builds such as HarmonyOS 4.x can omit screenrecord entirely;
+                # its shell error would otherwise be piped into the decoder as video.
+                found = self.backend.shell(RECORDER_PROBE, timeout=2)
+                self.recorder = found not in ("", "missing")
+            except Exception:
+                pass  # Unknown, not absent: keep the previous behavior and probe again.
+        if self.recording_time_limit is None and self.recorder is not False:
             try:
                 # AOSP prints usage on stderr; redirect it on the device.
                 help_text = self.backend.shell(["sh", "-c", "screenrecord --help 2>&1"], timeout=2)
@@ -400,6 +411,10 @@ class ScreenHub:
                 paused = self.pause_path.exists()
                 if paused or not active or self.locked or not self.connected:
                     self._stop_video()
+                elif self.recorder is False:
+                    # Permanent for this device: no encoder starts and no retry loop.
+                    self._stop_video()
+                    self.error = "preview_unsupported_device"
                 elif self.pipeline is None and self.geometry_ready and now >= self.retry_at:
                     try:
                         pipeline = self.pipeline_factory(
@@ -465,6 +480,7 @@ class ScreenHub:
                     "metadata_failures": self.metadata_failures,
                     "last_health_failure": self.last_health_failure,
                     "stream_failures": self.stream_failures,
+                    "recorder_available": self.recorder,
                     "recording_time_limit_seconds": self.recording_time_limit,
                     "recording_mode": "unlimited"
                     if self.recording_time_limit == 0

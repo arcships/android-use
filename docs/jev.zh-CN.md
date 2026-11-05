@@ -6,6 +6,16 @@
 
 参考 [browser-use/jev-ultrafast](https://github.com/browser-use/jev-ultrafast) 独立实现 Android 版本：读取可访问性树 → 本地生成动作候选 → Jev 选 ID → 执行一次 → 再观察。不需要安装浏览器项目，不依赖文本生成模型。
 
+## 无 Key：宿主决策模式
+
+`decider` 默认 `auto`：已启用且配置 Key 时用 Jev，否则用 `host`。也可显式传 `"decider": "jev"` 或 `"decider": "host"`。宿主模式下不向外发送任何数据：
+
+1. `aua_execute_goal` 返回 `status=decision_required`，附带精简的 `state`、`options`（候选 ID 以及 `DONE` / `BLOCKED`）和一次性 `token`。
+2. Agent 调用 `aua_goal_decide`，传入 `{"token": ..., "choice": "a3"}`。
+3. Android Use 重新读屏。界面变化则丢弃该选择，返回新的决策请求并标记 `previous_choice_stale=true`；否则执行该候选一次、检查效果，再返回下一步决策、完成或交回结果。
+
+令牌只能用一次，空闲 5 分钟过期，保存在当前 MCP 服务进程内存中，一次性 CLI 进程无法续接。无效的选项 ID 不会消耗令牌。`timeout_seconds` 只计设备时间，不计 Agent 思考时间。宿主模式用更多往返换来零配置；长决策循环仍是 Jev 更快。
+
 ## Agent + Jev 的分工
 
 路由按端到端完成速度、成功率和减少宿主大模型往返优先。Jev token 费用只作辅助记录，不作为路由约束。连续的局部决策交给同一次调用内的 Jev 循环处理，安全返回的观察用于后续规划，Agent 保留规划、恢复和业务验收职责。
@@ -70,6 +80,24 @@ OCR 推理后再次读取同一 ROI，比较精确像素哈希；变化就丢弃
 
 `aua_execute_goal` 另新增 `effect_timeout_seconds`（默认 1，范围 0.1–3 秒）。点击/输入确认后只观察，等待非空语义变化或完成条件；无效果交回 `uncertain_effect`，同一调用回到已消费的状态与动作则交回 `duplicate_action`。几何动画和过渡空树不算效果。ACK 仍记为 executed，不代表业务成功；`wait` 与有界列表滑动保留原有无进展限制。该机制不是跨调用去重，Agent 仍需根据返回记录恢复，不能重新提交整个目标。
 
+## Jev Box 视觉定位（截图需单独开启）
+
+有些目标在控件树里没有可用节点：Canvas/游戏界面、WebView 图片、无标签图标。`aua_locate` 让 Jev Box（需 `jev-1.14` 及以上）判断描述的元素在哪；`aua_tap` / `aua_long_press` / `aua_double_tap` 也接受同样参数的 `visual`，代替 `selector` 或 `x`/`y`。
+
+这是唯一会**上传截图**的功能，因此有独立开关，和启用 Jev 分开，**默认关闭**。在 Jev 设置中勾选「允许发送截图（视觉定位）」，或为服务进程设置 `ANDROID_USE_JEV_IMAGES=1`；本机保存的选择优先于环境变量。未开启时两个调用都在读取手机前返回 `jev_images_disabled`。
+
+```json
+{"package": "com.example.shop", "description": "右上角的购物车图标",
+ "region": {"x": 0, "y": 192, "width": 1080, "height": 2016}}
+```
+
+- 每次请求发送一张 `region`（默认全屏）的 JPEG，等比缩放到每边 280–1568 px，同时问三个问题：Noul 是否存在、none/one/several 的 Choice 匹配数量、Box 位置。约 3,900 输入 token（≈$0.00016），模型耗时约 0.4 秒。若首轮在缩小后的图上不确定（存在概率在 0.3 与门槛之间，或置信度偏低），会在首个框周围裁出至少 560 px 的原分辨率区域再问一次；`refined` 返回该窗口，`model_calls` 变为 2。
+- 仅当存在概率 ≥ `min_presence`（默认 0.7）、恰好一个匹配、框置信度 ≥ `min_confidence`（默认 0.5）时 `status=located`；否则为 `not_found`、`ambiguous`、`low_confidence` 或 `masked`（框中心落在遮罩内）。`box=[x,y,宽,高]`、`tap=[x,y]` 为显示像素；只有 `located` 才给出 `tap`。
+- 最多 8 个 `masks` 在上传前涂白。不需要状态栏时用 `region` 排除通知内容。
+- 设备暂停、可见密码框或树中出现验证码/PIN 提示时不截图。安全窗口（全黑截图）直接返回 `screen_capture_blocked`，不调用模型。只画在像素里的自定义认证无法识别，应先 pause。
+- 视觉点击依次执行：定位，重新读取上下文并再次截图，比较框外扩区域像素；变化像素超过 1% 返回 `stale_visual_target`。通过后在框中心**只点一次**，支持 `wait_for`/`observe`。未确认的目标返回 `visual_target_not_found`、`ambiguous_target` 或 `visual_low_confidence` 并附定位结果，不会点击。`batch` 中不允许视觉点击。
+- 定位框是模型判断，不是验收。能用控件树选择器时优先使用，结果以设备实际界面为准。
+
 ## 配置
 
 ### 推荐：在屏幕中配置
@@ -123,7 +151,9 @@ CLI 使用同样 JSON：`uv run --env-file .env --frozen android-use --serial <�
 
 ## 减少读屏开销与输入决策
 
-同一校验阶段内，亮屏与视口检查复用一次 `deviceInfo` 响应，不跨模型推理、动作或等待缓存。读树前后仍各自检查最新上下文；推理返回后和执行前仍会校验。
+同一校验阶段内，亮屏与视口检查复用一次 `deviceInfo` 响应，不跨模型推理、动作或等待缓存。读树前后仍各自检查最新上下文；推理返回后和执行前仍会校验。推理后那次读屏的收尾检查就是动作前的最后一次检查；每轮循环直接沿用刚完成读屏的检查结果，不再重复查询锁屏/亮屏（Android 16 真机上每步约省 170 毫秒）。
+
+每次 Jev 请求还会在同一观察上并行问一个 `goal` 问题（`NOT_YET` / `ACHIEVED`）。输出免费，几乎不增加费用和延迟。没有 `completion` 选择器时，若 `ACHIEVED` 达到同样的 `min_probability` / `min_margin` 阈值，就在下一次动作前停止，返回 `stop_reason=model_goal_achieved`、`handoff.next=verify_outcome`。这是判断，不是验证。有选择器时只看选择器，判断仅记录在 `decisions[].goal`。目标问题答案缺失或无效会被忽略：它只能让执行停下，不能触发动作。
 
 `input_macros` 默认 `true`。同时允许 `tap`、`type_text` 时，有唯一 resource ID 或 content description 的可见、未聚焦 EditText 可提供 `focus_type_text` 候选：**聚焦 → 设置一个精确允许值 → 原生 getText 回读**。Jev 只决策一次，Android Use 最多执行两个原生修改动作。标识必须在包含屏外节点的整棵树中唯一；不支持换行、密码或隐式提交。没有稳定标识时继续使用原有单步候选。
 

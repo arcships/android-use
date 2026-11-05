@@ -6,7 +6,7 @@ import pytest
 from PIL import Image
 
 from android_use.backend import UseError
-from android_use.screen import JPEGParser, ScreenHub, unlimited_recording
+from android_use.screen import RECORDER_PROBE, JPEGParser, ScreenHub, unlimited_recording
 
 
 def until(predicate, timeout=3):
@@ -41,6 +41,7 @@ class Metadata:
     offline = False
     orientation = 0
     recording_help = "Set to 0\nto remove the time limit."
+    recorder = "/system/bin/screenrecord"
     display_failed = False
 
     def locked(self):
@@ -53,6 +54,8 @@ class Metadata:
             raise TimeoutError("Display metadata timed out")
         if args == ["sh", "-c", "screenrecord --help 2>&1"]:
             return self.recording_help
+        if args == RECORDER_PROBE:
+            return self.recorder
         assert args in (["wm", "size"], ["getprop", "ro.product.model"], ["dumpsys", "display"])
         return (
             "Physical size: 1080x2400"
@@ -345,5 +348,56 @@ def test_initial_unknown_geometry_cannot_start_capture(monkeypatch, tmp_path):
         until(lambda: hub.metadata_failures > 0)
         assert not hub.frame()["interaction_ready"]
         assert not Video.instances
+    finally:
+        hub.close()
+
+
+def test_missing_screenrecord_is_reported_without_retrying(monkeypatch, tmp_path):
+    hub, metadata = make_hub(monkeypatch, tmp_path)
+    metadata.recorder = "missing"
+    calls = []
+    original = metadata.shell
+
+    def shell(args, **kwargs):
+        calls.append(args)
+        return original(args, **kwargs)
+
+    metadata.shell = shell
+    hub.frame()
+    hub.start()
+    try:
+        until(lambda: hub.frame()["error"] == "preview_unsupported_device")
+        time.sleep(1.3)  # Spans another health interval.
+        result = hub.frame()
+        assert not Video.instances and hub.pipeline is None and not result["capturing"]
+        assert result["connected"] and result["video"]["recorder_available"] is False
+        assert result["video"]["pipeline_starts"] == 0 and result["video"]["stream_failures"] == 0
+        # Probed once and cached; the recording-help probe is skipped entirely.
+        assert calls.count(RECORDER_PROBE) == 1
+        assert ["sh", "-c", "screenrecord --help 2>&1"] not in calls
+        with pytest.raises(UseError):
+            hub.require_interaction_ready()
+    finally:
+        hub.close()
+
+
+def test_recorder_probe_failure_is_unknown_not_unsupported(monkeypatch, tmp_path):
+    hub, metadata = make_hub(monkeypatch, tmp_path)
+    original = metadata.shell
+    failures = []
+
+    def shell(args, **kwargs):
+        if args == RECORDER_PROBE and not failures:
+            failures.append(args)
+            raise TimeoutError()
+        return original(args, **kwargs)
+
+    metadata.shell = shell
+    hub.frame()
+    hub.start()
+    try:
+        until(lambda: hub.frame_data is not None)
+        until(lambda: hub.recorder is True)
+        assert hub.frame()["error"] is None
     finally:
         hub.close()

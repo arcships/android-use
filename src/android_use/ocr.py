@@ -5,6 +5,7 @@ import json
 import math
 import os
 import platform
+import re
 import signal
 import subprocess
 import tempfile
@@ -16,6 +17,13 @@ from pathlib import Path
 from PIL import ImageDraw
 
 from .backend import UseError, state_dir
+
+# Authentication prompts: never send their text or pixels to a decision provider.
+AUTH_TEXT = re.compile(
+    r"验证码|输入.{0,12}(?:密码|PIN)|enter.{0,40}(?:password|pin)|"
+    r"verification code|one[- ]time (?:password|code)",
+    re.I,
+)
 
 
 def run_local(command, timeout):

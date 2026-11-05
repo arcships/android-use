@@ -8,7 +8,7 @@
     <a href="#mcp-客户端支持"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="标准 stdio MCP" /></a>
   </p>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
-  <p><a href="#快速开始"><strong>开始使用 →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.5.2">下载 v0.5.2</a> · <a href="#在屏幕中启用-jev">配置 Jev</a> · <a href="docs/guide.zh-CN.md">使用指南</a> · <a href="https://github.com/JackCaow/android-use/issues">反馈问题</a></p>
+  <p><a href="#快速开始"><strong>开始使用 →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.6.0">下载 v0.6.0</a> · <a href="#在屏幕中启用-jev">配置 Jev</a> · <a href="docs/guide.zh-CN.md">使用指南</a> · <a href="https://github.com/JackCaow/android-use/issues">反馈问题</a></p>
 </div>
 
 ## 把 Android 接入你的 Agent 工作流
@@ -43,7 +43,7 @@ Android Use 通过**标准 MCP**，让 Agent 操作你自己的 Android 手机�
 | **Jev · 可选** | 根据当前界面，选择代码提供的下一步候选。 |
 | **Android Use** | 读屏、校验范围与过期状态、执行原生动作、控制预算和暂停。 |
 
-已知路径使用 `batch`、动作加等待或 `scroll_until`。下一步依赖新界面的短流程可交给 `aua_execute_goal`；遇到不确定情况就带着动作账本和安全上下文交回 Agent。[分工、边界与示例 →](docs/jev.zh-CN.md)
+已知路径使用 `batch`、动作加等待或 `scroll_until`。下一步依赖新界面的短流程可交给 `aua_execute_goal`。没有 TypeSafe Key 时自动使用宿主决策模式：由你的 Agent 通过 `aua_goal_decide` 逐步选择代码生成的候选，Android Use 照样做过期、效果与防重放检查。遇到不确定情况就带着动作账本和安全上下文交回 Agent。[分工、边界与示例 →](docs/jev.zh-CN.md)
 
 ## 在屏幕中启用 Jev
 
@@ -58,7 +58,7 @@ Android Use 通过**标准 MCP**，让 Agent 操作你自己的 Android 手机�
 
 <img src="docs/images/jev-settings.jpg" alt="Jev 设置：密码形式的 API Key 输入框与验证并启用按钮" width="340" />
 
-启用后，子目标、可见界面文字和允许输入值会发送给 TypeSafe 进行决策。保存的 Key 不回传界面。
+启用后，子目标、可见界面文字和允许输入值会发送给 TypeSafe 进行决策。保存的 Key 不回传界面。只有单独勾选「允许发送截图（视觉定位）」后，视觉定位（`aua_locate`）才会发送截图。
 
 </details>
 
@@ -68,6 +68,7 @@ Android Use 通过**标准 MCP**，让 Agent 操作你自己的 Android 手机�
 | --- | --- |
 | **理解界面** | 控件树、截图、语义选择器与有界等待。 |
 | **精确操作** | 点击、长按、双击、滑动、拖拽、启动 App 与系统按钮。 |
+| **补上控件树看不到的** | 可选 Jev Box 定位 Canvas、图片和无标签目标；视觉点击先复核像素，只点一次。 |
 | **减少往返** | 动作、等待、观察合并；自动滚动按次数和时间停止。 |
 | **输入与核对** | 中文、emoji、替换/追加和原生回读；稳定输入框可一次决策完成聚焦→输入→回读。 |
 | **清楚交接控制** | 认证由用户接管；保留 partial/uncertain 动作账本，不自动重放。 |
@@ -187,6 +188,10 @@ uv run android-use scroll_until '{"selector":{"text":"显示与亮度"},"directi
 
 可选决策集成与原有工具配合使用：[Agent + Jev 配置、分工和对比测试 →](docs/jev.zh-CN.md)。
 
+## v0.6.0：无 Key 决策与视觉定位
+
+没有 TypeSafe Key 也能用 `aua_execute_goal`：由你的 Agent 通过 `aua_goal_decide` 逐步选择代码生成的候选，照样做过期、效果和防重放检查。使用 Jev 时，已核对的 emoji 输入不再重复输入，每步读屏更少，目标判断头可在目标已达成时停止。新增可选 Jev Box（`aua_locate`、点击的 `visual`），定位 Canvas、图片和无标签目标；只有勾选「允许发送截图（视觉定位）」后才发送截图。不支持 `screenrecord` 的手机会直接说明，不再反复重试预览。[宿主决策与 Box →](docs/jev.zh-CN.md)
+
 ## v0.5.2：修复预览重连
 
 闲置时保留预览入口，MCP 读图可恢复已退出的服务；收到新画面后才提示重连成功。Jev 设置入口改为带文字的简洁星标按钮。[恢复行为、验收与边界 →](docs/preview-reconnection.md)
@@ -214,7 +219,7 @@ v0.5.0 通过 **277 项 Python 测试、17 项界面测试**。内置 OCR 目前
 
 ## 项目状态
 
-**v0.5.2 · MIT · 305 项 Python 测试 · 22 项浏览器测试。** 模拟器验收覆盖 15 项真实 stdio MCP 场景；已有 Android 16 / Xiaomi 15 Ultra 真机验收。新增 Jev 设置和机身界面在本机/模拟器验证，其他厂商、宿主版本及系统的覆盖范围另见[验证记录](docs/validation.md)。
+**v0.6.0 · MIT · 362 项 Python 测试 · 24 项浏览器测试。** 模拟器验收覆盖 15 项真实 stdio MCP 场景；已有 Android 16 / Xiaomi 15 Ultra 真机验收。新增 Jev 设置和机身界面在本机/模拟器验证，其他厂商、宿主版本及系统的覆盖范围另见[验证记录](docs/validation.md)。
 
 多指手势、任意轨迹、精细文本选区及自绘编辑器输入兜底尚未实现。UI 条件满足仅证明该条件，Agent 仍需验收业务结果。控制和预览运行于本机，工具结果由你选择的客户端与模型处理。
 

@@ -45,6 +45,7 @@ class JevConfig:
     key: str = field(repr=False)
     model: str = "jev-1.14.0"
     base_url: str = "https://api.typesafe.ai/v1"
+    images: bool = False
 
     @classmethod
     def from_env(cls):
@@ -62,6 +63,7 @@ class JevConfig:
             key,
             settings["model"],
             endpoint_url(settings["base_url"]),
+            settings["images"],
         )
 
 
@@ -144,16 +146,24 @@ class JevPolicy:
             "confidence": confidence,
         }
 
-    def ask(self, state, questions, timeout):
+    def ask(self, state, questions, timeout, assets=None):
         if not check_budget(state, questions):
             raise UseError("context_too_large", "Request exceeds conservative local byte budget")
+        body = {"model": self.config.model, "state": state, "questions": questions}
+        headers = {}
+        if assets:
+            if not self.config.images:
+                raise UseError("jev_images_disabled", "Screenshots may not leave the device")
+            body["assets"] = assets
+            headers["TypeSafe-Danger-Zone-Images"] = "true"
         self.metrics["model_calls"] += 1
         self.metrics["unpriced_calls"] += 1
         start = time.monotonic()
         try:
             response = self.client.post(
                 self.config.base_url + "/systemone",
-                json={"model": self.config.model, "state": state, "questions": questions},
+                json=body,
+                headers=headers,
                 timeout=max(0.001, timeout),
             )
             if response.status_code != 200:
@@ -175,6 +185,30 @@ class JevPolicy:
             raise UseError("jev_invalid_response", "Decision response failed validation") from None
         finally:
             self.metrics["model_seconds"] += time.monotonic() - start
+
+    @staticmethod
+    def validate_noul(answer):
+        if not isinstance(answer, dict) or answer.get("type") != "noul":
+            raise ValueError("Invalid answer")
+        p = answer["noul"]
+        if type(p) not in (int, float) or not math.isfinite(p) or not 0 <= p <= 1:
+            raise ValueError("Invalid probability")
+        return p
+
+    @staticmethod
+    def validate_box(answer):
+        if not isinstance(answer, dict) or answer.get("type") != "box":
+            raise ValueError("Invalid answer")
+        box, confidence = answer["box"], answer["confidence"]
+        edges = [box[k] for k in ("left", "top", "right", "bottom")]
+        if any(
+            type(n) not in (int, float) or not math.isfinite(n) or not 0 <= n <= 1
+            for n in [*edges, confidence]
+        ):
+            raise ValueError("Invalid box")
+        if not (edges[0] < edges[2] and edges[1] < edges[3]):
+            raise ValueError("Empty box")
+        return edges, confidence
 
     def decide(self, state, criteria, timeout):
         questions = action_questions(criteria)
@@ -200,7 +234,7 @@ class JevPolicy:
                 heads["target"] = target
                 choice = target["choice"]
             # Only the selected operation's target is consumed. Other heads cannot act.
-            return {
+            result = {
                 "choice": choice,
                 "operation": op,
                 **{
@@ -211,6 +245,11 @@ class JevPolicy:
             }
         except (KeyError, TypeError, ValueError):
             raise UseError("jev_invalid_response", "Decision response failed validation") from None
+        try:
+            result["goal"] = self.validate_choice(answers["goal"], questions["goal"]["criteria"])
+        except (KeyError, TypeError, ValueError):
+            pass  # The goal head can only stop a run; a missing/bad answer never acts.
+        return result
 
     def summary(self):
         return {

@@ -55,19 +55,32 @@ class ActionArgs(StrictModel):
     observe: Observe = "none"
 
 
+class LocateArgs(StrictModel):
+    package: Annotated[str, Field(pattern=r"^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z0-9_]+)+$")]
+    description: Annotated[str, Field(min_length=1, max_length=300)]
+    region: Region | None = None
+    masks: Annotated[list[Region], Field(max_length=8)] = Field(default_factory=list)
+    min_presence: Annotated[float, Field(ge=0.5, le=1)] = 0.7
+    min_confidence: Annotated[float, Field(ge=0, le=1)] = 0.5
+    timeout_seconds: Annotated[float, Field(gt=0, le=60)] = 20.0
+
+
 class TapArgs(ActionArgs):
     selector: Selector | None = None
     x: Annotated[int, Field(ge=0)] | None = None
     y: Annotated[int, Field(ge=0)] | None = None
+    # Jev Box: screenshot -> located box -> pixel recheck -> one tap at the box center.
+    visual: LocateArgs | None = None
     observation_id: str | None = None
 
     @model_validator(mode="after")
     def target(self):
-        if self.selector is not None:
-            if self.x is not None or self.y is not None:
-                raise ValueError("Pass selector OR x/y")
-        elif self.x is None or self.y is None:
-            raise ValueError("Pass selector OR both x and y")
+        given = [self.selector is not None, self.visual is not None]
+        if self.x is not None or self.y is not None:
+            if any(given) or self.x is None or self.y is None:
+                raise ValueError("Pass exactly one of selector, visual, or both x and y")
+        elif given.count(True) != 1:
+            raise ValueError("Pass exactly one of selector, visual, or both x and y")
         return self
 
 
@@ -166,6 +179,13 @@ class ExecuteGoalArgs(StrictModel):
     observe: Literal["none", "tree"] = "tree"
     input_macros: bool = True
     effect_timeout_seconds: Annotated[float, Field(ge=0.1, le=3)] = 1.0
+    # auto: Jev when enabled with a key, otherwise the host Agent via goal_decide.
+    decider: Literal["auto", "jev", "host"] = "auto"
+
+
+class GoalDecideArgs(StrictModel):
+    token: Annotated[str, Field(pattern=r"^[0-9a-f]{32}$")]
+    choice: Annotated[str, Field(min_length=1, max_length=40)]
 
 
 class FieldQuestion(StrictModel):
@@ -246,7 +266,9 @@ class BatchStep(StrictModel):
 
 ARG_MODELS = {
     "read_fields": ReadFieldsArgs,
+    "locate": LocateArgs,
     "execute_goal": ExecuteGoalArgs,
+    "goal_decide": GoalDecideArgs,
     "tap": TapArgs,
     "long_press": LongPressArgs,
     "double_tap": DoubleTapArgs,

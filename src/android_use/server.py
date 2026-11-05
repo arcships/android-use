@@ -69,6 +69,8 @@ SCHEMAS.update(
                         "jev_test",
                         "jev_disable",
                         "jev_clear",
+                        "jev_images_on",
+                        "jev_images_off",
                     ],
                 },
                 # Private validation avoids SDK schema errors echoing the secret value.
@@ -105,17 +107,37 @@ DESCRIPTIONS = {
     "min_ocr_confidence is optional uncalibrated provider telemetry, not accuracy. Declare currency "
     "for ambiguous symbols. Optional sum_check validates same-currency Decimal sums in code; "
     "no device actions. verified=false always requires Agent business verification.",
-    "execute_goal": "Agent plans, Jev selects candidate IDs, Android Use executes. Optional local "
-    "decision loop; enable with a TypeSafe key in screen settings, or through "
-    "ANDROID_USE_JEV_ENABLED=1 / TYPESAFE_API_KEY. Sends visible app UI text to TypeSafe. "
+    "locate": "Read-only Jev Box location for elements the accessibility tree lacks (canvas, "
+    "games, WebView images, icons without labels). Sends one masked screenshot of region (default "
+    "full display) to TypeSafe, so it needs Jev plus the separate images opt-in "
+    "(允许发送截图（视觉定位） in screen settings, or ANDROID_USE_JEV_IMAGES=1); otherwise "
+    "jev_images_disabled. Refuses password/OTP screens and paused devices. One request asks "
+    "presence, match count and a box; status is located, not_found, ambiguous, low_confidence "
+    "or masked. box=[x,y,width,height] and tap=[x,y] are display pixels; tap is set only when "
+    "located. masks blank sensitive areas before upload. Prefer trees/selectors when they work; "
+    "a located box is a model judgment, not verification.",
+    "execute_goal": "Agent plans, a decision policy selects candidate IDs, Android Use executes. "
+    "decider=auto uses Jev when enabled (TypeSafe key in screen settings, or "
+    "ANDROID_USE_JEV_ENABLED=1 / TYPESAFE_API_KEY; sends visible app UI text to TypeSafe), "
+    "otherwise host: no key, nothing sent externally. Host mode returns status=decision_required "
+    "with compact state, option IDs and a one-time token; choose with aua_goal_decide. "
     "Caller supplies goal, foreground package, exact input texts and optional completion selector. "
     "Compact semantic state and parallel operation/target questions share one Jev request per step. "
+    "Each Jev request also judges goal completion; without a completion selector a confident "
+    "ACHIEVED stops before another action (stop_reason=model_goal_achieved, unverified: check it). "
     "input_macros=true can combine stable-field focus and exact input with native readback; "
     "max_steps counts candidate selections, with at most two native writes per input macro. "
     "Bounded candidate-only actions; no automatic replay. status=handoff is not success. "
     "effect_timeout_seconds bounds observation after acknowledged mutations; unresolved effects "
     "hand off without another mutation. Geometry-only changes do not prove an effect. "
     "Keep existing tools for planning, unsupported controls and recovery. Password screens hand off.",
+    "goal_decide": "Host-decider step of aua_execute_goal: send one option ID from the latest "
+    "decision_required result with its one-time token. Android Use reads the UI again; if it "
+    "changed, the choice is discarded and a fresh decision is returned "
+    "(previous_choice_stale=true). Otherwise it executes that candidate once, checks its effect "
+    "and returns the next decision, completion or handoff. An unknown option ID keeps the token; "
+    "any other outcome consumes it. Tokens expire after 5 idle minutes and need the same MCP "
+    "server process. timeout_seconds counts device time only, not host thinking time.",
     "doctor": "Read local ADB device inventory and configuration. Does not start a phone service.",
     "setup": "First use: status/discover, start once if needed, then ready. configure selects a serial. "
     "start pushes a pinned JAR and reuses/starts UiAutomator without root or keyboard APK.",
@@ -125,7 +147,9 @@ DESCRIPTIONS = {
     "pixels; image pixels multiplied by pixel_to_device give action coordinates.",
     "find": "Find exact text/description/resource_id/class_name/package or substring text/description. "
     "Multiple targets require an explicit 0-based index; bounds don't prove unobstructed access.",
-    "tap": "Tap once by selector OR x/y display pixels. Ambiguity returns candidates and a screenshot. "
+    "tap": "Tap once by selector OR x/y display pixels OR visual (aua_locate args: Jev Box with "
+    "the images opt-in). visual taps the box center only when located, after rechecking the "
+    "pixels around the box, never in batch. Ambiguity returns candidates and a screenshot. "
     "Optional wait_for waits for visible/gone selector after action; timeout never replays it. "
     "Optional observation_id checks same runtime/app/display context. No automatic replay.",
     "long_press": "Long press once by selector OR x/y display pixels for duration seconds (0.5..3). "
@@ -170,16 +194,18 @@ def create_server(runtime=None):
         version=__version__,
         instructions="First call aua_setup(status), start if absent, then aua_ready. "
         "The host agent owns task understanding, planning, exact text composition, recovery and "
-        "final business verification. When enabled, use aua_execute_goal for a short local UI "
-        "subgoal: Jev decides the next candidate; Android Use alone executes actions. "
+        "final business verification. Use aua_execute_goal for a short local UI subgoal: Jev, when "
+        "enabled, decides the next candidate; otherwise you decide each step with "
+        "aua_goal_decide. Android Use alone executes actions. "
         "Known paths should still use batch. "
         "Optimize end-to-end completion time and success rate, reducing host-model round trips. "
-        "Do not route based on Jev token cost. Delegate a coherent local decision loop rather "
-        "than asking the host to approve every low-level choice. Reuse a safe returned "
+        "Do not route based on Jev token cost. With Jev, delegate a coherent local decision loop "
+        "rather than asking the host to approve every low-level choice. Reuse a safe returned "
         "observation when planning the next step instead of immediately reading it again. "
         "On handoff inspect steps and current state, then continue with existing tools; do not "
         "repeat the original goal blindly. Jev does not replace the host agent. "
-        "Use trees first, screenshots for visual content/failures. "
+        "Use trees first, screenshots for visual content/failures; aua_locate or tap visual "
+        "only when no tree target exists and the user opted in to sending screenshots. "
         "Actions accept wait_for={selector,state:visible|gone,timeout_seconds}; "
         "use scroll_until for bounded list search. An unmet condition never replays the action. "
         "Execute actions once; do not replay uncertain mutations. "
@@ -189,7 +215,7 @@ def create_server(runtime=None):
 
     @server.list_tools()
     async def list_tools():
-        reads = {"doctor", "observe", "find", "wait", "apps", "ready", "read_fields"}
+        reads = {"doctor", "observe", "find", "wait", "apps", "ready", "read_fields", "locate"}
         tools = [
             Tool(
                 name="aua_" + name,

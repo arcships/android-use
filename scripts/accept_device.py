@@ -150,6 +150,13 @@ async def exercise(serial, apk, jev=False):
     def shell(*args):
         return command([adb, "-s", serial, "shell", *args])
 
+    def restart_benchmark():
+        shell("am", "force-stop", PACKAGE)
+        shell("am", "start", "-W", "-n", PACKAGE + "/.MainActivity", "--ez", "benchmark", "true")
+        # -W returns at first draw; launcher animations (e.g. HyperOS) can still
+        # swallow an immediate tap. Fixture setup only, not a behavior under test.
+        time.sleep(1.0)
+
     if f"package:{PACKAGE}" in shell("pm", "list", "packages", PACKAGE).splitlines():
         raise RuntimeError("Fixture package already exists; refusing to replace it")
     params = StdioServerParameters(
@@ -184,6 +191,9 @@ async def exercise(serial, apk, jev=False):
                         "timeout_seconds": 10,
                     },
                 )
+                # The selector appears at first draw; launch animations (e.g. HyperOS)
+                # can still swallow an immediate tap. Fixture setup only.
+                await asyncio.sleep(1.0)
                 start = time.monotonic()
                 shown = await call(
                     "tap",
@@ -342,17 +352,31 @@ async def exercise(serial, apk, jev=False):
                         "executor": "android_use",
                     }
                     passed.append("jev_goal_over_real_stdio_mcp")
-                    shell("am", "force-stop", PACKAGE)
-                    shell(
-                        "am",
-                        "start",
-                        "-W",
-                        "-n",
-                        PACKAGE + "/.MainActivity",
-                        "--ez",
-                        "benchmark",
-                        "true",
+                    # No completion selector: Jev's parallel goal head must stop the run
+                    # once the target shows, before any further mutation.
+                    await call(
+                        "tap",
+                        selector={"description": "hide-target"},
+                        wait_for={"selector": {"text": "TARGET_VISIBLE"}, "state": "gone"},
                     )
+                    judged = await call(
+                        "execute_goal",
+                        goal="Tap Show once so that TARGET_VISIBLE appears.",
+                        package=PACKAGE,
+                        actions=["tap", "wait"],
+                        timeout_seconds=30.0,
+                    )
+                    judged_summary = {
+                        k: judged.get(k) for k in ("stop_reason", "steps", "decisions")
+                    }
+                    assert judged["stop_reason"] == "model_goal_achieved", judged_summary
+                    assert [s["op"] for s in judged["steps"]] == ["tap"], judged_summary
+                    assert judged["handoff"]["next"] == "verify_outcome"
+                    assert (await call("wait", selector={"text": "TARGET_VISIBLE"}))[
+                        "condition_met"
+                    ]
+                    passed.append("jev_goal_judgment_stops_without_selector")
+                    restart_benchmark()
                     assert (await call("wait", selector={"description": "open-profile"}))[
                         "condition_met"
                     ]
@@ -393,17 +417,7 @@ async def exercise(serial, apk, jev=False):
                     handoff_metrics = handed["metrics"]
                     passed.append("jev_handoff_then_host_continues_without_replay")
                     # Reset the field so focus + exact Unicode input needs one decision.
-                    shell("am", "force-stop", PACKAGE)
-                    shell(
-                        "am",
-                        "start",
-                        "-W",
-                        "-n",
-                        PACKAGE + "/.MainActivity",
-                        "--ez",
-                        "benchmark",
-                        "true",
-                    )
+                    restart_benchmark()
                     await call(
                         "tap",
                         selector={"description": "open-profile"},
@@ -423,7 +437,9 @@ async def exercise(serial, apk, jev=False):
                     assert len(macros) == 1 and macros[0]["state"] == "executed", macro
                     assert macros[0]["substeps"][1]["verified"]
                     assert macro["metrics"]["model_calls"] == 2
-                    assert macro["verified"]
+                    assert macro["verified"], {
+                        k: macro.get(k) for k in ("stop_reason", "steps", "decisions", "error")
+                    }
                     assert (await call("find", selector={"text_contains": "DRAFT=宏动作"}))[
                         "total"
                     ] == 1
@@ -473,7 +489,12 @@ async def exercise(serial, apk, jev=False):
                     activity = original.get("activity")
                     package = original.get("foreground")
                     if package and activity:
-                        shell("am", "start", "-n", f"{package}/{activity}")
+                        try:
+                            shell("am", "start", "-n", f"{package}/{activity}")
+                        except RuntimeError:
+                            # A non-exported activity can't be started from adb; removing the
+                            # fixture usually returns its task to the top. Check that instead.
+                            pass
                         restored = await call("observe", mode="tree")
                         assert restored["foreground"] == package, (
                             "Original foreground did not restore"

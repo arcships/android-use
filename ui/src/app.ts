@@ -17,7 +17,7 @@ const notice=document.querySelector<HTMLElement>('#notice')!;
 const pointer=document.querySelector<HTMLElement>('#pointer')!;
 const buttons=Object.fromEntries(['refresh','back','home','copy'].map(id=>[id,document.getElementById(id) as HTMLButtonElement]));
 const standalone=window.__ANDROID_USE_STANDALONE__===true;
-const app=standalone?undefined:new App({name:'Android Use Screen',version:'0.5.2'},
+const app=standalone?undefined:new App({name:'Android Use Screen',version:'0.6.0'},
   {availableDisplayModes:['fullscreen']},{autoResize:false});
 let preview:Preview|undefined,seq=0,stream='',disposed=false,inFlight=false,acting=false;
 let suspended=false,timer:ReturnType<typeof setTimeout>|undefined;
@@ -26,7 +26,7 @@ let reconnectRequested=false;
 const recoveryGraceMs=5000;
 let interruptedAt:number|undefined,waitingAfterSeq:number|undefined;
 let noticeTimer:ReturnType<typeof setTimeout>|undefined;
-type JevStatus={ok:boolean;enabled:boolean;configured:boolean;has_saved_key:boolean;key_source:string;model:string;base_url:string;tested?:boolean;latency_ms?:number;demo?:boolean;error?:{code:string;status?:number}};
+type JevStatus={ok:boolean;enabled:boolean;configured:boolean;has_saved_key:boolean;images_enabled?:boolean;key_source:string;model:string;base_url:string;tested?:boolean;latency_ms?:number;demo?:boolean;error?:{code:string;status?:number}};
 const settingsButton=document.querySelector<HTMLButtonElement>('#settings')!;
 const settingsDialog=document.querySelector<HTMLDialogElement>('#jev-settings')!;
 const keyInput=document.querySelector<HTMLInputElement>('#jev-key')!;
@@ -35,8 +35,9 @@ const enableJev=document.querySelector<HTMLButtonElement>('#jev-enable')!;
 const testJev=document.querySelector<HTMLButtonElement>('#jev-test')!;
 const disableJev=document.querySelector<HTMLButtonElement>('#jev-disable')!;
 const clearJev=document.querySelector<HTMLButtonElement>('#jev-clear')!;
+const imagesJev=document.querySelector<HTMLInputElement>('#jev-images')!;
 let jevStatus:JevStatus|undefined,settingsBusy=false;
-const labels:Record<string,string>={connecting:'连接中',live:'Live',buffering:'缓冲中',paused:'已暂停',offline:'未连接'};
+const labels:Record<string,string>={connecting:'连接中',live:'Live',buffering:'缓冲中',paused:'已暂停',offline:'未连接',unsupported:'不支持预览'};
 
 function showNotice(message:string,detail=''){
   if(noticeTimer)clearTimeout(noticeTimer);
@@ -75,6 +76,7 @@ function renderJev(data:JevStatus){
   keyInput.placeholder=data.configured?'已有 Key，留空继续使用':'粘贴你的 API Key';
   keyInput.disabled=!!data.demo||settingsBusy;enableJev.disabled=!!data.demo||settingsBusy||(!data.configured&&!keyInput.value.trim());testJev.disabled=!data.configured||!!data.demo||settingsBusy;
   disableJev.hidden=!data.enabled;clearJev.hidden=!data.has_saved_key;disableJev.disabled=settingsBusy;clearJev.disabled=settingsBusy;
+  imagesJev.checked=!!data.images_enabled;imagesJev.disabled=!!data.demo||settingsBusy;
 }
 function jevError(data?:JevStatus):string{
   if(data?.error?.code==='jev_http_error')return data.error.status===401?'Key 无效或已失效':data.error.status===429?'请求过于频繁，请稍后重试':'服务拒绝请求，请检查 Key 权限和账户状态';
@@ -84,24 +86,25 @@ function jevError(data?:JevStatus):string{
 async function configureJev(action:string){
   if(settingsBusy||!jevStatus||jevStatus.demo)return;
   settingsBusy=true;settingsMessage.textContent=action==='jev_save'?'正在验证 Key…':action==='jev_test'?'正在测试连接…':'正在更新设置…';settingsMessage.dataset.error='false';
-  keyInput.disabled=true;settingsButton.disabled=true;document.querySelector<HTMLButtonElement>('#settings-close')!.disabled=true;for(const b of [enableJev,testJev,disableJev,clearJev])b.disabled=true;
+  keyInput.disabled=true;settingsButton.disabled=true;document.querySelector<HTMLButtonElement>('#settings-close')!.disabled=true;for(const b of [enableJev,testJev,disableJev,clearJev,imagesJev])b.disabled=true;
   try{
     const data:JevStatus=await call('action',{action,...(action==='jev_save'?{api_key:keyInput.value}:{})});
     if(!data?.ok){settingsMessage.textContent=jevError(data);settingsMessage.dataset.error='true';return;}
-    keyInput.value='';renderJev(data);
-    settingsMessage.textContent=data.tested?`${action==='jev_save'?'已保存并启用':'连接正常'} · ${data.latency_ms} ms`:action==='jev_clear'?'本机 Key 已移除，Jev 已停用':'Jev 已停用';
+    if(!action.startsWith('jev_images'))keyInput.value='';renderJev(data);
+    settingsMessage.textContent=data.tested?`${action==='jev_save'?'已保存并启用':'连接正常'} · ${data.latency_ms} ms`:action==='jev_images_on'?'已允许发送截图':action==='jev_images_off'?'已关闭截图发送':action==='jev_clear'?'本机 Key 已移除，Jev 已停用':'Jev 已停用';
   }catch{settingsMessage.textContent='无法连接本机设置服务，请重新打开手机屏幕';settingsMessage.dataset.error='true';}
   finally{settingsBusy=false;settingsButton.disabled=false;document.querySelector<HTMLButtonElement>('#settings-close')!.disabled=false;if(jevStatus)renderJev(jevStatus);}
 }
 settingsButton.onclick=()=>{
   if(settingsBusy)return;
   jevStatus=undefined;keyInput.value='';keyInput.disabled=true;settingsMessage.textContent='';settingsDialog.showModal();
-  enableJev.disabled=true;testJev.disabled=true;disableJev.hidden=true;clearJev.hidden=true;
+  enableJev.disabled=true;testJev.disabled=true;disableJev.hidden=true;clearJev.hidden=true;imagesJev.disabled=true;imagesJev.checked=false;
   void call('action',{action:'jev_status'}).then((data:JevStatus)=>{
     if(!data?.ok)throw new Error('settings_unavailable');renderJev(data);
   }).catch(()=>{document.querySelector('#jev-state')!.textContent='无法读取设置，请重新打开手机屏幕';});
 };
 document.querySelector<HTMLFormElement>('#jev-form')!.onsubmit=event=>{event.preventDefault();void configureJev('jev_save');};
+imagesJev.onchange=()=>{const on=imagesJev.checked;if(jevStatus)imagesJev.checked=!!jevStatus.images_enabled;void configureJev(on?'jev_images_on':'jev_images_off');};
 testJev.onclick=()=>void configureJev('jev_test');disableJev.onclick=()=>void configureJev('jev_disable');clearJev.onclick=()=>void configureJev('jev_clear');
 document.querySelector<HTMLButtonElement>('#settings-close')!.onclick=()=>settingsDialog.close();
 settingsDialog.addEventListener('close',()=>{keyInput.value='';});
@@ -138,6 +141,10 @@ function apply(data:Preview){
     // stay on one pipe. Require a new picture before re-enabling phone controls.
     if(waitingAfterSeq===undefined){waitingAfterSeq=data.seq;generation++;}
     recovering('正在恢复视频…',true);return;
+  }
+  if(data.error==='preview_unsupported_device'){
+    // Permanent device capability, not a transient failure: don't promise a retry.
+    clearFrame();setState('unsupported','此手机不支持实时预览','系统未提供 screenrecord；截图、读屏和操作仍可正常使用');return;
   }
   if(data.error){clearFrame();setState('offline','视频连接暂不可用',data.error==='preview_dependency_missing'?'请安装 ffmpeg 后重连':'正在自动重试，也可点击「重连」');return;}
   if(waitingAfterSeq!==undefined&&data.seq<=waitingAfterSeq){recovering('正在等待新画面…',true);return;}
