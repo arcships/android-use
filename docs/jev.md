@@ -147,7 +147,9 @@ CLI supports the same JSON: `uv run --env-file .env --frozen android-use --seria
 
 ## Fewer reads and input decisions
 
-Within each validation phase, screen-on and viewport checks share one sampled `deviceInfo` response. That response is never cached across inference, actions or waits. The tree is still bracketed by fresh context checks; the selected decision is checked again after inference and before execution.
+Within each validation phase, screen-on and viewport checks share one sampled `deviceInfo` response. That response is never cached across inference, actions or waits. The tree is still bracketed by fresh context checks; the selected decision is checked again after inference and before execution. That post-inference snapshot's closing check is the last check before the action, and each loop iteration reuses the checks of the snapshot it just read rather than repeating lock/screen calls (about 170 ms saved per step on a physical Android 16 phone).
+
+Every Jev request also asks a parallel `goal` question (`NOT_YET` / `ACHIEVED`) on the same observation; output is free, so this adds almost no cost or latency. Without a `completion` selector, a confident `ACHIEVED` (same `min_probability` / `min_margin` thresholds) stops the run before another action with `stop_reason=model_goal_achieved` and `handoff.next=verify_outcome`. It is a judgment, not verification. With a selector, the selector alone decides and the judgment is only recorded in `decisions[].goal`. A missing or invalid goal answer is ignored: the goal head can only stop a run, never cause an action.
 
 `input_macros` defaults to `true`. When both `tap` and `type_text` are allowed, a visible unfocused EditText with a unique resource ID or content description can offer a `focus_type_text` candidate: **focus → set one exact supplied value → native getText verification**. Jev selects this as one decision; Android Use executes at most two native mutations. The binding must be unique across the entire hierarchy, including offscreen nodes. Newlines, passwords and implicit submission are excluded. Fields without a stable binding retain the existing primitive candidates.
 

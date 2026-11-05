@@ -465,3 +465,32 @@ def test_changed_field_offers_the_verified_text_again(goal_rig):
     assert len(typed({field: ("宏动作🐻", "other")})) == 1
     assert len(typed({field: ("其他", "宏动作..")})) == 1
     assert len(typed({})) == 1
+
+
+def test_one_step_reads_only_bracketed_snapshots(goal_rig):
+    """Decision -> fresh snapshot -> action, with no extra lock checks around them."""
+    runtime, backend = goal_rig
+    events = []
+    for name in ("locked", "tree"):
+        original = getattr(backend, name)
+
+        def wrapped(*args, original=original, name=name):
+            events.append(name)
+            return original(*args)
+
+        setattr(backend, name, wrapped)
+    original_tap = backend.tap
+
+    def tap(*args):
+        events.append("tap")
+        backend.xml = XML.replace("Show", "Shown")
+        return original_tap(*args)
+
+    backend.tap = tap
+    result = run(runtime, Policy(), completion={"text": "Shown"})
+    assert result["verified"]
+    snapshot_reads = ["locked", "tree", "locked"]
+    # Initial snapshot, post-decision freshness snapshot, then the action itself.
+    assert events[: events.index("tap") + 1] == snapshot_reads * 2 + ["tap"]
+    # Effect snapshot, then one context check guarding the returned observation.
+    assert events[events.index("tap") + 1 :] == snapshot_reads + ["locked"]

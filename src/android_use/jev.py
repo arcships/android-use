@@ -200,7 +200,7 @@ class JevPolicy:
                 heads["target"] = target
                 choice = target["choice"]
             # Only the selected operation's target is consumed. Other heads cannot act.
-            return {
+            result = {
                 "choice": choice,
                 "operation": op,
                 **{
@@ -211,6 +211,11 @@ class JevPolicy:
             }
         except (KeyError, TypeError, ValueError):
             raise UseError("jev_invalid_response", "Decision response failed validation") from None
+        try:
+            result["goal"] = self.validate_choice(answers["goal"], questions["goal"]["criteria"])
+        except (KeyError, TypeError, ValueError):
+            pass  # The goal head can only stop a run; a missing/bad answer never acts.
+        return result
 
     def summary(self):
         return {

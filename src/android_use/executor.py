@@ -431,6 +431,8 @@ def execute(runtime, args, policy: DecisionPolicy, run=None):
                 "next": "user_authentication"
                 if reason
                 in {"authentication_required", "phone_locked", "screen_off", "user_takeover"}
+                else "verify_outcome"
+                if reason == "model_goal_achieved"
                 else "observe_and_replan",
             }
         if error is None and snap is not None and args.observe == "tree":
@@ -450,7 +452,8 @@ def execute(runtime, args, policy: DecisionPolicy, run=None):
     try:
         snap = read()
         while True:
-            runtime._usable()
+            # Every path here ends with read(), whose bracketing context checks already
+            # covered pause, lock and screen state. Don't repeat those phone calls.
             if completed(snap, args):
                 return finish("completion_selector", True)
             if time.monotonic() >= deadline:
@@ -474,6 +477,7 @@ def execute(runtime, args, policy: DecisionPolicy, run=None):
                 "state": "pending",
                 "context": context_metrics,
                 **({"heads": decision["heads"]} if "heads" in decision else {}),
+                **({"goal": decision["goal"]} if "goal" in decision else {}),
             }
             decisions.append(audit)
             runtime._check_paused()
@@ -486,6 +490,18 @@ def execute(runtime, args, policy: DecisionPolicy, run=None):
                 run.stale += 1
                 snap = fresh
                 continue
+            goal = decision.get("goal")
+            if (
+                args.completion is None
+                and goal
+                and goal["choice"] == "ACHIEVED"
+                and goal["probability"] >= args.min_probability
+                and goal["margin"] >= args.min_margin
+            ):
+                # A confident judgment on this exact UI may only stop before another
+                # mutation. It is not verification; the selector, when given, decides.
+                audit["state"] = "handoff"
+                return finish("model_goal_achieved")
             if (
                 decision["probability"] < args.min_probability
                 or decision["margin"] < args.min_margin
@@ -506,8 +522,7 @@ def execute(runtime, args, policy: DecisionPolicy, run=None):
             if choice not in options:
                 raise UseError("jev_invalid_response", "Unknown candidate; no action executed")
             selected = options[choice]  # Consume this decision once, before any mutation.
-            if runtime._checked_context() != fresh["context"]:
-                raise UseError("goal_scope_changed", "App or display changed before action")
+            # fresh's closing context check ran just now, with only local work since.
             if time.monotonic() >= deadline:
                 return finish("timeout")
             signature = hashlib.sha256(

@@ -112,6 +112,8 @@ DESCRIPTIONS = {
     "with compact state, option IDs and a one-time token; choose with aua_goal_decide. "
     "Caller supplies goal, foreground package, exact input texts and optional completion selector. "
     "Compact semantic state and parallel operation/target questions share one Jev request per step. "
+    "Each Jev request also judges goal completion; without a completion selector a confident "
+    "ACHIEVED stops before another action (stop_reason=model_goal_achieved, unverified: check it). "
     "input_macros=true can combine stable-field focus and exact input with native readback; "
     "max_steps counts candidate selections, with at most two native writes per input macro. "
     "Bounded candidate-only actions; no automatic replay. status=handoff is not success. "

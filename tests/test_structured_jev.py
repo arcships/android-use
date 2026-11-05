@@ -71,6 +71,7 @@ def test_structured_operation_and_target_share_one_request():
         "operation",
         "target_tap",
         "target_wait_local",
+        "goal",
     }
     assert result["heads"]["target"]["choice"] == "a0"
     policy.close()
@@ -476,3 +477,67 @@ def test_stale_field_error_keeps_model_telemetry(field_rig):
         )
     assert exc.value.details["metrics"]["model_calls"] == 1
     assert exc.value.code == "stale_field_evidence"
+
+
+def goal_pick(goal):
+    return lambda name, opts: (
+        "tap" if name == "operation" else goal if name == "goal" else next(iter(opts))
+    )
+
+
+def test_confident_goal_judgment_stops_before_another_action(field_rig):
+    runtime, backend = field_rig
+    result = execute(
+        runtime,
+        {"goal": "tap", "package": PACKAGE, "actions": ["tap"]},
+        policy_for(goal_pick("ACHIEVED")),
+    )
+    assert result["stop_reason"] == "model_goal_achieved" and not backend.actions
+    assert result["status"] == "handoff" and not result["verified"]
+    assert result["handoff"]["next"] == "verify_outcome"
+    assert result["decisions"][0]["goal"]["choice"] == "ACHIEVED"
+    assert result["observation"]["tree"]["nodes"]
+
+
+def test_goal_judgment_never_overrides_a_completion_selector(field_rig):
+    runtime, backend = field_rig
+    result = execute(
+        runtime,
+        {"goal": "tap", "package": PACKAGE, "actions": ["tap"], "completion": {"text": "x"}},
+        policy_for(goal_pick("ACHIEVED")),
+    )
+    # The selector is unmet, so the run keeps acting; the judgment is only recorded.
+    assert backend.actions and result["decisions"][0]["goal"]["choice"] == "ACHIEVED"
+
+
+@pytest.mark.parametrize("goal", ["NOT_YET", "invalid", "uncertain"])
+def test_goal_head_cannot_cause_or_block_an_action_by_itself(field_rig, goal):
+    runtime, backend = field_rig
+
+    def handler(request):
+        questions = json.loads(request.content)["questions"]
+        answers = {
+            "operation": answer(questions["operation"]["criteria"], "tap"),
+            "target_tap": answer(questions["target_tap"]["criteria"], "a0"),
+        }
+        if goal == "NOT_YET":
+            answers["goal"] = answer(questions["goal"]["criteria"], "NOT_YET")
+        elif goal == "invalid":
+            answers["goal"] = {"choice": "rm -rf /"}
+        else:
+            answers["goal"] = {
+                "type": "choice",
+                "choice": "ACHIEVED",
+                "probabilities": {"ACHIEVED": 0.55, "NOT_YET": 0.45},
+            }
+        return httpx.Response(200, json={"answers": answers})
+
+    policy = JevPolicy(JevConfig("test"), transport=httpx.MockTransport(handler))
+    result = execute(runtime, {"goal": "tap", "package": PACKAGE, "actions": ["tap"]}, policy)
+    assert len(backend.actions) == 1 and result["stop_reason"] != "model_goal_achieved"
+
+
+def test_goal_head_counts_toward_the_request_budget():
+    questions = action_questions({"a0": {"action": "tap"}, "DONE": "d", "BLOCKED": "b"})
+    assert set(questions["goal"]["criteria"]) == {"NOT_YET", "ACHIEVED"}
+    assert check_budget({"ui": []}, questions)

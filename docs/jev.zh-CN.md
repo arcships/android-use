@@ -133,7 +133,9 @@ CLI 使用同样 JSON：`uv run --env-file .env --frozen android-use --serial <�
 
 ## 减少读屏开销与输入决策
 
-同一校验阶段内，亮屏与视口检查复用一次 `deviceInfo` 响应，不跨模型推理、动作或等待缓存。读树前后仍各自检查最新上下文；推理返回后和执行前仍会校验。
+同一校验阶段内，亮屏与视口检查复用一次 `deviceInfo` 响应，不跨模型推理、动作或等待缓存。读树前后仍各自检查最新上下文；推理返回后和执行前仍会校验。推理后那次读屏的收尾检查就是动作前的最后一次检查；每轮循环直接沿用刚完成读屏的检查结果，不再重复查询锁屏/亮屏（Android 16 真机上每步约省 170 毫秒）。
+
+每次 Jev 请求还会在同一观察上并行问一个 `goal` 问题（`NOT_YET` / `ACHIEVED`）。输出免费，几乎不增加费用和延迟。没有 `completion` 选择器时，若 `ACHIEVED` 达到同样的 `min_probability` / `min_margin` 阈值，就在下一次动作前停止，返回 `stop_reason=model_goal_achieved`、`handoff.next=verify_outcome`。这是判断，不是验证。有选择器时只看选择器，判断仅记录在 `decisions[].goal`。目标问题答案缺失或无效会被忽略：它只能让执行停下，不能触发动作。
 
 `input_macros` 默认 `true`。同时允许 `tap`、`type_text` 时，有唯一 resource ID 或 content description 的可见、未聚焦 EditText 可提供 `focus_type_text` 候选：**聚焦 → 设置一个精确允许值 → 原生 getText 回读**。Jev 只决策一次，Android Use 最多执行两个原生修改动作。标识必须在包含屏外节点的整棵树中唯一；不支持换行、密码或隐式提交。没有稳定标识时继续使用原有单步候选。
 
