@@ -66,7 +66,15 @@ class Runtime:
                     "transport": "adb-screenrecord-h264",
                 }
             if op == "screen_frame":
-                return client.request("frame", args)
+                try:
+                    return client.request("frame", args)
+                except UseError as exc:
+                    if exc.code != "preview_unreachable":
+                        raise
+                    # Only a read may be retried after recovering the endpoint.
+                    # Never replay a toolbar/phone action after a transport error.
+                    client.ensure()
+                    return client.request("frame", args)
             if op == "screen_action":
                 action = args.get("action")
                 if action == "refresh":

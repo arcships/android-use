@@ -1,3 +1,4 @@
+import json
 import os
 from types import SimpleNamespace
 
@@ -5,6 +6,7 @@ import pytest
 
 from android_use.backend import UseError
 from android_use.screen import (
+    PREVIEW_BOOTSTRAP_ENV,
     PREVIEW_IMPLEMENTATION_VERSION,
     PREVIEW_PROTOCOL_VERSION,
     ScreenClient,
@@ -36,7 +38,7 @@ def client(monkeypatch, protocol, *, revision=PREVIEW_IMPLEMENTATION_VERSION, mi
         }
 
     def spawn(*args, **kwargs):
-        started.append(1)
+        started.append(kwargs)
         return SimpleNamespace(pid=900002)
 
     monkeypatch.setattr(current, "_load", load)
@@ -60,6 +62,9 @@ def test_legacy_authenticated_preview_is_replaced_and_new_process_confirmed(monk
     assert killed == [900001] and len(started) == 1
     assert calls == ["status", "stop_capture", "status"]
     assert preview.info["pid"] == 900002
+    endpoint = json.loads(started[0]["env"][PREVIEW_BOOTSTRAP_ENV])
+    assert endpoint["port"] == 12345 and endpoint["token"] == "private-token"
+    assert endpoint["device_key"] == "hardware-key"
 
 
 def test_mismatched_process_is_not_terminated_or_reused(monkeypatch):

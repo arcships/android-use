@@ -2,6 +2,7 @@
 
 import argparse
 import atexit
+import errno
 import json
 import os
 import re
@@ -15,6 +16,7 @@ from importlib.resources import files
 from .backend import Backend, UseError
 from .runtime import Runtime, save_images
 from .screen import (
+    PREVIEW_BOOTSTRAP_ENV,
     PREVIEW_IMPLEMENTATION_VERSION,
     PREVIEW_PROTOCOL_VERSION,
     ScreenHub,
@@ -23,15 +25,48 @@ from .screen import (
 from .settings import JEV_ACTIONS, settings_action
 
 
+def previous_endpoint(info_path, serial, key):
+    bootstrap = os.environ.pop(PREVIEW_BOOTSTRAP_ENV, None)
+    if bootstrap:
+        try:
+            info = json.loads(bootstrap)
+            if (
+                isinstance(info, dict)
+                and info.get("device_key") == key
+                and info.get("serial") == serial
+            ):
+                return info
+        except ValueError:
+            pass
+    try:
+        info = json.loads(info_path.read_text())
+        if isinstance(info, dict) and info.get("device_key") == key:
+            return info
+    except (OSError, ValueError):
+        pass
+    return {}
+
+
+def bind_server(port, handler):
+    # A terminated older daemon may still be releasing its listener. Do not
+    # immediately choose a new port and strand every existing browser panel.
+    deadline = time.monotonic() + 3
+    while True:
+        try:
+            return ThreadingHTTPServer(("127.0.0.1", port), handler)
+        except OSError as exc:
+            if not port or exc.errno != errno.EADDRINUSE:
+                raise
+            if time.monotonic() >= deadline:
+                return ThreadingHTTPServer(("127.0.0.1", 0), handler)
+            time.sleep(0.05)
+
+
 def serve(serial, key):
     hub = ScreenHub(serial, key)
     runtime = Runtime(serial)
     info_path = device_paths(key)[0]
-    previous = {}
-    try:
-        previous = json.loads(info_path.read_text())
-    except (OSError, ValueError):
-        pass
+    previous = previous_endpoint(info_path, serial, key)
     previous_token = previous.get("token")
     token = (
         previous_token
@@ -175,10 +210,7 @@ def serve(serial, key):
 
     port = previous.get("port", 0)
     port = port if isinstance(port, int) and 1024 <= port <= 65535 else 0
-    try:
-        server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    except OSError:
-        server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    server = bind_server(port, Handler)
     server.daemon_threads = True
     info = {
         "pid": os.getpid(),
@@ -196,11 +228,8 @@ def serve(serial, key):
 
     def cleanup():
         hub.close()
-        try:
-            if json.loads(info_path.read_text()).get("pid") == os.getpid():
-                info_path.unlink()
-        except (OSError, ValueError):
-            pass
+        # Keep private endpoint metadata (never frames) for a future restart.
+        # Clients authenticate a live owner before trusting or terminating a PID.
 
     atexit.register(cleanup)
     signal.signal(
@@ -208,12 +237,8 @@ def serve(serial, key):
     )
     hub.start()
 
-    def idle_shutdown():
-        while time.monotonic() - hub.last_activity < 600:
-            time.sleep(5)
-        server.shutdown()
-
-    threading.Thread(target=idle_shutdown, daemon=True).start()
+    # The HTTP entry point stays available while capture follows its short
+    # viewer lease. Idle browser tabs must not lose their reconnect endpoint.
     try:
         server.serve_forever(poll_interval=0.2)
     finally:
