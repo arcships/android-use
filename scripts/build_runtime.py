@@ -83,8 +83,15 @@ def build(output, cache, ffmpeg_binary=None):
                 archive.extractall(work, filter="data")
         ffmpeg_binary = source / ("ffmpeg" + suffix)
         if not ffmpeg_binary.exists():
-            run(["bash", "./configure", *CONFIGURE], cwd=source)
-            run(["make", "-j4", "ffmpeg"], cwd=source)
+            run(
+                [
+                    os.environ.get("ANDROID_USE_BUILD_BASH") or shutil.which("bash"),
+                    "./configure",
+                    *CONFIGURE,
+                ],
+                cwd=source,
+            )
+            run([shutil.which("make"), "-j4", "ffmpeg"], cwd=source)
     config = subprocess.run(
         [str(ffmpeg_binary), "-buildconf"], capture_output=True, text=True, check=True
     )

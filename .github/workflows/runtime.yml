@@ -39,6 +39,7 @@ jobs:
         with:
           python-version: '3.13.7'
       - name: Prepare Windows compiler
+        id: msys2
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
         with:
@@ -49,8 +50,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          'C:\msys64\mingw64\bin' >> $env:GITHUB_PATH
-          'C:\msys64\usr\bin' >> $env:GITHUB_PATH
+          $msys = '${{ steps.msys2.outputs.msys2-location }}'
+          (Join-Path $msys 'mingw64/bin') >> $env:GITHUB_PATH
+          (Join-Path $msys 'usr/bin') >> $env:GITHUB_PATH
+          "ANDROID_USE_BUILD_BASH=$(Join-Path $msys 'usr/bin/bash.exe')" >> $env:GITHUB_ENV
       - run: uv sync --frozen --python 3.13.7
       - run: uv pip install -r scripts/runtime-build-requirements.txt
       - name: Build native runtime and Dim plugin
