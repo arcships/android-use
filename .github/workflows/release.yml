@@ -1,0 +1,46 @@
+name: Release
+
+# Pushing an annotated vX.Y.Z tag on main publishes the GitHub release: the full test
+# suite, then the plugin ZIP and SHA256SUMS, with docs/releases/<tag>.md as the body.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref_name }}
+
+jobs:
+  tests:
+    uses: ./.github/workflows/test.yml
+
+  release:
+    needs: tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require the tagged commit on main
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+      - name: Check versions and release notes
+        id: check
+        run: |
+          title=$(python3 scripts/release_check.py "$GITHUB_REF_NAME")
+          echo "title=$title" >> "$GITHUB_OUTPUT"
+      - name: Build plugin ZIP
+        run: |
+          python3 scripts/package.py
+          cd dist && sha256sum "android-use-${GITHUB_REF_NAME#v}-plugin.zip" > SHA256SUMS
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: ${{ steps.check.outputs.title }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "dist/android-use-${GITHUB_REF_NAME#v}-plugin.zip" dist/SHA256SUMS \
+            --verify-tag --title "$TITLE" --notes-file "docs/releases/$GITHUB_REF_NAME.md"
