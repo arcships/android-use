@@ -303,6 +303,8 @@ v0.5.0 通过 **277 项 Python 测试、17 项界面测试**。内置 OCR 目前
 
 多指手势、任意轨迹、精细文本选区及自绘编辑器输入兜底尚未实现。UI 条件满足仅证明该条件，Agent 仍需验收业务结果。控制和预览运行于本机，工具结果由你选择的客户端与模型处理。
 
+Android Use 源码采用 MIT；运行包依赖保留各自协议。[协议审计与随包声明 →](docs/license-audit.md#中文)
+
 ## 致谢
 
 感谢 [iPhone Use](https://github.com/zhongerxin/iPhone-use) 的作者与贡献者，为 Android Use 在手机 Agent 交互、引导式安装和实时画面方面带来的启发。

@@ -50,9 +50,11 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-python@v6
+        id: build-python
         with:
           python-version: '3.13.7'
+      - uses: astral-sh/setup-uv@v6
       - name: Prepare Windows compiler
         id: msys2
         if: runner.os == 'Windows'
@@ -73,7 +75,7 @@ jobs:
         with:
           name: standalone-build-inputs
           path: dist/runtime-build
-      - run: uv sync --frozen --python 3.13.7
+      - run: uv sync --frozen --python "${{ steps.build-python.outputs.python-path }}"
       - run: uv pip install -r scripts/runtime-build-requirements.txt
       - name: Build native runtime and Dim plugin
         run: uv run --no-sync python scripts/build_runtime.py

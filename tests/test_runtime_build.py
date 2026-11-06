@@ -1,10 +1,12 @@
 import hashlib
 import importlib.util
+import sys
 from pathlib import Path
 
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
 spec = importlib.util.spec_from_file_location("runtime_builder", ROOT / "scripts/build_runtime.py")
 builder = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(builder)
@@ -48,3 +50,63 @@ def test_wrong_upstream_checksum_never_replaces_cached_input(tmp_path, monkeypat
         builder.locked_input(tmp_path, item)
     assert cached.read_bytes() == b"existing"
     assert list(tmp_path.iterdir()) == [cached]
+
+
+def test_statically_linked_optional_gpl_modules_are_rejected(monkeypatch):
+    import runtime_licenses
+
+    monkeypatch.setattr(runtime_licenses.sys, "builtin_module_names", ("_dbm", "_ssl"))
+    with pytest.raises(ValueError, match="statically includes"):
+        runtime_licenses.check_interpreter()
+    monkeypatch.setattr(runtime_licenses.sys, "builtin_module_names", ("_ssl", "sys"))
+    runtime_licenses.check_interpreter()
+
+
+def test_native_package_contains_original_notices_and_mpl_source_form(tmp_path):
+    import json
+
+    import runtime_licenses
+
+    bundle = tmp_path / "bundle"
+    (bundle / "app").mkdir(parents=True)
+    (bundle / "app/android-use-runtime").write_bytes(b"test-native-runtime")
+    runtime_licenses.collect(ROOT, bundle)
+    licenses = bundle / "licenses"
+    assert (licenses / "CPython-LICENSE.txt").is_file()
+    assert (licenses / "native/LICENSE.uiautomator-server.txt").is_file()
+    assert (licenses / "sources/certifi/core.py").is_file()
+    inventory = json.loads((licenses / "inventory.json").read_text())
+    assert any(
+        p["name"].lower() == "certifi" and p["declared_license"] == "MPL-2.0"
+        for p in inventory["packages"]
+    )
+    assert inventory["native_files"][0]["file"] == "app/android-use-runtime"
+
+
+def test_unexpected_gdbm_native_binary_blocks_packaging(tmp_path):
+    import runtime_licenses
+
+    bundle = tmp_path / "bundle"
+    (bundle / "app").mkdir(parents=True)
+    (bundle / "app/libgdbm.so").write_bytes(b"unexpected-native-library")
+    with pytest.raises(ValueError, match="DBM/readline binary"):
+        runtime_licenses.collect(ROOT, bundle)
+
+
+def test_changed_upstream_notice_blocks_packaging(tmp_path):
+    import json
+
+    import runtime_licenses
+
+    root = tmp_path / "source"
+    (root / "docs/licenses").mkdir(parents=True)
+    (root / "LICENSE").write_text("Project license")
+    (root / "THIRD_PARTY_NOTICES.md").write_text("Notices")
+    (root / "docs/licenses/COPYING.txt").write_text("changed notice")
+    (root / "docs/licenses/sources.json").write_text(
+        json.dumps([{"file": "COPYING.txt", "sha256": "0" * 64}])
+    )
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    with pytest.raises(ValueError, match="notice was modified"):
+        runtime_licenses.collect(root, bundle)

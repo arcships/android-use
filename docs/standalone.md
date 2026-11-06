@@ -97,10 +97,10 @@ This downloads the matching release's `android-use-ocr-PLATFORM.zip`, checks its
 
 ## Build and acceptance
 
-Build on the target OS with Python 3.13.7, uv, a C compiler, make and Bash; macOS additionally needs Swift for the optional component. Windows CI provisions a MinGW toolchain. End users do not need these build tools.
+Build on the target OS with a modular CPython (CI uses 3.13.7 from actions/setup-python), uv, a C compiler, make and Bash; macOS additionally needs Swift for the optional component. Windows CI provisions a MinGW toolchain. End users do not need these build tools.
 
 ```bash
-uv sync --frozen --python 3.13.7
+uv sync --frozen --python /absolute/path/to/modular/python3
 uv pip install -r scripts/runtime-build-requirements.txt
 uv run --no-sync python scripts/build_runtime.py
 uv run --no-sync python scripts/build_runtime_upgrade_fixture.py
@@ -111,7 +111,7 @@ uv run --no-sync python scripts/accept_runtime.py \
 
 The upgrade fixture builds a distinct `+upgrade-test` version in a disposable source tree; it is never published. Native acceptance removes system Python/uv/ADB/ffmpeg from PATH, checks packaged tools and UI resources, retains a live MCP connection across install/rollback, deletes the original extraction, rejects corrupted/mismatched upgrades, preserves private settings, tests the frozen daemon dispatch and actual H.264-to-JPEG conversion. macOS also checks optional OCR installation and recognition. The lightweight plugin's first-install test stubs only download transport with local artifacts while checking production URLs; it is not a live GitHub release-download test. No phone or model calls are made.
 
-Inputs are pinned in `scripts/runtime-inputs.json`. Archives carry Python/ADB notices and corresponding FFmpeg source/configuration. The legacy source/Codex package and its installer continue to work independently. [Recorded results and limits](validation.md).
+Builds reject statically embedded optional DBM/readline modules and exclude their loadable versions. [License audit](license-audit.md). Inputs are pinned in `scripts/runtime-inputs.json`. Archives carry Python/ADB notices and corresponding FFmpeg source/configuration. The legacy source/Codex package and its installer continue to work independently. [Recorded results and limits](validation.md).
 
 ## 中文
 

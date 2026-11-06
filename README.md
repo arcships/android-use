@@ -304,6 +304,8 @@ Development comparisons include **18 source-level trials** and **12 live Agent /
 
 Multi-touch, arbitrary gesture paths, fine-grained text selection and custom-editor input fallbacks are not implemented. A matched UI condition proves that condition; the Agent must verify business outcomes. Control and preview run locally, and tool results are handled by your chosen client/model.
 
+Android Use source is MIT; bundled runtime dependencies retain their own licenses. [License audit and package notices →](docs/license-audit.md)
+
 ## Acknowledgements
 
 Thank you to [iPhone Use](https://github.com/zhongerxin/iPhone-use), its author and contributors for inspiring Android Use's phone-agent workflow, guided setup and live-screen experience.

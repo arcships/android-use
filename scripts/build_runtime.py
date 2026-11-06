@@ -5,8 +5,10 @@ Run on each target OS/architecture, with locked Python deps and PyInstaller inst
 
 import argparse
 import hashlib
+import importlib.metadata
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -20,6 +22,8 @@ import httpx
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+from runtime_licenses import EXCLUDED_MODULES, check_interpreter, collect  # noqa: E402
+
 from android_use import __version__  # noqa: E402
 from android_use.portable import fetch, target  # noqa: E402
 
@@ -85,6 +89,8 @@ def archive_folder(folder, destination):
 def build(output, cache, ffmpeg_binary=None):
     from android_use.installation import probe
 
+    check_interpreter()
+
     output.mkdir(parents=True, exist_ok=True)
     cache.mkdir(parents=True, exist_ok=True)
     lock = json.loads((ROOT / "scripts/runtime-inputs.json").read_text())
@@ -110,15 +116,18 @@ def build(output, cache, ffmpeg_binary=None):
                 ],
                 cwd=source,
             )
-            run([shutil.which("make"), "-j4", "ffmpeg"], cwd=source)
+            run([shutil.which("make"), "-j4", "ffmpeg" + suffix], cwd=source)
     config = subprocess.run(
         [str(ffmpeg_binary), "-buildconf"], capture_output=True, text=True, check=True
     )
-    configuration = (config.stdout + config.stderr).replace("'", "").replace('"', "")
-    if not all(flag in configuration for flag in CONFIGURE) or any(
-        flag in configuration for flag in ["--enable-gpl", "--enable-nonfree"]
-    ):
-        raise ValueError("FFmpeg must be built with the locked minimal configuration")
+    configurations = [
+        line.split("configuration:", 1)[1].strip()
+        for line in (config.stdout + config.stderr).splitlines()
+        if "configuration:" in line
+    ]
+    configured = next((shlex.split(line) for line in configurations if line), [])
+    if set(configured) != set(CONFIGURE) or len(configured) != len(CONFIGURE):
+        raise ValueError("FFmpeg must use exactly the pinned minimal build flags")
     run(
         [
             sys.executable,
@@ -129,6 +138,7 @@ def build(output, cache, ffmpeg_binary=None):
             "--onedir",
             "--name",
             "android-use-runtime",
+            *[argument for module in EXCLUDED_MODULES for argument in ("--exclude-module", module)],
             "--distpath",
             work / "dist",
             "--workpath",
@@ -156,7 +166,21 @@ def build(output, cache, ffmpeg_binary=None):
     shutil.copytree(work / "dist/android-use-runtime", bundle / "app", symlinks=False)
     with ZipFile(adb_zip) as archive:
         archive.extractall(work / "adb")
-    shutil.copytree(work / "adb/platform-tools", bundle / "tools/adb", dirs_exist_ok=True)
+    adb_source = work / "adb/platform-tools"
+    adb_destination = bundle / "tools/adb"
+    adb_destination.mkdir(parents=True)
+    for filename in (
+        "adb",
+        "adb.exe",
+        "AdbWinApi.dll",
+        "AdbWinUsbApi.dll",
+        "NOTICE.txt",
+        "source.properties",
+    ):
+        if (adb_source / filename).is_file():
+            shutil.copyfile(adb_source / filename, adb_destination / filename)
+    if (adb_source / "lib64").is_dir():
+        shutil.copytree(adb_source / "lib64", adb_destination / "lib64")
     (bundle / "tools/adb" / ("adb" + suffix)).chmod(0o755)
     shutil.copyfile(ffmpeg_binary, bundle / "tools" / ("ffmpeg" + suffix))
     (bundle / "tools" / ("ffmpeg" + suffix)).chmod(0o755)
@@ -173,38 +197,16 @@ def build(output, cache, ffmpeg_binary=None):
         shutil.copyfile(ROOT / "LICENSE", component / "LICENSE")
         ocr_archive = output / f"android-use-ocr-{plat}.zip"
         archive_folder(component, ocr_archive)
+    collect(ROOT, bundle)
     licenses = bundle / "licenses"
-    licenses.mkdir()
-    for filename in ("LICENSE", "THIRD_PARTY_NOTICES.md"):
-        shutil.copyfile(ROOT / filename, licenses / filename)
-    # Carry corresponding FFmpeg source and exact configure options with the binary.
     shutil.copyfile(ffmpeg_source, licenses / ffmpeg_source.name)
+    with tarfile.open(ffmpeg_source) as archive:
+        license_text = archive.extractfile("ffmpeg-8.0/COPYING.LGPLv2.1").read()
+    (licenses / "FFmpeg-LGPL-2.1.txt").write_bytes(license_text)
+    (licenses / "ffmpeg-changes.diff").write_text("")
     (licenses / "ffmpeg-build.json").write_text(
         json.dumps({"source": lock["ffmpeg"], "configure": CONFIGURE}, indent=2)
     )
-    import sysconfig
-
-    python_license = Path(sysconfig.get_path("stdlib")) / "LICENSE.txt"
-    if not python_license.is_file():
-        python_license = Path(sys.base_prefix) / "LICENSE.txt"
-    if not python_license.is_file():
-        raise ValueError("CPython license missing from build interpreter")
-    shutil.copyfile(python_license, licenses / "CPython-LICENSE.txt")
-    # Include license metadata for every installed Python distribution in the build env.
-    import importlib.metadata
-
-    for distribution in importlib.metadata.distributions():
-        for file in distribution.files or []:
-            if any(
-                part.lower()
-                in {"licenses", "license", "license.txt", "copying", "notice", "notice.txt"}
-                for part in file.parts
-            ):
-                path = Path(distribution.locate_file(file))
-                if path.is_file():
-                    destination = licenses / "python" / str(file)
-                    destination.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copyfile(path, destination)
     info = {
         "schema": 1,
         "version": __version__,

@@ -41,4 +41,6 @@ aua_apps 查询已安装的第三方 **包名**，不支持按 App 显示名查�
 
 独立运行包的固定入口也支持 `cli <操作> '<JSON>'`，使用安装返回的启动命令，将最后的 `auto-serve` 改为 `cli` 并追加操作及参数，无需 uv。回滚使用固定入口的 `rollback`；后台更新只影响后续 MCP 会话，不重启当前任务。
 
+独立运行包默认不带 macOS OCR；控件树不足时可由宿主 Agent 看图，确需自动离线识字时，用固定入口的 `install-ocr` 安装可选组件。`ocr_unavailable` 不意味着需要给用户安装 Swift/Xcode。Jev Box 视觉定位不是 OCR，截图上传仍需已有独立授权。
+
 MCP 不可用且使用源码安装时，使用同一仓库 CLI：`uv run --frozen --directory <仓库路径> android-use <操作> '<JSON>'`。CLI 截图保存到 image_paths 中的本机绝对路径，使用图片查看工具实际查看。MCP 图片必须转发 image 块，不输出 base64。CLI 的每次运行是新 Runtime，不能跨进程传 observation_id。
