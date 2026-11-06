@@ -2,13 +2,13 @@
   <h1><img src="docs/images/hero.png" alt="Android Use: Agent plans, optional Jev decides, Android Use validates and executes." width="100%" /></h1>
   <p><strong>Your agent. Now on Android.</strong><br/>Standard MCP control. A live screen. Optional Jev decisions.</p>
   <p>
-    <a href="https://github.com/JackCaow/android-use/actions/workflows/test.yml"><img src="https://github.com/JackCaow/android-use/actions/workflows/test.yml/badge.svg" alt="Tests" /></a>
+    <a href="https://github.com/arcships/android-use/actions/workflows/test.yml"><img src="https://github.com/arcships/android-use/actions/workflows/test.yml/badge.svg" alt="Tests" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License" /></a>
     <a href="pyproject.toml"><img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11 or newer" /></a>
     <a href="#mcp-client-support"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="Standard stdio MCP" /></a>
   </p>
   <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
-  <p><a href="#quick-start"><strong>Get started →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.6.2">Download v0.6.2</a> · <a href="#enable-jev-from-the-screen">Set up Jev</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/JackCaow/android-use/issues">Report an issue</a></p>
+  <p><a href="#quick-start"><strong>Get started →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.6.2">Download v0.6.2</a> · <a href="#enable-jev-from-the-screen">Set up Jev</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/arcships/android-use/issues">Report an issue</a></p>
 </div>
 
 ## Bring Android into your agent workflow
@@ -81,7 +81,7 @@ Paste this into an agent that can use your local terminal:
 
 ```text
 Install and configure Android Use on this computer:
-https://github.com/JackCaow/android-use
+https://github.com/arcships/android-use
 
 Read README.md, docs/guide.md, and skills/android-use/SKILL.md first.
 Reuse existing installs and preserve uncommitted changes and other MCP servers.
@@ -102,7 +102,7 @@ For a client without terminal access, use the manual path below. [Stable upgrade
 **1. Prepare the tools and clone.** Install [uv](https://docs.astral.sh/uv/getting-started/installation/), [ADB](https://developer.android.com/tools/releases/platform-tools), and [ffmpeg](https://ffmpeg.org/download.html). You also need Git; uv can provision Python 3.13.
 
 ```bash
-git clone https://github.com/JackCaow/android-use.git
+git clone https://github.com/arcships/android-use.git
 cd android-use
 uv sync --frozen --python 3.13
 ```
@@ -173,6 +173,12 @@ The preview URL is a private local video endpoint, **not a remote MCP endpoint**
 
 In v0.5.1, supported devices record continuously; legacy segments reuse one connection and decoder. Brief known-health recovery keeps the picture visible. [Recovery behavior and troubleshooting →](docs/guide.md#live-screen).
 
+## Optional interaction variation (source update)
+
+Add `variation` to a gesture or local goal to sample bounded delays, selector touch points and swipe timing/endpoints. Fixed seeds reproduce samples; explicit coordinates and text stay exact. Added waits revalidate the page and share existing budgets. Default behavior is unchanged. This is interaction testing, with no anti-detection guarantee. [Parameters, audit and boundaries →](docs/interaction-variation.md)
+
+Source development is synchronized to [arcships/android-use](https://github.com/arcships/android-use); published archives through v0.6.2 remain linked to their original release location.
+
 ## A smaller loop, with explicit outcomes
 
 ```bash
@@ -227,6 +233,6 @@ Multi-touch, arbitrary gesture paths, fine-grained text selection and custom-edi
 | --- | --- |
 | [English user guide](docs/guide.md) · [中文使用指南](docs/guide.zh-CN.md) | [Implementation notes — 中文](docs/architecture.md) |
 | [Client configuration](docs/guide.md#other-mcp-clients) · [Troubleshooting](docs/guide.md#troubleshooting) | [Device acceptance records — 中文](docs/validation.md) |
-| [Development and tests](docs/guide.md#development) · [Open an issue](https://github.com/JackCaow/android-use/issues) | [MIT license](LICENSE) · [Third-party notices](THIRD_PARTY_NOTICES.md) |
+| [Development and tests](docs/guide.md#development) · [Open an issue](https://github.com/arcships/android-use/issues) | [MIT license](LICENSE) · [Third-party notices](THIRD_PARTY_NOTICES.md) |
 
 Bug reports and contributions are welcome. Include your host OS, Android version, client, and a minimal reproduction; remove device identifiers, access tokens, and private screen content.

@@ -142,7 +142,7 @@ def build_app(sdk, output):
     return output / "test.apk"
 
 
-async def exercise(serial, apk, jev=False):
+async def exercise(serial, apk, jev=False, variation=False):
     adb = os.environ.get("ANDROID_USE_ADB") or shutil.which("adb")
     if not adb:
         raise RuntimeError("ADB is required")
@@ -165,6 +165,8 @@ async def exercise(serial, apk, jev=False):
         env={**os.environ, "ANDROID_SERIAL": serial},
     )
     passed = []
+    variation_audit = []
+    variation_calls = 0
     jev_metrics = None
     handoff_metrics = None
     original = None
@@ -173,12 +175,38 @@ async def exercise(serial, apk, jev=False):
             await client.initialize()
 
             async def call(name, **args):
+                nonlocal variation_calls
+
+                def add_variation(op, parameters):
+                    nonlocal variation_calls
+                    if op in {"tap", "long_press", "double_tap", "drag", "swipe", "scroll_until"} and not parameters.get("visual"):
+                        parameters["variation"] = {
+                            "seed": 41 + variation_calls, "delay_max_seconds": .1,
+                        }
+                        variation_calls += 1
+
+                if variation:
+                    add_variation(name, args)
+                    if name == "batch":
+                        for step in args["steps"]:
+                            add_variation(step["op"], step["args"])
                 response = await client.call_tool("aua_" + name, args)
                 data = response.structuredContent
                 if response.isError:
                     raise AssertionError(f"{name}: {data}")
+                if "variation" in data:
+                    variation_audit.append({"op": name, **data["variation"]})
+                if "variations" in data:
+                    variation_audit.extend({"op": name, **entry} for entry in data["variations"])
+                if name == "batch":
+                    for step, result in zip(args["steps"], data["results"], strict=True):
+                        if "variation" in result:
+                            variation_audit.append({"op": step["op"], **result["variation"]})
                 return data
 
+            status = await call("setup", action="status")
+            if not status.get("service_reachable"):
+                await call("setup", action="start")
             ready = await call("ready")
             original = ready["observation"]
             try:
@@ -471,6 +499,7 @@ async def exercise(serial, apk, jev=False):
                     "scroll_swipes": found["swipes"],
                     "no_progress_swipes": missed["swipes"],
                     "elapsed_seconds": round(time.monotonic() - start, 2),
+                    **({"variation": {"enabled": True, "actions": variation_audit}} if variation else {}),
                     **(
                         {"jev_metrics": jev_metrics, "handoff_metrics": handoff_metrics}
                         if jev
@@ -506,6 +535,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--serial", required=True)
     parser.add_argument("--jev", action="store_true", help="Also exercise opt-in Jev via real MCP")
+    parser.add_argument("--variation", action="store_true", help="Exercise opt-in gesture variation")
     parser.add_argument(
         "--sdk",
         type=Path,
@@ -522,7 +552,7 @@ def main():
         JevConfig.from_env()
     with tempfile.TemporaryDirectory(prefix="android-use-acceptance-") as directory:
         apk = build_app(options.sdk, Path(directory))
-        print(json.dumps(asyncio.run(exercise(options.serial, apk, options.jev)), indent=2))
+        print(json.dumps(asyncio.run(exercise(options.serial, apk, options.jev, options.variation)), indent=2))
 
 
 if __name__ == "__main__":

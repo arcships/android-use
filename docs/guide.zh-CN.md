@@ -29,7 +29,7 @@ Android Use 的核心是使用[官方 Python MCP SDK](https://github.com/modelco
 
 ```text
 请在我的电脑上安装并配置 Android Use：
-https://github.com/JackCaow/android-use
+https://github.com/arcships/android-use
 
 先阅读 README.md、docs/guide.zh-CN.md 和 skills/android-use/SKILL.md，然后实际完成安装与验收。
 检查当前系统、已有仓库、插件和依赖；复用现有安装，只补齐缺项，不覆盖未提交修改。
@@ -97,7 +97,7 @@ ffmpeg -version
 ### 2. 克隆并安装项目
 
 ```bash
-git clone https://github.com/JackCaow/android-use.git
+git clone https://github.com/arcships/android-use.git
 cd android-use
 
 uv sync --frozen --python 3.13

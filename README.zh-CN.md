@@ -2,13 +2,13 @@
   <h1><img src="docs/images/hero.png" alt="Android Use：Agent 规划，可选 Jev 决策，Android Use 校验与执行。" width="100%" /></h1>
   <p><strong>让你的 Agent，真正操作 Android。</strong><br/>标准 MCP 接入，实时画面跟随，可选 Jev 决策。</p>
   <p>
-    <a href="https://github.com/JackCaow/android-use/actions/workflows/test.yml"><img src="https://github.com/JackCaow/android-use/actions/workflows/test.yml/badge.svg" alt="自动化测试" /></a>
+    <a href="https://github.com/arcships/android-use/actions/workflows/test.yml"><img src="https://github.com/arcships/android-use/actions/workflows/test.yml/badge.svg" alt="自动化测试" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT 许可证" /></a>
     <a href="pyproject.toml"><img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11 及以上" /></a>
     <a href="#mcp-客户端支持"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="标准 stdio MCP" /></a>
   </p>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
-  <p><a href="#快速开始"><strong>开始使用 →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.6.2">下载 v0.6.2</a> · <a href="#在屏幕中启用-jev">配置 Jev</a> · <a href="docs/guide.zh-CN.md">使用指南</a> · <a href="https://github.com/JackCaow/android-use/issues">反馈问题</a></p>
+  <p><a href="#快速开始"><strong>开始使用 →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.6.2">下载 v0.6.2</a> · <a href="#在屏幕中启用-jev">配置 Jev</a> · <a href="docs/guide.zh-CN.md">使用指南</a> · <a href="https://github.com/arcships/android-use/issues">反馈问题</a></p>
 </div>
 
 ## 把 Android 接入你的 Agent 工作流
@@ -81,7 +81,7 @@ Android Use 通过**标准 MCP**，让 Agent 操作你自己的 Android 手机�
 
 ```text
 请在我的电脑上安装并配置 Android Use：
-https://github.com/JackCaow/android-use
+https://github.com/arcships/android-use
 
 先阅读 README.md、docs/guide.zh-CN.md 和 skills/android-use/SKILL.md。
 复用已有安装，保留未提交修改和其他 MCP 服务配置。
@@ -101,7 +101,7 @@ USB 授权、解锁和必要系统权限由我本人在手机上处理。
 **1. 准备工具并克隆仓库。** 安装 [uv](https://docs.astral.sh/uv/getting-started/installation/)、[ADB](https://developer.android.com/tools/releases/platform-tools)、[ffmpeg](https://ffmpeg.org/download.html) 和 Git；uv 可按需安装 Python 3.13。
 
 ```bash
-git clone https://github.com/JackCaow/android-use.git
+git clone https://github.com/arcships/android-use.git
 cd android-use
 uv sync --frozen --python 3.13
 ```
@@ -187,6 +187,12 @@ uv run android-use scroll_until '{"selector":{"text":"显示与亮度"},"directi
 
 可选决策集成与原有工具配合使用：[Agent + Jev 配置、分工和对比测试 →](docs/jev.zh-CN.md)。
 
+## 可选交互变化（源码更新）
+
+手势或局部目标可显式传 `variation`：限定范围内变化等待、选择器落点和滑动参数，支持固定种子复现。明确坐标和文本保持精确；新增等待后检查页面，继续遵守预算与不重放规则。默认行为不变，不承诺防检测。[参数、审计与边界 →](docs/interaction-variation.md#中文)
+
+源码同步到 [arcships/android-use](https://github.com/arcships/android-use)；v0.6.2 及此前安装包仍链接到原发布位置。
+
 ## v0.6.0：无 Key 决策与视觉定位
 
 没有 TypeSafe Key 也能用 `aua_execute_goal`：由你的 Agent 通过 `aua_goal_decide` 逐步选择代码生成的候选，照样做过期、效果和防重放检查。使用 Jev 时，已核对的 emoji 输入不再重复输入，每步读屏更少，目标判断头可在目标已达成时停止。新增可选 Jev Box（`aua_locate`、点击的 `visual`），定位 Canvas、图片和无标签目标；只有勾选「允许发送截图（视觉定位）」后才发送截图。不支持 `screenrecord` 的手机会直接说明，不再反复重试预览。v0.6.1：Box 框住多个树中文字标签时返回 `ambiguous` 和 `tree_candidates`，不再给出点击点；Box 用于图标、图片和 Canvas，文字请用选择器。[宿主决策与 Box →](docs/jev.zh-CN.md)
@@ -228,6 +234,6 @@ v0.5.0 通过 **277 项 Python 测试、17 项界面测试**。内置 OCR 目前
 | --- | --- |
 | [中文使用指南](docs/guide.zh-CN.md) · [English guide](docs/guide.md) | [实现说明](docs/architecture.md) |
 | [客户端配置](docs/guide.zh-CN.md#其他-mcp-客户端) · [故障排查](docs/guide.zh-CN.md#常见问题) | [真机验收记录](docs/validation.md) |
-| [开发与测试](docs/guide.zh-CN.md#开发与验证) · [提交问题](https://github.com/JackCaow/android-use/issues) | [MIT 许可证](LICENSE) · [第三方声明](THIRD_PARTY_NOTICES.md) |
+| [开发与测试](docs/guide.zh-CN.md#开发与验证) · [提交问题](https://github.com/arcships/android-use/issues) | [MIT 许可证](LICENSE) · [第三方声明](THIRD_PARTY_NOTICES.md) |
 
 欢迎反馈问题与贡献代码。请提供电脑系统、Android 版本、客户端和最小复现步骤，并移除设备标识、访问令牌和私人画面。

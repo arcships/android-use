@@ -53,6 +53,15 @@ def test_real_stdio_handshake_schemas_and_error(tmp_path):
                 }
                 tap = next(t for t in tools if t.name == "aua_tap")
                 assert "wait_for" in tap.inputSchema["properties"]
+                for name in (
+                    "aua_tap", "aua_long_press", "aua_double_tap", "aua_drag",
+                    "aua_swipe", "aua_scroll_until", "aua_execute_goal",
+                ):
+                    schema = next(t for t in tools if t.name == name).inputSchema
+                    assert schema["properties"]["variation"]["default"] is None
+                    variation = schema["$defs"]["InteractionVariation"]
+                    assert variation["properties"]["point_radius"]["maximum"] == 16
+                    assert variation["additionalProperties"] is False
                 screen = next(t for t in tools if t.name == "aua_screen")
                 assert screen.meta["ui"]["resourceUri"] == "ui://android-use/phone-0.2.1.html"
                 assert next(t for t in tools if t.name == "aua_screen_frame").meta["ui"][

@@ -63,7 +63,7 @@ uv --version
 adb version
 ffmpeg -version
 
-git clone https://github.com/JackCaow/android-use.git
+git clone https://github.com/arcships/android-use.git
 cd android-use
 uv sync --frozen --python 3.13
 uv run android-use --help

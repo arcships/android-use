@@ -1,0 +1,601 @@
+{
+  "date": "2026-11-06",
+  "scope": "API 35 ARM64 emulator; temporary local acceptance app; real stdio MCP except explicitly marked direct-backend diagnostics",
+  "attempts": [
+    {
+      "mode": "variation",
+      "status": "failed",
+      "stage": "double_tap_event",
+      "error": "postcondition_timeout",
+      "action_executed": true,
+      "replay_action": false,
+      "seed": 44,
+      "interval_seconds": 0.07223997546069065,
+      "root_cause": "unresolved; no native event trace captured for this first failure"
+    },
+    {
+      "mode": "baseline",
+      "status": "passed",
+      "passed": [
+        "tap_wait_visible",
+        "tap_wait_gone",
+        "long_press_event",
+        "double_tap_event",
+        "drag_event",
+        "scroll_find_offscreen_target",
+        "scroll_visible_target_zero_swipes",
+        "scroll_no_progress_stop",
+        "gesture_batch_with_waits",
+        "timeout_no_replay_and_batch_stop",
+        "pause_cancels_active_wait"
+      ],
+      "tool_count": 26,
+      "scroll_swipes": 4,
+      "no_progress_swipes": 2,
+      "elapsed_seconds": 35.19
+    },
+    {
+      "mode": "direct_backend_diagnostics",
+      "status": "passed",
+      "cases": [
+        {
+          "offset": [
+            0,
+            0
+          ],
+          "interval": 0.08,
+          "elapsed": 0.383,
+          "recognized": true,
+          "native_down_to_down_ms": 227
+        },
+        {
+          "offset": [
+            4,
+            -2
+          ],
+          "interval": 0.072239975,
+          "elapsed": 0.374,
+          "recognized": true,
+          "native_down_to_down_ms": 219
+        },
+        {
+          "offset": [
+            4,
+            -2
+          ],
+          "interval": 0.08,
+          "elapsed": 0.402,
+          "recognized": true,
+          "native_down_to_down_ms": 257
+        },
+        {
+          "offset": [
+            0,
+            0
+          ],
+          "interval": 0.072239975,
+          "elapsed": 0.391,
+          "recognized": true,
+          "native_down_to_down_ms": 230
+        }
+      ]
+    },
+    {
+      "mode": "variation_with_temporary_event_logging",
+      "status": "passed",
+      "passed": [
+        "tap_wait_visible",
+        "tap_wait_gone",
+        "long_press_event",
+        "double_tap_event",
+        "drag_event",
+        "scroll_find_offscreen_target",
+        "scroll_visible_target_zero_swipes",
+        "scroll_no_progress_stop",
+        "gesture_batch_with_waits",
+        "timeout_no_replay_and_batch_stop",
+        "pause_cancels_active_wait"
+      ],
+      "tool_count": 26,
+      "scroll_swipes": 5,
+      "no_progress_swipes": 2,
+      "elapsed_seconds": 38.62,
+      "variation": {
+        "enabled": true,
+        "actions": [
+          {
+            "op": "tap",
+            "seed": 41,
+            "delay_seconds": 0.038102068999577146,
+            "spatial_applied": true,
+            "point": [
+              146,
+              449
+            ]
+          },
+          {
+            "op": "tap",
+            "seed": 42,
+            "delay_seconds": 0.06394267984578837,
+            "spatial_applied": true,
+            "point": [
+              374,
+              451
+            ]
+          },
+          {
+            "op": "long_press",
+            "seed": 43,
+            "delay_seconds": 0.0038551839337380048,
+            "spatial_applied": true,
+            "point": [
+              631,
+              454
+            ],
+            "duration": 0.7687705212920548
+          },
+          {
+            "op": "double_tap",
+            "seed": 44,
+            "delay_seconds": 0.04085358792544938,
+            "spatial_applied": true,
+            "point": [
+              544,
+              695
+            ],
+            "interval": 0.07223997546069065
+          },
+          {
+            "op": "drag",
+            "seed": 45,
+            "delay_seconds": 0.027187541438409082,
+            "spatial_applied": false,
+            "duration": 0.5978450774131634,
+            "start": [
+              286,
+              698
+            ],
+            "end": [
+              794,
+              698
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 46,
+            "delay_seconds": 0.0888268076452488,
+            "spatial_applied": true,
+            "duration": 0.35823610357975705,
+            "start": [
+              542,
+              1340
+            ],
+            "end": [
+              539,
+              1001
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 46,
+            "delay_seconds": 0.053802619835137955,
+            "spatial_applied": true,
+            "duration": 0.4158593501076925,
+            "start": [
+              536,
+              1340
+            ],
+            "end": [
+              537,
+              998
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 46,
+            "delay_seconds": 0.005445831152163139,
+            "spatial_applied": true,
+            "duration": 0.4033323213425174,
+            "start": [
+              536,
+              1342
+            ],
+            "end": [
+              544,
+              997
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 46,
+            "delay_seconds": 0.09678965934609308,
+            "spatial_applied": true,
+            "duration": 0.3587333367503197,
+            "start": [
+              537,
+              1346
+            ],
+            "end": [
+              543,
+              998
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 46,
+            "delay_seconds": 0.04656085135834759,
+            "spatial_applied": true,
+            "duration": 0.391919648849689,
+            "start": [
+              537,
+              1347
+            ],
+            "end": [
+              544,
+              994
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 48,
+            "delay_seconds": 0.054815782841632965,
+            "spatial_applied": true,
+            "duration": 0.4351794608876037,
+            "start": [
+              538,
+              1348
+            ],
+            "end": [
+              544,
+              997
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 48,
+            "delay_seconds": 0.05053125783258553,
+            "spatial_applied": true,
+            "duration": 0.399169636055216,
+            "start": [
+              542,
+              1342
+            ],
+            "end": [
+              538,
+              994
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 48,
+            "delay_seconds": 0.022039988054371875,
+            "spatial_applied": true,
+            "duration": 0.39661460091212797,
+            "start": [
+              544,
+              1348
+            ],
+            "end": [
+              544,
+              995
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 49,
+            "delay_seconds": 0.0066883976342751675,
+            "spatial_applied": true,
+            "duration": 0.40135421318507825,
+            "start": [
+              542,
+              1341
+            ],
+            "end": [
+              541,
+              1001
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 49,
+            "delay_seconds": 0.004967399448053068,
+            "spatial_applied": true,
+            "duration": 0.42804938678031823,
+            "start": [
+              536,
+              1344
+            ],
+            "end": [
+              538,
+              1000
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "mode": "variation_final_unmodified_fixture_including_profiled_batch",
+      "status": "passed",
+      "passed": [
+        "tap_wait_visible",
+        "tap_wait_gone",
+        "long_press_event",
+        "double_tap_event",
+        "drag_event",
+        "scroll_find_offscreen_target",
+        "scroll_visible_target_zero_swipes",
+        "scroll_no_progress_stop",
+        "gesture_batch_with_waits",
+        "timeout_no_replay_and_batch_stop",
+        "pause_cancels_active_wait"
+      ],
+      "tool_count": 26,
+      "scroll_swipes": 5,
+      "no_progress_swipes": 2,
+      "elapsed_seconds": 41.88,
+      "variation": {
+        "enabled": true,
+        "actions": [
+          {
+            "op": "tap",
+            "seed": 41,
+            "delay_seconds": 0.038102068999577146,
+            "spatial_applied": true,
+            "point": [
+              146,
+              449
+            ]
+          },
+          {
+            "op": "tap",
+            "seed": 42,
+            "delay_seconds": 0.06394267984578837,
+            "spatial_applied": true,
+            "point": [
+              374,
+              451
+            ]
+          },
+          {
+            "op": "long_press",
+            "seed": 43,
+            "delay_seconds": 0.0038551839337380048,
+            "spatial_applied": true,
+            "point": [
+              631,
+              454
+            ],
+            "duration": 0.7687705212920548
+          },
+          {
+            "op": "double_tap",
+            "seed": 44,
+            "delay_seconds": 0.04085358792544938,
+            "spatial_applied": true,
+            "point": [
+              544,
+              695
+            ],
+            "interval": 0.07223997546069065
+          },
+          {
+            "op": "drag",
+            "seed": 45,
+            "delay_seconds": 0.027187541438409082,
+            "spatial_applied": false,
+            "duration": 0.5978450774131634,
+            "start": [
+              286,
+              698
+            ],
+            "end": [
+              794,
+              698
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 46,
+            "delay_seconds": 0.0888268076452488,
+            "spatial_applied": true,
+            "duration": 0.35823610357975705,
+            "start": [
+              542,
+              1340
+            ],
+            "end": [
+              539,
+              1001
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 46,
+            "delay_seconds": 0.053802619835137955,
+            "spatial_applied": true,
+            "duration": 0.4158593501076925,
+            "start": [
+              536,
+              1340
+            ],
+            "end": [
+              537,
+              998
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 46,
+            "delay_seconds": 0.005445831152163139,
+            "spatial_applied": true,
+            "duration": 0.4033323213425174,
+            "start": [
+              536,
+              1342
+            ],
+            "end": [
+              544,
+              997
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 46,
+            "delay_seconds": 0.09678965934609308,
+            "spatial_applied": true,
+            "duration": 0.3587333367503197,
+            "start": [
+              537,
+              1346
+            ],
+            "end": [
+              543,
+              998
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 46,
+            "delay_seconds": 0.04656085135834759,
+            "spatial_applied": true,
+            "duration": 0.391919648849689,
+            "start": [
+              537,
+              1347
+            ],
+            "end": [
+              544,
+              994
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 48,
+            "delay_seconds": 0.054815782841632965,
+            "spatial_applied": true,
+            "duration": 0.4351794608876037,
+            "start": [
+              538,
+              1348
+            ],
+            "end": [
+              544,
+              997
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 48,
+            "delay_seconds": 0.05053125783258553,
+            "spatial_applied": true,
+            "duration": 0.399169636055216,
+            "start": [
+              542,
+              1342
+            ],
+            "end": [
+              538,
+              994
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 48,
+            "delay_seconds": 0.022039988054371875,
+            "spatial_applied": true,
+            "duration": 0.39661460091212797,
+            "start": [
+              544,
+              1348
+            ],
+            "end": [
+              544,
+              995
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 49,
+            "delay_seconds": 0.0066883976342751675,
+            "spatial_applied": true,
+            "duration": 0.40135421318507825,
+            "start": [
+              542,
+              1341
+            ],
+            "end": [
+              541,
+              1001
+            ]
+          },
+          {
+            "op": "scroll_until",
+            "seed": 49,
+            "delay_seconds": 0.004967399448053068,
+            "spatial_applied": true,
+            "duration": 0.42804938678031823,
+            "start": [
+              536,
+              1344
+            ],
+            "end": [
+              538,
+              1000
+            ]
+          },
+          {
+            "op": "long_press",
+            "seed": 50,
+            "delay_seconds": 0.04975365687586023,
+            "spatial_applied": true,
+            "point": [
+              633,
+              452
+            ],
+            "duration": 0.8329786787464859
+          },
+          {
+            "op": "double_tap",
+            "seed": 51,
+            "delay_seconds": 0.0243517762709337,
+            "spatial_applied": true,
+            "point": [
+              544,
+              702
+            ],
+            "interval": 0.07188650034297935
+          }
+        ]
+      }
+    }
+  ],
+  "cleanup": {
+    "fixture_uninstalled": true,
+    "original_foreground_restored": true,
+    "dedicated_emulator_stopped": true,
+    "user_selected_device_unchanged": true
+  },
+  "limits": [
+    "First full variation run failed at double-tap verification; later passes do not establish a fix or erase that failure.",
+    "Single emulator profile; no new physical-device, third-party app or anti-detection acceptance.",
+    "No real Jev requests in this run; host/Jev profile forwarding covered by automated unit regressions.",
+    "Sampled backend parameters are not native wall-clock timings; no throughput or success-rate guarantee."
+  ],
+  "automated_checks": {
+    "workspace_pytest": {
+      "passed": 437,
+      "seconds": 27.12
+    },
+    "clean_export_isolated_uv_pytest": {
+      "passed": 437,
+      "seconds": 27.35
+    },
+    "ruff": "passed",
+    "wheel_sdist_plugin_build": "passed from clean index export",
+    "retained_harness_failure": {
+      "passed": 436,
+      "failed": 1,
+      "cause": "The first clean-export test command injected PYTHONPATH, so spawned old-version MCP upgrade probes imported the export instead of their isolated runtime and reported mcp_version_mismatch. Reran the full suite from a separate uv environment without PYTHONPATH; all 437 passed. No product change was made for this test-command error."
+    }
+  }
+}
