@@ -35,8 +35,15 @@ try {
     $lines = @(Get-Content (Join-Path $work 'SHA256SUMS') | Where-Object { $_ -match "^[a-fA-F0-9]{64}\s+\*?$([regex]::Escape($name))$" })
     if ($lines.Count -ne 1) { throw 'Missing runtime checksum' }
     $expected = ($lines[0] -split '\s+')[0].ToLowerInvariant()
-    if ((Get-FileHash (Join-Path $work $name) -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) { throw 'Runtime checksum mismatch' }
-    Expand-Archive -LiteralPath (Join-Path $work $name) -DestinationPath (Join-Path $work 'bundle')
+    # Use .NET rather than optional functions/modules inherited from a pwsh host.
+    $stream = [System.IO.File]::OpenRead((Join-Path $work $name))
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $actual = [System.BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-', '').ToLowerInvariant()
+    } finally { $stream.Dispose(); $sha.Dispose() }
+    if ($actual -ne $expected) { throw 'Runtime checksum mismatch' }
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    [System.IO.Compression.ZipFile]::ExtractToDirectory((Join-Path $work $name), (Join-Path $work 'bundle'))
     $result = & (Join-Path $work 'bundle/app/android-use-runtime.exe') --root $root install --archive (Join-Path $work $name) --sha256 $expected
     [Console]::Error.WriteLine(($result -join [Environment]::NewLine))
     if ($LASTEXITCODE -ne 0) { throw 'Runtime installation failed' }
