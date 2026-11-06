@@ -1,6 +1,6 @@
 # Standalone runtime / 独立运行包
 
-**Source feature after v0.6.2.** Historical v0.6.2 source-plugin ZIPs do not contain this runtime. The **Standalone runtimes** workflow builds native archives and lightweight Dim plugins; tagged releases publish those artifacts only after their acceptance checks pass. Before a release containing these assets exists, use the workflow artifacts for offline installation. The lightweight plugin's production download URL cannot provision a runtime from an older release that lacks it.
+**Available in v0.7.0.** Download native runtime archives or the optional lightweight Dim plugin from [the release](https://github.com/arcships/android-use/releases/tag/v0.7.0). The four-platform workflow verifies each archive before publication. Older v0.6.2 source-plugin ZIPs do not contain these native assets.
 
 **Optional installation route.** Android Use does not require this runtime. The Agent first reuses a healthy installation, then checks existing Python/uv, ADB, ffmpeg, platform, network and available assets. Use source setup when it fits the host; choose a verified native package when it saves dependency setup. Do not migrate a working source installation solely to use the runtime. Only selecting the lightweight native plugin opts into its runtime bootstrap.
 
@@ -119,7 +119,7 @@ Builds reject statically embedded optional DBM/readline modules and exclude thei
 
 **runtime 是可选安装方式，不是使用 Android Use 的前提。** Agent 先复用健康安装，再检查 Python/uv、ADB、ffmpeg、平台、网络和发行包可用性，自主选择源码或独立包；不因提供了 runtime 就迁移已有正常环境。仅选择轻量原生插件时，才使用它的运行包自动安装流程。
 
-这是 v0.6.2 之后的新源码功能，旧 v0.6.2 插件包不包含独立运行时。跨平台工作流生成原生运行包、轻量 Dim 插件与 SHA256；正式发布需要对应 Release 中实际有这些资产，不能把旧 ZIP 当成新包。发布前可使用工作流产物离线安装。
+此功能已纳入 v0.7.0，发行包包含四个平台的原生运行包、轻量 Dim 插件与 SHA256，发布前逐平台验收。旧 v0.6.2 源码插件包不包含这些原生资产。
 
 默认包内置 Python、Python 依赖、ADB、ffmpeg、界面和控制 JAR，普通用户无需 Git、uv、Node.js 或 JDK。**macOS OCR 不默认携带**，需要本地识字时用固定入口的 `install-ocr` 安装可选组件，安装后也不需要 Xcode/Swift。未安装时明确返回不可用，不悄悄编译。Jev 决策和视觉定位不等同于 OCR；树缺失页面的自动离线文字提取仍需此组件。
 

@@ -8,7 +8,7 @@
     <a href="#mcp-客户端支持"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="标准 stdio MCP" /></a>
   </p>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
-  <p><a href="#快速开始"><strong>在 Dim Agent 中使用 →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.6.2">下载 v0.6.2</a> · <a href="#在屏幕中启用-jev">配置 Jev</a> · <a href="docs/guide.zh-CN.md">使用指南</a> · <a href="https://github.com/arcships/android-use/issues">反馈问题</a></p>
+  <p><a href="#快速开始"><strong>在 Dim Agent 中使用 →</strong></a> · <a href="https://github.com/arcships/android-use/releases/tag/v0.7.0">下载 v0.7.0</a> · <a href="#在屏幕中启用-jev">配置 Jev</a> · <a href="docs/guide.zh-CN.md">使用指南</a> · <a href="https://github.com/arcships/android-use/issues">反馈问题</a></p>
 </div>
 
 ## 在 Dim Agent 中，直接完成 Android 任务
@@ -34,13 +34,13 @@ Android Use 把你自己的 Android 手机或模拟器接入 **Dim Agent**，也
 | 缺少依赖，且有匹配、可校验的原生发行包 | 可选独立 runtime，减少逐项安装依赖。 |
 | 离线、不支持的原生平台或尚无原生发行资产 | 选择可用的本地包或源码安装，明确缺失条件。 |
 
-### 可选独立运行包（新源码功能）
+### 可选独立运行包 · v0.7.0
 
 **Python、ADB、ffmpeg、实时界面和控制服务，打成一个原生运行包。** 轻量 Dim 插件首次自动安装；后续 MCP 连接立即使用已安装版本，并在后台检查更新。新包校验、握手通过后，下一次连接使用新版；失败保留旧版，回滚前也会重新验证。
 
 **macOS OCR 是可选组件，默认包不带。** 控件树操作、Agent 看图和 Jev 均可独立使用。选择独立包的用户无需准备 Python、uv、Git、Node.js、JDK 或 Xcode 工具，公开发行包首次下载只使用系统基础工具。私有发行包自动安装支持 GitHub CLI 与私有令牌，也可用原生离线包省去此依赖。
 
-此功能晚于已发布的 v0.6.2 源码插件 ZIP。正式 Release 尚未包含这些资产时，可用原生构建工作流产物离线体验。[安装、自动更新、可选 OCR 与回滚 →](docs/standalone.md#中文)
+v0.7.0 分别提供源码插件、轻量 Dim 插件和原生运行包，按用户环境选择；旧 v0.6.2 源码 ZIP 不含原生运行包。[安装、自动更新、可选 OCR 与回滚 →](docs/standalone.md#中文)
 
 ## 快速开始
 
@@ -111,15 +111,9 @@ Dim Agent 会调用 Android 工具，通过 `aua_screen` 在桌面端右侧打�
 
 ## 像拿着手机一样，看见每一步
 
-<table>
-  <tr><th align="center">浅色</th><th align="center">深色</th></tr>
-  <tr>
-    <td align="center"><img src="docs/images/sidebar-light.jpg" alt="带手机机身边框的 Android Use 浅色预览" width="260" /></td>
-    <td align="center"><img src="docs/images/sidebar-dark.jpg" alt="带手机机身边框的 Android Use 深色预览" width="260" /></td>
-  </tr>
-</table>
+![Dim Agent 通过 Android Use 操作手机并显示实时画面](docs/images/dim-agent-live-screen.png)
 
-上图为真实前端渲染，手机内容使用文档示例。机身随主题、窗口和横竖屏适配；屏幕内支持点击和滑动，工具栏支持返回、Home 与 PNG 画面复制。[实时屏幕指南 →](docs/guide.zh-CN.md#实时屏幕与图片复制)
+在 Dim Agent 中描述任务，旁边的实时手机画面展示执行过程。屏幕内支持点击和滑动，工具栏支持返回、Home 与 PNG 画面复制。[实时屏幕指南 →](docs/guide.zh-CN.md#实时屏幕与图片复制)
 
 ## Agent 规划，Jev 决策，Android Use 执行
 
@@ -278,7 +272,7 @@ uv run android-use scroll_until '{"selector":{"text":"显示与亮度"},"directi
 
 手势或局部目标可显式传 `variation`：限定范围内变化等待、选择器落点和滑动参数，支持固定种子复现。明确坐标和文本保持精确；新增等待后检查页面，继续遵守预算与不重放规则。默认行为不变，不承诺防检测。[参数、审计与边界 →](docs/interaction-variation.md#中文)
 
-源码同步到 [arcships/android-use](https://github.com/arcships/android-use)；v0.6.2 及此前安装包仍链接到原发布位置。
+源码及 v0.7.0 发行包统一托管于 [arcships/android-use](https://github.com/arcships/android-use)。
 
 ## v0.6.0：无 Key 决策与视觉定位
 
@@ -311,7 +305,7 @@ v0.5.0 通过 **277 项 Python 测试、17 项界面测试**。内置 OCR 目前
 
 ## 项目状态
 
-**v0.6.2 · MIT · 392 项 Python 测试 · 24 项浏览器测试。** 模拟器验收覆盖 15 项真实 stdio MCP 场景；已有 Android 16 / Xiaomi 15 Ultra 真机验收。新增 Jev 设置和机身界面在本机/模拟器验证，其他厂商、宿主版本及系统的覆盖范围另见[验证记录](docs/validation.md)。
+**v0.7.0 · MIT · 481 项 Python 测试 · 24 项浏览器测试。** 原生安装、升级和回滚在 macOS ARM64/Intel 各通过 15 项，Linux x86_64/Windows x86_64 各通过 13 项。这些包验收不操作手机、不调用模型；历史 Android 16 真机与模拟器验收分开记录。[验证记录](docs/validation.md)。
 
 多指手势、任意轨迹、精细文本选区及自绘编辑器输入兜底尚未实现。UI 条件满足仅证明该条件，Agent 仍需验收业务结果。控制和预览运行于本机，工具结果由你选择的客户端与模型处理。
 
