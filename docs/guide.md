@@ -2,7 +2,7 @@
 
 Optional feature in v0.4.0: [optional Jev decision integration and comparison](jev.md). Default off; original tools remain compatible. Included in the v0.4.0 release ZIP.
 
-v0.5.1 includes [read-only automatic OCR and execution guards](jev.md#automatic-read-only-ocr), plus automatic preview recovery. v0.5.2 adds [stable preview endpoints and frame-confirmed reconnection](preview-reconnection.md). v0.6.0 adds the [keyless host decider and opt-in Jev Box visual location](jev.md#no-key-host-decider). v0.6.1 returns `ambiguous` with tree candidates when a Box spans several text labels. Built-in OCR requires macOS and Xcode Command Line Tools.
+v0.5.1 includes [read-only automatic OCR and execution guards](jev.md#automatic-read-only-ocr), plus automatic preview recovery. v0.5.2 adds [stable preview endpoints and frame-confirmed reconnection](preview-reconnection.md). v0.6.0 adds the [keyless host decider and opt-in Jev Box visual location](jev.md#no-key-host-decider). v0.6.1 returns `ambiguous` with tree candidates when a Box spans several text labels. Source-mode local OCR requires macOS and Xcode Command Line Tools; the optional standalone package uses a separately installed precompiled OCR component.
 
 **English** · [简体中文](guide.zh-CN.md) · [Project home](../README.md)
 
@@ -25,8 +25,8 @@ The process running the server must have ADB access to the device. A cloud agent
 
 Use the [copyable installation prompt](../README.md#let-your-agent-install-it) with an agent that has local terminal access. The agent should perform these steps:
 
-1. Inspect the host, repository, installed tools, and existing MCP/plugin config. Reuse suitable installations; preserve uncommitted work and unrelated server entries. Install missing Git, uv, ADB, ffmpeg, and Python from official sources. Codex CLI is needed only for the Codex routes.
-2. Clone or reuse the repository. Run `uv sync --frozen --python 3.13` in its root. Node.js is not required for normal use.
+1. Inspect the host, installed tools and existing MCP/plugin config. Reuse a healthy installation; preserve uncommitted work and unrelated server entries. **Runtime is optional:** choose source setup or a verified matching native package based on dependencies, platform, network and asset availability. See [installation choices](../README.md#choose-an-installation-path).
+2. For source setup, clone/reuse the repository, prepare missing Git, uv, ADB, ffmpeg and Python from official sources, then run `uv sync --frozen --python 3.13`. Codex CLI is needed only for the Codex routes. For native setup, follow [standalone installation](standalone.md), without installing these bundled dependencies separately. Node.js is not required for normal use.
 3. Configure the current client. For Codex, use the stable installer and diagnose conflicts before migrating an existing registration. For other clients, configure the local stdio command directly. Check existing registrations before changing them.
 4. Discover ADB devices. Reuse the user's intended target, or select a clearly identifiable unique device. Ask which device to use when the target is ambiguous. The user handles USB trust, unlocking, and system permission prompts.
 5. Save the chosen serial with `setup configure`, check service status, and reuse a healthy service. If absent, start it once. Diagnose errors rather than repeatedly reinstalling or restarting.
@@ -38,7 +38,9 @@ Installation authorizes setup and read-screen acceptance. Wait for a concrete ph
 
 ## Installation
 
-### Dependencies
+### Source installation dependencies
+
+These apply to the source route. The [optional standalone package](standalone.md) bundles its own runtime dependencies; the Agent can choose either route for the environment.
 
 | Dependency | Purpose |
 | --- | --- |

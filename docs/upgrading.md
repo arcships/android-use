@@ -1,5 +1,7 @@
 # Stable installation and upgrades
 
+For the new self-contained runtime, automatic background updates and optional OCR, use the [standalone guide](standalone.md). The uv-based source/Codex installer described below remains supported; its external Python/uv prerequisites do not apply to the standalone package.
+
 This installer ships in **v0.6.2** and later source/ZIP installations. Verify the release checksum, extract it, and run its `scripts/install.py`. The older v0.6.1 ZIP does not contain the installer; a current installer can also install an older extracted release with `--source /path/to/extracted-release`.
 
 ## Codex: one command, one registration

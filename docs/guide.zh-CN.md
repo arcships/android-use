@@ -2,7 +2,7 @@
 
 v0.4.0 可选功能：[可选 Jev 决策集成与对比测试](jev.zh-CN.md)。默认关闭，原有工具兼容保留；v0.4.0 Release ZIP 已包含。
 
-v0.5.1 已包含[只读自动 OCR 与执行守卫](jev.zh-CN.md#自动只读-ocr)，并修复预览自动恢复；v0.5.2 进一步加入[稳定预览入口与新帧确认重连](preview-reconnection.md)；v0.6.0 新增[无 Key 宿主决策与可选 Jev Box 视觉定位](jev.zh-CN.md#无-key宿主决策模式)；v0.6.1 在 Box 框住多个文字标签时返回 `ambiguous` 和树中候选；内置 OCR 需要 macOS 与 Xcode Command Line Tools。
+v0.5.1 已包含[只读自动 OCR 与执行守卫](jev.zh-CN.md#自动只读-ocr)，并修复预览自动恢复；v0.5.2 进一步加入[稳定预览入口与新帧确认重连](preview-reconnection.md)；v0.6.0 新增[无 Key 宿主决策与可选 Jev Box 视觉定位](jev.zh-CN.md#无-key宿主决策模式)；v0.6.1 在 Box 框住多个文字标签时返回 `ambiguous` 和树中候选；源码方式的本地 OCR 需要 macOS 与 Xcode Command Line Tools；可选独立包使用另行安装的预编译 OCR 组件。
 
 [English](guide.md) · **简体中文** · [返回项目首页](../README.zh-CN.md)
 
@@ -33,8 +33,9 @@ https://github.com/arcships/android-use
 
 先阅读 README.md、docs/guide.zh-CN.md 和 skills/android-use/SKILL.md，然后实际完成安装与验收。
 检查当前系统、已有仓库、插件和依赖；复用现有安装，只补齐缺项，不覆盖未提交修改。
-从官方来源安装缺失的 Git、uv、Python 3.11+、ADB、ffmpeg 和所需的 Codex CLI。
-克隆或复用仓库，安装锁定依赖，生成 dist/android-use，再注册本地市场并安装插件。
+独立 runtime 可选：根据已有依赖、平台、网络和发行资产自主选择源码或独立包，不强制迁移健康安装。
+源码方式才从官方来源补齐 Git、uv、Python 3.11+、ADB、ffmpeg 和所需的 Codex CLI；独立包见 docs/standalone.md。
+按所选方式安装并配置当前客户端；Codex 源码插件才需要打包、市场注册与插件安装。
 检查 ADB 设备，只有一个明确目标时直接配置；目标不明确时让我选择。
 复用健康控制服务，缺少服务时启动一次，完成 READY 验证并打开实时手机屏幕。
 如果当前聊天还没加载新工具，先用仓库 CLI 完成可执行的配置和验收，并说明如何在新聊天使用插件。
@@ -45,7 +46,7 @@ https://github.com/arcships/android-use
 
 ### Agent 的执行顺序
 
-1. **检查并复用环境。** 检查 `git`、`uv`、`adb`、`ffmpeg` 和 `codex`，按本机系统补齐缺失依赖。Python 推荐使用下方已验证的 3.13；普通安装无需 Node.js。仓库已存在时先检查状态，保留用户未提交内容。
+1. **检查并选择安装方式。** 先复用健康安装，检查依赖、平台、网络和可用发行资产，自主选择源码或可选独立 runtime。已有依赖可继续源码；缺少依赖且有匹配原生包时可用独立包，不强制迁移。独立包按 [standalone.md](standalone.md#中文) 操作；下方第 2–3 步是源码 Codex 路径。仓库已存在时先检查状态，保留用户未提交内容。
 2. **检查升级配置。** 执行 `uv run --no-project --python 3.13 python scripts/install.py doctor`，识别同名 MCP、重复插件、项目覆盖和已失效路径。
 3. **安装并核对插件。** 执行 `uv run --no-project --python 3.13 python scripts/install.py install --source . --codex`。已有注册需要显式加 `--migrate-codex`；安装器先准备独立运行时并验证真实 MCP 握手，再切换固定入口和注册 `android-use@android-use-managed`，保留其他服务与设备/Jev 设置。
 
@@ -66,7 +67,9 @@ https://github.com/arcships/android-use
 
 ## 安装
 
-### 1. 准备依赖
+### 1. 准备源码安装依赖
+
+下表适用于源码方式；[可选独立运行包](standalone.md#中文)已包含对应运行依赖。由 Agent 根据用户环境选择，无需两套都安装。
 
 | 依赖 | 用途 |
 | --- | --- |

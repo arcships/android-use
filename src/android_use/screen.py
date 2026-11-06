@@ -612,8 +612,8 @@ class ScreenClient:
             process = subprocess.Popen(
                 [
                     sys.executable,
-                    "-m",
-                    "android_use.preview_daemon",
+                    *(["preview-daemon"] if getattr(sys, "frozen", False)
+                      else ["-m", "android_use.preview_daemon"]),
                     "--serial",
                     self.serial,
                     "--key",
@@ -628,6 +628,7 @@ class ScreenClient:
                 # same browser URL. The child consumes this private value once.
                 env={
                     **{k: v for k, v in os.environ.items() if k != PREVIEW_BOOTSTRAP_ENV},
+                    **({"PYINSTALLER_RESET_ENVIRONMENT": "1"} if getattr(sys, "frozen", False) else {}),
                     **(
                         {
                             PREVIEW_BOOTSTRAP_ENV: json.dumps(

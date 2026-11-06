@@ -5,6 +5,8 @@ description: 通过 Android Use 的 MCP 工具或 CLI 操作 ADB 已授权的 An
 
 # Android Use
 
+安装或升级时，独立 runtime 是可选项。先检查已有 MCP/插件是否健康，再检查 Python/uv、ADB、ffmpeg、平台、网络和可用发行资产；由 Agent 按环境选择源码方式或已校验的独立包。已有依赖可继续源码安装，缺少依赖且有匹配原生包时可选独立包。不为采用 runtime 迁移正常安装，不重复注册 MCP；保留设备、Jev 设置和其他服务。安装细节见 README 与 `docs/standalone.md`。
+
 优化目标按完成任务的端到端速度、成功率、宿主大模型往返次数排序。Jev token 费用不作为路由约束，usage 只作辅助记录。连续局部决策在一次 `aua_execute_goal` 内处理，不逐个动作交回宿主审批；复用安全返回的 observation 规划后续步骤，避免紧接着重复读树。已知路径仍用更直接的 batch / scroll_until，遇到不确定、接管、业务验收时由 Agent 处理。
 
 `aua_execute_goal` 的 `input_macros=true` 默认将有稳定唯一标识的非密码输入框提供为“聚焦→精确输入→原生回读”候选，需同时允许 tap/type_text。无稳定标识或界面意外变化时沿用单步或交回，不强行输入；输入法覆盖层同样会停止。宏不提交、不换行、不生成新文本。max_steps 统计候选次数，一个输入宏最多两次原生动作；检查 steps[].substeps 的执行、partial/uncertain 和验证状态，handoff.completed_actions 统计原生子动作，不能据此重放整个宏。需要对照或禁用宏时传 input_macros=false。
@@ -15,7 +17,7 @@ Agent 负责理解任务、规划、编写文本和验收；Jev 是决策模型�
 
 首次使用执行 `aua_setup(action="status")`。服务缺失时调用一次 `aua_setup(action="start")`，再调用 `aua_ready(screenshot=false)`。多台设备先 discover，按用户目标 configure(serial=...)，不随意选第一台。USB 未授权或锁屏让用户在手机上完成信任/解锁，再 READY。服务不会自动重启；启动失败按返回原因诊断，不循环 start。
 
-READY 自动关联本聊天的实时手机屏幕侧边栏；同一聊天复用同一个面板，不反复打开新面板。用户单独要求看屏幕时调用一次 `aua_screen()`，无需为打开预览重复 READY。视频由独立的 ADB screenrecord H.264 通道提供；需要宿主安装 ffmpeg，缺失时按工具返回处理。预览没有可见 viewer 5 秒后停止手机端采集；前端读取的是内存中缓存的视频帧，不轮询手机截图或 XML。侧边栏失败不自动判定控制通道失效。
+READY 自动关联本聊天的实时手机屏幕侧边栏；同一聊天复用同一个面板，不反复打开新面板。用户单独要求看屏幕时调用一次 `aua_screen()`，无需为打开预览重复 READY。视频由独立的 ADB screenrecord H.264 通道提供；独立运行包已内置 ffmpeg；源码安装需要宿主提供，缺失时按工具返回处理。预览没有可见 viewer 5 秒后停止手机端采集；前端读取的是内存中缓存的视频帧，不轮询手机截图或 XML。侧边栏失败不自动判定控制通道失效。
 
 `aua_screen_frame`、`aua_screen_action` 仅供预览 App 自己使用，模型不要调用它们刷新画面或模拟用户点击。模型需要看图片仍用 aua_observe，侧边栏 Live 不替代模型观察。用户可以在预览中点击、滑动、返回、Home 或将当前视频画面复制为剪贴板 PNG 图片；这些动作会改变真实页面，下一次模型观察按实际状态继续。CLI 的 `screen` 返回本机预览 URL，可作为 Codex 的右侧浏览器面板打开。
 
@@ -39,4 +41,8 @@ batch 中动作等待超时停止为 postcondition_timeout，scroll_until 未找
 
 aua_apps 查询已安装的第三方 **包名**，不支持按 App 显示名查找。不要连续猜包名。aua_launch_app 使用已核实的 package，不强停或清除 App 数据。发送、下单等外部变更需用户授权，并核对目标与内容，执行一次后验收结果。
 
-MCP 不可用时使用同一仓库 CLI：`uv run --frozen --directory <仓库路径> android-use <操作> '<JSON>'`。CLI 截图保存到 image_paths 中的本机绝对路径，使用图片查看工具实际查看。MCP 图片必须转发 image 块，不输出 base64。CLI 的每次运行是新 Runtime，不能跨进程传 observation_id。
+独立运行包的固定入口也支持 `cli <操作> '<JSON>'`，使用安装返回的启动命令，将最后的 `auto-serve` 改为 `cli` 并追加操作及参数，无需 uv。回滚使用固定入口的 `rollback`；后台更新只影响后续 MCP 会话，不重启当前任务。
+
+独立运行包默认不带 macOS OCR；控件树不足时可由宿主 Agent 看图，确需自动离线识字时，用固定入口的 `install-ocr` 安装可选组件。`ocr_unavailable` 不意味着需要给用户安装 Swift/Xcode。Jev Box 视觉定位不是 OCR，截图上传仍需已有独立授权。
+
+MCP 不可用且使用源码安装时，使用同一仓库 CLI：`uv run --frozen --directory <仓库路径> android-use <操作> '<JSON>'`。CLI 截图保存到 image_paths 中的本机绝对路径，使用图片查看工具实际查看。MCP 图片必须转发 image 块，不输出 base64。CLI 的每次运行是新 Runtime，不能跨进程传 observation_id。

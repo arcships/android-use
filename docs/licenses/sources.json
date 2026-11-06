@@ -1,0 +1,87 @@
+[
+  {
+    "file": "LICENSE.openssl-3.txt",
+    "source": "https://github.com/astral-sh/python-build-standalone/blob/de549958c79576345140088bd5482d0b0f8a2614/LICENSE.openssl-3.txt",
+    "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a"
+  },
+  {
+    "file": "LICENSE.bzip2.txt",
+    "source": "https://github.com/astral-sh/python-build-standalone/blob/de549958c79576345140088bd5482d0b0f8a2614/LICENSE.bzip2.txt",
+    "sha256": "1f38bbc7caacafd65169276d759c0d88c991b753b643ce35d0e45ea1971dd441"
+  },
+  {
+    "file": "LICENSE.expat.txt",
+    "source": "https://github.com/astral-sh/python-build-standalone/blob/de549958c79576345140088bd5482d0b0f8a2614/LICENSE.expat.txt",
+    "sha256": "122f2c27000472a201d337b9b31f7eb2b52d091b02857061a8880371612d9534"
+  },
+  {
+    "file": "LICENSE.libffi.txt",
+    "source": "https://github.com/astral-sh/python-build-standalone/blob/de549958c79576345140088bd5482d0b0f8a2614/LICENSE.libffi.txt",
+    "sha256": "deaf3a42effb551a5b140fa9afefed183a27f1341c6d1bf430d106a5e6931fc0"
+  },
+  {
+    "file": "LICENSE.liblzma.txt",
+    "source": "https://github.com/astral-sh/python-build-standalone/blob/de549958c79576345140088bd5482d0b0f8a2614/LICENSE.liblzma.txt",
+    "sha256": "9a4062de0a2c388a98cf35a35d348b62fa97c838a71c3c28ee1a2d7d0a565b02"
+  },
+  {
+    "file": "LICENSE.libuuid.txt",
+    "source": "https://github.com/astral-sh/python-build-standalone/blob/de549958c79576345140088bd5482d0b0f8a2614/LICENSE.libuuid.txt",
+    "sha256": "122ee1f7e258f2c3c0e538a75c037684f420454bf3850ddc74ce750bbf5fe86b"
+  },
+  {
+    "file": "LICENSE.mpdecimal.txt",
+    "source": "https://github.com/astral-sh/python-build-standalone/blob/de549958c79576345140088bd5482d0b0f8a2614/LICENSE.mpdecimal.txt",
+    "sha256": "669512af7219f58be03a398766d7c9da11a3b3df9d3f05cb74c5ceca25c8da3b"
+  },
+  {
+    "file": "LICENSE.ncurses.txt",
+    "source": "https://github.com/astral-sh/python-build-standalone/blob/de549958c79576345140088bd5482d0b0f8a2614/LICENSE.ncurses.txt",
+    "sha256": "87a4c4442337b8968ef956031c406b74f9cb7149b7ba87311bdaba534816201c"
+  },
+  {
+    "file": "LICENSE.sqlite.txt",
+    "source": "https://github.com/astral-sh/python-build-standalone/blob/de549958c79576345140088bd5482d0b0f8a2614/LICENSE.sqlite.txt",
+    "sha256": "38bef3d28b24f145ea293bd3b6eb4b20396982abc8303128fb493986ea5bc719"
+  },
+  {
+    "file": "LICENSE.zlib.txt",
+    "source": "https://github.com/astral-sh/python-build-standalone/blob/de549958c79576345140088bd5482d0b0f8a2614/LICENSE.zlib.txt",
+    "sha256": "e32ff4e00d9d94930537635291da39e7e612703334bf6fde8c7f1686fe8a45a2"
+  },
+  {
+    "file": "LICENSE.zlib-ng.txt",
+    "source": "https://github.com/astral-sh/python-build-standalone/blob/de549958c79576345140088bd5482d0b0f8a2614/LICENSE.zlib-ng.txt",
+    "sha256": "6c9f0d975b41afaa34d22f55bb8986ce69e5cb7ad327cb2b28820cd425edf5ee"
+  },
+  {
+    "file": "LICENSE.zstd.txt",
+    "source": "https://github.com/astral-sh/python-build-standalone/blob/de549958c79576345140088bd5482d0b0f8a2614/LICENSE.zstd.txt",
+    "sha256": "7055266497633c9025b777c78eb7235af13922117480ed5c674677adc381c9d8"
+  },
+  {
+    "file": "LICENSE.cpython-components.rst",
+    "source": "https://github.com/python/cpython/blob/v3.13.7/Doc/license.rst",
+    "sha256": "62f2c9c2c75d511170eb464ad5f83b78cc1f37eb2eb49c2846c9aa6c4557ee99"
+  },
+  {
+    "file": "LICENSE.hacl.txt",
+    "source": "https://github.com/python/cpython/blob/v3.13.7/Modules/_hacl/Hacl_Hash_SHA2.c",
+    "sha256": "998ce04fb8ad9dedb0bc1b44938f8c3dcf1089780fa105ce1c8c30fb5554d78c"
+  },
+  {
+    "file": "LICENSE.uiautomator-server.txt",
+    "source": "https://github.com/openatx/android-uiautomator-server/blob/master/LICENSE",
+    "sha256": "494e9ca2718c1b3242e2c6eb75a55ff0325b18b384c0d6551d16db1a21f07141"
+  },
+  {
+    "file": "LICENSE.gcc-runtime-exception.txt",
+    "source": "https://github.com/gcc-mirror/gcc/blob/releases/gcc-15.2.0/COPYING.RUNTIME",
+    "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74"
+  },
+  {
+    "file": "LICENSE.gcc-gpl3.txt",
+    "source": "https://github.com/gcc-mirror/gcc/blob/releases/gcc-15.2.0/COPYING3",
+    "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+  }
+]

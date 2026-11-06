@@ -55,6 +55,14 @@ class VisionOCR:
     name = "macos_vision"
 
     def recognize(self, image, deadline):
+        bundled = os.environ.get("ANDROID_USE_OCR")
+        if bundled:
+            if not Path(bundled).is_file():
+                raise UseError(
+                    "ocr_unavailable",
+                    "Optional local OCR is not installed; use the stable launcher's install-ocr command, or let the Agent inspect the screenshot",
+                )
+            return self._recognize_binary(image, deadline, Path(bundled))
         if platform.system() != "Darwin":
             raise UseError("ocr_unavailable", "Built-in OCR currently requires macOS Vision")
         source = files("android_use").joinpath("assets/ocr.swift").read_bytes()
@@ -75,6 +83,11 @@ class VisionOCR:
                 )
                 output.chmod(0o700)
                 os.replace(output, binary)
+        return self._recognize_binary(image, deadline, binary, version, start)
+
+    def _recognize_binary(self, image, deadline, binary, version=None, start=None):
+        version = version or "vision-v1-" + platform.mac_ver()[0]
+        start = time.monotonic() if start is None else start
         with tempfile.TemporaryDirectory(prefix="android-use-ocr-") as folder:
             path = Path(folder) / "region.png"
             image.save(path, format="PNG")

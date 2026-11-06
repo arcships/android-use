@@ -272,7 +272,9 @@ def create_server(runtime=None):
             raise ValueError("Unknown screen resource")
         return [
             ReadResourceContents(
-                content=files("android_use").joinpath("assets/phone-screen.html").read_text(),
+                content=files("android_use")
+                .joinpath("assets/phone-screen.html")
+                .read_text(encoding="utf-8"),
                 mime_type="text/html;profile=mcp-app",
                 meta=SCREEN_META,
             )

@@ -16,8 +16,11 @@ jobs:
   tests:
     uses: ./.github/workflows/test.yml
 
+  runtimes:
+    uses: ./.github/workflows/runtime.yml
+
   release:
-    needs: tests
+    needs: [tests, runtimes]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -32,15 +35,22 @@ jobs:
         run: |
           title=$(python3 scripts/release_check.py "$GITHUB_REF_NAME")
           echo "title=$title" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: runtime-*
+          path: dist/runtime
+          merge-multiple: true
       - name: Build plugin ZIP
         run: |
           python3 scripts/package.py
-          cd dist && sha256sum "android-use-${GITHUB_REF_NAME#v}-plugin.zip" > SHA256SUMS
+          cd dist
+          sha256sum "android-use-${GITHUB_REF_NAME#v}-plugin.zip" > SHA256SUMS
+          cat runtime/*SHA256SUMS >> SHA256SUMS
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
           TITLE: ${{ steps.check.outputs.title }}
         run: |
           gh release create "$GITHUB_REF_NAME" \
-            "dist/android-use-${GITHUB_REF_NAME#v}-plugin.zip" dist/SHA256SUMS \
+            "dist/android-use-${GITHUB_REF_NAME#v}-plugin.zip" dist/runtime/*.zip dist/SHA256SUMS \
             --verify-tag --title "$TITLE" --notes-file "docs/releases/$GITHUB_REF_NAME.md"

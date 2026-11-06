@@ -1,0 +1,139 @@
+{
+  "date": "2026-11-06",
+  "scope": "Standalone runtime source feature after v0.6.2; no release published",
+  "local": {
+    "platform": "macos-arm64",
+    "source_commit": "1ad951c54a836ca59fb8174f84b1c1c5f79335e9",
+    "build_python": "3.12.12 (modular Homebrew CPython)",
+    "acceptance": {
+      "platform": "macos-arm64",
+      "version": "0.6.2",
+      "upgraded_version": "0.6.2+upgrade-test",
+      "passed": [
+        "health_without_system_python_uv_adb_ffmpeg",
+        "first_install_stable_stdio_and_embedded_ui_resource",
+        "corrupt_download_keeps_previous_runtime",
+        "upgrade_switches_new_sessions_without_interrupting_old_session",
+        "deleted_original_extraction_does_not_break_stable_entry",
+        "native_health_failure_preserves_active_version",
+        "rollback_reprobes_previous_runtime_and_pauses_auto_update",
+        "private_settings_preserved",
+        "bundled_cli_dispatch",
+        "frozen_preview_daemon_dispatch",
+        "bundled_ffmpeg_h264_filter_scale_and_jpeg_decode",
+        "ocr_omitted_by_default_optional_component_verified_and_bad_update_refused",
+        "precompiled_ocr_without_swift_compiler",
+        "packaged_plugin_first_install_and_clean_stdio_with_stubbed_download_transport",
+        "private_plugin_bootstrap_with_stubbed_github_cli_and_clean_stdio"
+      ],
+      "phone_actions": false,
+      "model_calls": false,
+      "runtime_system_tools_removed_from_PATH": true,
+      "bootstrap_download_transport": "local stub; production URLs checked",
+      "runtime_sha256": "dc829b3201ee366f6aedcb37cf1dbed61d73ab760e8c31e16b29686337d3e89b"
+    },
+    "native_file_count": 118,
+    "package_metadata_count": 51,
+    "package_inventory_scope": "build environment superset, not a complete binary provenance graph",
+    "source_artifacts": [
+      "wheel",
+      "sdist",
+      "source plugin ZIP"
+    ]
+  },
+  "regressions": {
+    "python_passed": 481,
+    "browser_passed": 24,
+    "ruff": "passed",
+    "notice_regeneration": "unchanged after frontend rebuild"
+  },
+  "ci": {
+    "run": "https://github.com/arcships/android-use/actions/runs/42185381161",
+    "source_commit": "1ad951c54a836ca59fb8174f84b1c1c5f79335e9",
+    "platforms": [
+      {
+        "platform": "linux-x86_64",
+        "version": "0.6.2",
+        "upgraded_version": "0.6.2+upgrade-test",
+        "passed": [
+          "health_without_system_python_uv_adb_ffmpeg",
+          "first_install_stable_stdio_and_embedded_ui_resource",
+          "corrupt_download_keeps_previous_runtime",
+          "upgrade_switches_new_sessions_without_interrupting_old_session",
+          "deleted_original_extraction_does_not_break_stable_entry",
+          "native_health_failure_preserves_active_version",
+          "rollback_reprobes_previous_runtime_and_pauses_auto_update",
+          "private_settings_preserved",
+          "bundled_cli_dispatch",
+          "frozen_preview_daemon_dispatch",
+          "bundled_ffmpeg_h264_filter_scale_and_jpeg_decode",
+          "packaged_plugin_first_install_and_clean_stdio_with_stubbed_download_transport",
+          "private_plugin_bootstrap_with_stubbed_github_cli_and_clean_stdio"
+        ],
+        "phone_actions": false,
+        "model_calls": false,
+        "runtime_system_tools_removed_from_PATH": true,
+        "bootstrap_download_transport": "local stub; production URLs checked",
+        "runtime_sha256": "eab60b5705b6f5dff18a23174873c8256fa438a96a78a7ea8f63c70b1a46a384",
+        "job_id": 127785046874,
+        "result": "passed"
+      },
+      {
+        "platform": "macos-arm64",
+        "version": "0.6.2",
+        "upgraded_version": "0.6.2+upgrade-test",
+        "passed": [
+          "health_without_system_python_uv_adb_ffmpeg",
+          "first_install_stable_stdio_and_embedded_ui_resource",
+          "corrupt_download_keeps_previous_runtime",
+          "upgrade_switches_new_sessions_without_interrupting_old_session",
+          "deleted_original_extraction_does_not_break_stable_entry",
+          "native_health_failure_preserves_active_version",
+          "rollback_reprobes_previous_runtime_and_pauses_auto_update",
+          "private_settings_preserved",
+          "bundled_cli_dispatch",
+          "frozen_preview_daemon_dispatch",
+          "bundled_ffmpeg_h264_filter_scale_and_jpeg_decode",
+          "ocr_omitted_by_default_optional_component_verified_and_bad_update_refused",
+          "precompiled_ocr_without_swift_compiler",
+          "packaged_plugin_first_install_and_clean_stdio_with_stubbed_download_transport",
+          "private_plugin_bootstrap_with_stubbed_github_cli_and_clean_stdio"
+        ],
+        "phone_actions": false,
+        "model_calls": false,
+        "runtime_system_tools_removed_from_PATH": true,
+        "bootstrap_download_transport": "local stub; production URLs checked",
+        "runtime_sha256": "bb45b0f3fa9beba629a533ff5994f8653c404cc7748203991ed5472c30f05161",
+        "job_id": 127785046865,
+        "result": "passed"
+      }
+    ],
+    "scope": "Recorded completed platform snapshots from this run; it also exposed the Windows bootstrap failure retained below. These are not a claim that the whole run passed."
+  },
+  "retained_initial_failures": [
+    "Optional gdbm was built into the first local uv-managed Python. Those diagnostic artifacts are not approved; the builder now requires excludable DBM/readline and inventories native files.",
+    "Windows initially selected the wrong Bash path; use the MSYS2 action-provided installation path.",
+    "A Windows upstream FFmpeg download timed out; one verified input job now supplies all native jobs.",
+    "Windows make required the ffmpeg.exe target rather than ffmpeg.",
+    "Git autocrlf changed pinned license hashes on Windows; preserve upstream bytes with attributes and a real checkout regression.",
+    "Windows MCP initialized but HTML resource reading failed with a charmap decoding error; explicitly read UTF-8 in MCP and HTTP preview and add two regressions.",
+    "The first local source-distribution check included the custom .build-venv from the build sandbox. A separate clean index export, without build environments, passed wheel/sdist/plugin construction.",
+    "Windows PowerShell 5.1 bootstrap inherited a host module environment without Get-FileHash; compute SHA256 and extract ZIPs through .NET instead.",
+    "On the native PowerShell path, core health/MCP/upgrade checks completed before the initial-bootstrap failure; the run as a whole is not counted as passing."
+  ],
+  "limits": [
+    "No phone actions, real device video, Jev calls or model performance comparisons in this package acceptance.",
+    "Bootstrap download transport is stubbed locally; a live release download cannot be accepted until native assets are published.",
+    "Current MCP processes are not hot-replaced; the next connection uses the promoted version.",
+    "Existing runtime directories are retained. A forced process exit can leave a lock that requires operator verification before cleanup.",
+    "macOS and Windows packages are unsigned. New-user OS security prompts and OEM USB drivers were not accepted in CI.",
+    "Licensing evidence is scoped to current declarations, build configuration and collected notices; not blanket legal certification of every static native dependency."
+  ],
+  "installation_policy": "Agent selects source or optional standalone runtime from the host environment; reuse healthy installs",
+  "project_license": {
+    "spdx": "MIT",
+    "copyright": "Copyright (c) 2026 Archship",
+    "verified_in_source_and_native_archives": true
+  },
+  "latest_validation": "https://github.com/arcships/android-use/pull/1/checks"
+}
