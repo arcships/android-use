@@ -48,9 +48,15 @@ Available in v0.7.0 as separate source-plugin, lightweight Dim-plugin and native
 
 **Start in Dim Agent Desktop on the computer connected to your Android phone.** Install Android Use once, then describe tasks in the chat and follow the live phone view in the right panel. Jev is optional; your existing Agent can make decisions without an extra model key.
 
+**Install from the plugin marketplace.** In Dim Agent, open **Plugins (插件) → Plugin Marketplace (插件市场)**, search for **AndroidUse**, and click **+** to install. A checkmark means the plugin is already installed.
+
+![AndroidUse in the Dim Agent plugin marketplace](docs/images/dim-plugin-marketplace.png)
+
 **1. Connect your phone.** Enable Developer options and USB debugging, connect a data cable, accept the debugging prompt, and keep the phone unlocked. ADB must be available on the computer where Dim executes commands. For a remote Dim session, connect the phone to that execution host.
 
-**2. Ask Dim Agent to install and configure it.** Paste this into a chat with local terminal access:
+**2. Let Dim Agent finish setup.** If installed from the marketplace, ask the Agent to reuse the installed AndroidUse plugin, check dependencies and the device connection, verify READY, and open the live screen. Keep the existing MCP registration.
+
+For installation from GitHub, paste this into a chat with local terminal access:
 
 ```text
 Install Android Use for Dim Agent on this computer:
