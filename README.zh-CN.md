@@ -1,6 +1,6 @@
 <div align="center">
   <h1><img src="docs/images/hero.png" alt="Android Use：Agent 规划，可选 Jev 决策，Android Use 校验与执行。" width="100%" /></h1>
-  <p><strong>让你的 Agent，真正操作 Android。</strong><br/>标准 MCP 接入，实时画面跟随，可选 Jev 决策。</p>
+  <p><strong>让你的 Agent，真正操作 Android。</strong><br/>在 Dim Agent 中下达任务，实时画面跟随，可选 Jev 决策。</p>
   <p>
     <a href="https://github.com/arcships/android-use/actions/workflows/test.yml"><img src="https://github.com/arcships/android-use/actions/workflows/test.yml/badge.svg" alt="自动化测试" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT 许可证" /></a>
@@ -8,12 +8,12 @@
     <a href="#mcp-客户端支持"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="标准 stdio MCP" /></a>
   </p>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
-  <p><a href="#快速开始"><strong>开始使用 →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.6.2">下载 v0.6.2</a> · <a href="#在屏幕中启用-jev">配置 Jev</a> · <a href="docs/guide.zh-CN.md">使用指南</a> · <a href="https://github.com/arcships/android-use/issues">反馈问题</a></p>
+  <p><a href="#快速开始"><strong>在 Dim Agent 中使用 →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.6.2">下载 v0.6.2</a> · <a href="#在屏幕中启用-jev">配置 Jev</a> · <a href="docs/guide.zh-CN.md">使用指南</a> · <a href="https://github.com/arcships/android-use/issues">反馈问题</a></p>
 </div>
 
-## 把 Android 接入你的 Agent 工作流
+## 在 Dim Agent 中，直接完成 Android 任务
 
-Android Use 通过**标准 MCP**，让 Agent 操作你自己的 Android 手机或模拟器：读屏、定位、点击、输入、滚动，再核对结果。实时手机画面让过程看得见。
+Android Use 把你自己的 Android 手机或模拟器接入 **Dim Agent**，也通过**标准 MCP**支持其他兼容客户端：读屏、定位、点击、输入、滚动，再核对结果。实时手机画面让过程看得见。
 
 需要连续判断下一步时，可启用 **Jev**：Agent 保留规划与最终验收，Jev 选择下一步候选，Android Use 校验并执行。
 
@@ -22,6 +22,72 @@ Android Use 通过**标准 MCP**，让 Agent 操作你自己的 Android 手机�
 > “用我提供的文字填写资料，核对输入，保存本地草稿。”
 
 **无需 root、Appium、签名配置或键盘 APK。** 已包含编译好的界面，通过 USB 或已授权的无线 ADB 连接。
+
+## 快速开始
+
+### 在 Dim Agent 中使用
+
+**在连接 Android 手机的电脑上打开 Dim Agent 桌面端。** 安装一次 Android Use，之后在聊天中描述任务，在右侧手机画面跟随执行过程。Jev 可选；不配置额外模型 Key，也能由当前 Agent 决策。
+
+**1. 连接手机。** 开启开发者选项和 USB 调试，插入数据线，在手机上接受调试授权并保持解锁。ADB 需要运行在 Dim 实际执行命令的电脑上；如果使用远程会话，手机应连接到那台执行主机。
+
+**2. 让 Dim Agent 完成安装配置。** 将下面整段发到有本机终端权限的聊天中：
+
+```text
+请在这台电脑上为 Dim Agent 安装并配置 Android Use：
+https://github.com/arcships/android-use
+
+先阅读 README.md、docs/guide.zh-CN.md 和 skills/android-use/SKILL.md。
+复用已有安装，保留其他 MCP 服务和未提交改动。
+检查 Git、uv、ADB、ffmpeg，从官方来源补齐依赖。
+用 scripts/install.py install --source . 创建固定入口的独立运行时。
+把返回的 mcp_config 注册为 Dim 的本地 stdio MCP，名称 android_use；
+使用 Dim 的 MCP 管理或 dim mcp add，先检查已有注册，避免重复配置。
+发现设备，明确选择我的目标手机，先调用 aua_setup(action="status")，
+仅在服务缺失时启动，再实际验证 aua_ready 返回 ready=true。
+调用 aua_screen 在 Dim 右侧打开实时手机画面，并检查画面有更新。
+工具尚未加载时，重载 MCP 或新建聊天，再次核对工具是否可用。
+请实际执行安装并报告结果；手机授权和解锁由我处理，暂不启用 Jev。
+```
+
+<details>
+<summary>手动配置 Dim：使用固定 MCP 入口</summary>
+
+准备依赖并[克隆仓库](#或者手动安装)，在仓库根目录执行：
+
+```bash
+uv run --no-project --python 3.13 python scripts/install.py install --source .
+```
+
+返回的 JSON 包含 `mcp_config.command` 和 `mcp_config.args`。在 Dim 的 **MCP 管理**中添加**本地 stdio** 服务，名称填 `android_use`，命令与参数按返回值逐项填写，保持参数顺序。安装器会创建独立运行时，真实 MCP 握手通过后才切换版本。
+
+已安装 Dim CLI 时，也可使用下方命令。两处带引号的占位路径分别替换为安装器返回的 `command` 和 `args[0]`：
+
+```bash
+dim mcp add --scope user android_use -- \
+  "/absolute/path/from/mcp_config.command" \
+  "/absolute/path/from/mcp_config.args[0]" serve
+dim mcp test android_use --json
+```
+
+检查 MCP 测试返回的工具列表是否非空；部分 Dim CLI 版本会返回 `success=true`、`tools=[]`，不能据此判断工具已加载。请在新的 Dim 聊天中实际调用 `aua_setup` 和 `aua_ready`。已有 Android Use 注册时，先检查原条目再配置。[升级与回退 →](docs/upgrading.md#中文)
+
+</details>
+
+**3. 发出第一个任务。** 工具加载完成后，在聊天中说：
+
+> 使用 Android Use 检查手机 READY，打开实时画面，再进入设置读取电池电量，不修改任何设置。
+
+Dim Agent 会调用 Android 工具，通过 `aua_screen` 在桌面端右侧打开画面。你可以旁观，也可以点击、滑动、返回、回到主屏或复制画面。宿主不能内嵌时，让 Agent 在同一电脑的浏览器中打开返回的本机预览 URL。
+
+| 在 Dim Agent 中做什么 | 可以直接这样说 |
+| --- | --- |
+| 读屏与导航 | “打开设置，找到电池，读取当前使用情况。” |
+| 填写草稿 | “输入我提供的文字，回读核对，保存本地草稿。” |
+| 跨 App 比价 | “在美团和淘宝比较同一款饮品的外送到手价，计入配送和打包费，只报告价格，不下单。” |
+| Agent + Jev 协作 | “短流程的下一步判断交给 Jev，规划和异常恢复由 Agent 负责，最后独立核对结果。” |
+
+**可选：开启 Jev。** 在手机画面中点击 **Jev**，填写 TypeSafe API Key，再点**验证并启用**，新任务立即生效，无需配置 `TEXT_MODEL_*`。Dim Agent 继续负责规划、编写文本和最终验收。[Jev 设置与发送数据说明 →](#在屏幕中启用-jev)
 
 ## 像拿着手机一样，看见每一步
 
@@ -73,7 +139,7 @@ Android Use 通过**标准 MCP**，让 Agent 操作你自己的 Android 手机�
 | **输入与核对** | 中文、emoji、替换/追加和原生回读；稳定输入框可一次决策完成聚焦→输入→回读。 |
 | **清楚交接控制** | 认证由用户接管；保留 partial/uncertain 动作账本，不自动重放。 |
 
-## 快速开始
+## 其他客户端与手动安装
 
 ### 让 Agent 自己安装
 
@@ -164,6 +230,7 @@ uv run android-use ready
 
 | 接入方式 | 能力与要求 |
 | --- | --- |
+| **Dim Agent 桌面端** | 本地 stdio 工具、右侧实时手机画面，以及可选 Agent + Jev 协作。[开始使用](#快速开始)。 |
 | **本地 stdio MCP** | 手机控制工具及标准文本 / 图片返回。Claude Desktop、Cursor、VS Code / Copilot 等使用各自的[本地命令配置](docs/guide.zh-CN.md#其他-mcp-客户端)。 |
 | **MCP Apps** | 宿主支持该扩展时，可内嵌实时屏幕；布局和剪贴板权限取决于宿主。 |
 | **本机浏览器** | 无内嵌界面时，执行 `uv run android-use screen`，打开返回的本机 URL。 |

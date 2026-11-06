@@ -1,6 +1,6 @@
 <div align="center">
   <h1><img src="docs/images/hero.png" alt="Android Use: Agent plans, optional Jev decides, Android Use validates and executes." width="100%" /></h1>
-  <p><strong>Your agent. Now on Android.</strong><br/>Standard MCP control. A live screen. Optional Jev decisions.</p>
+  <p><strong>Your agent. Now on Android.</strong><br/>Use it in Dim Agent. Follow the live screen. Add Jev when you need it.</p>
   <p>
     <a href="https://github.com/arcships/android-use/actions/workflows/test.yml"><img src="https://github.com/arcships/android-use/actions/workflows/test.yml/badge.svg" alt="Tests" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License" /></a>
@@ -8,12 +8,12 @@
     <a href="#mcp-client-support"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="Standard stdio MCP" /></a>
   </p>
   <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
-  <p><a href="#quick-start"><strong>Get started →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.6.2">Download v0.6.2</a> · <a href="#enable-jev-from-the-screen">Set up Jev</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/arcships/android-use/issues">Report an issue</a></p>
+  <p><a href="#quick-start"><strong>Use in Dim Agent →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.6.2">Download v0.6.2</a> · <a href="#enable-jev-from-the-screen">Set up Jev</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/arcships/android-use/issues">Report an issue</a></p>
 </div>
 
-## Bring Android into your agent workflow
+## Android tasks, inside Dim Agent
 
-Android Use connects your agent to your own Android phone or emulator through **standard MCP**. Read the screen, find a control, tap, type, scroll, and check the result. Follow the process in a live phone view.
+Android Use brings your own Android phone or emulator into **Dim Agent**, with **standard MCP** support for other compatible clients. Read the screen, find a control, tap, type, scroll, and check the result. Follow the process in a live phone view.
 
 For workflows that need repeated UI decisions, enable **Jev**. Your Agent keeps planning and final verification; Jev selects the next candidate; Android Use validates and executes it.
 
@@ -22,6 +22,73 @@ For workflows that need repeated UI decisions, enable **Jev**. Your Agent keeps 
 > “Fill in the profile with the text I provide, verify it, and save a local draft.”
 
 **No root, Appium, signing setup, or keyboard APK.** The compiled UI is included. Use USB or already-authorized wireless ADB.
+
+## Quick start
+
+### Use in Dim Agent
+
+**Start in Dim Agent Desktop on the computer connected to your Android phone.** Install Android Use once, then describe tasks in the chat and follow the live phone view in the right panel. Jev is optional; your existing Agent can make decisions without an extra model key.
+
+**1. Connect your phone.** Enable Developer options and USB debugging, connect a data cable, accept the debugging prompt, and keep the phone unlocked. ADB must be available on the computer where Dim executes commands. For a remote Dim session, connect the phone to that execution host.
+
+**2. Ask Dim Agent to install and configure it.** Paste this into a chat with local terminal access:
+
+```text
+Install Android Use for Dim Agent on this computer:
+https://github.com/arcships/android-use
+
+Read README.md, docs/guide.md and skills/android-use/SKILL.md.
+Reuse existing installations and preserve other MCP servers and uncommitted work.
+Check Git, uv, ADB and ffmpeg; install missing dependencies from official sources.
+Use scripts/install.py install --source . to create a stable managed runtime.
+Register its returned mcp_config as Dim's local stdio server named android_use;
+use Dim's MCP management or dim mcp add. Check for duplicate registrations first.
+Discover devices, select my intended phone, call aua_setup(action="status"),
+start the service only if absent, then verify aua_ready reports ready=true.
+Call aua_screen to open the live phone view in Dim's right panel and check for
+fresh video. If tools are not loaded, reload MCP or start a new chat and recheck.
+Please perform the setup and report the results. I will handle phone authorization
+and unlocking. Leave Jev disabled for now.
+```
+
+<details>
+<summary>Manual Dim setup — stable MCP entry</summary>
+
+Prepare the dependencies and [clone the repository](#or-install-manually), then run from its root:
+
+```bash
+uv run --no-project --python 3.13 python scripts/install.py install --source .
+```
+
+The JSON result contains `mcp_config.command` and `mcp_config.args`. In Dim's **MCP management**, add a **local stdio** server named `android_use`, using that command and the arguments in their original order. The installer creates an independent runtime and verifies its MCP handshake before switching versions.
+
+With the Dim CLI, the equivalent is below. Replace the two quoted placeholders with the exact `command` and `args[0]` returned by the installer:
+
+```bash
+dim mcp add --scope user android_use -- \
+  "/absolute/path/from/mcp_config.command" \
+  "/absolute/path/from/mcp_config.args[0]" serve
+dim mcp test android_use --json
+```
+
+Check that the MCP test returns a non-empty tool list. Some Dim CLI versions can return `success=true` with `tools=[]`; that alone does not confirm tools are loaded. In a new Dim chat, actually call `aua_setup` and `aua_ready`. If Android Use is already registered, inspect that entry before adding another. [Upgrade and rollback →](docs/upgrading.md)
+
+</details>
+
+**3. Give it a first task.** Once the tools are loaded, send:
+
+> Use Android Use to check my phone is READY, open the live screen, then open Settings and report the battery level. Do not change any settings.
+
+Dim Agent calls the Android tools and opens the screen through `aua_screen`. In Desktop, the view appears in the right panel; you can watch, tap or swipe, use Back/Home and copy a frame. If the host cannot embed the view, ask it to open the returned local preview URL in a browser on the same computer.
+
+| Try in Dim Agent | Example request |
+| --- | --- |
+| Read and navigate | “Open Settings, find Battery, and read the current usage.” |
+| Fill a draft | “Enter the text I provide, read it back, and save a local draft.” |
+| Compare prices | “Compare the same drink in Meituan and Taobao for delivery, including delivery and packaging fees. Report the totals without ordering.” |
+| Use Agent + Jev | “Use Jev for short UI subgoals, keep planning and recovery with the Agent, and verify the final result yourself.” |
+
+**Optional: enable Jev.** Click **Jev** in the phone view, enter a TypeSafe API Key, then click **验证并启用** (Verify & enable). New tasks use the setting immediately; no `TEXT_MODEL_*` configuration is needed. Dim Agent keeps planning, text composition and final verification. [Jev settings and data sent →](#enable-jev-from-the-screen)
 
 ## A phone screen you can follow
 
@@ -73,7 +140,7 @@ Enabling Jev sends the subgoal, visible UI text and supplied input values to Typ
 | **Input with verification** | Unicode/emoji, replace/append and native text readback. A stable field can offer one focus → input → readback decision. |
 | **Keep control clear** | User takeover for authentication, partial/uncertain action ledgers and no automatic replay. |
 
-## Quick start
+## Other clients and manual setup
 
 ### Let your agent install it
 
@@ -165,6 +232,7 @@ Look for **`ready=true`**. With multiple devices, [select the target explicitly]
 
 | Connection | What to expect |
 | --- | --- |
+| **Dim Agent Desktop** | Local stdio tools, an embedded phone view in the right panel, and optional Agent + Jev workflows. [Get started](#quick-start). |
 | **Local stdio MCP** | Phone-control tools and standard text/image responses. [Claude Desktop](docs/guide.md#claude-desktop), [Cursor](docs/guide.md#cursor), [VS Code / Copilot](docs/guide.md#vs-code--github-copilot), and other clients can use their local-command configuration. |
 | **MCP Apps** | An embedded live-screen view when the host supports the extension. Layout and clipboard permissions depend on the host. |
 | **Local browser** | Run `uv run android-use screen` and open the returned URL when an embedded view is unavailable. |
