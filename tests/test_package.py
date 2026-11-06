@@ -5,9 +5,12 @@ import sys
 from pathlib import Path
 from zipfile import ZipFile
 
+import pytest
 
-def test_release_archive_is_an_installable_marketplace_without_local_state(tmp_path):
-    root = tmp_path / "release source"
+
+@pytest.mark.parametrize("parent", ["normal", "test-results"])
+def test_release_archive_is_an_installable_marketplace_without_local_state(tmp_path, parent):
+    root = tmp_path / parent / "release source"
     script = root / "scripts/package.py"
     script.parent.mkdir(parents=True)
     shutil.copyfile(Path(__file__).resolve().parents[1] / "scripts/package.py", script)

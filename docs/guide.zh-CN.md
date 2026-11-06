@@ -46,8 +46,8 @@ https://github.com/JackCaow/android-use
 ### Agent 的执行顺序
 
 1. **检查并复用环境。** 检查 `git`、`uv`、`adb`、`ffmpeg` 和 `codex`，按本机系统补齐缺失依赖。Python 推荐使用下方已验证的 3.13；普通安装无需 Node.js。仓库已存在时先检查状态，保留用户未提交内容。
-2. **在仓库根目录安装并打包。** 执行 `uv sync --frozen --python 3.13`，再执行 `uv run python scripts/package.py`。确认 `dist/android-use/.codex-plugin/plugin.json` 和 `.mcp.json` 已生成；市场指向此目录，不能省略打包步骤。
-3. **安装并核对插件。** 检查现有市场后，在该仓库根目录执行 `codex plugin marketplace add .` 和 `codex plugin add android-use@android-use-local`；用下面的命令核对本地市场来源、已安装插件版本及路径。若已有同名市场指向另一个目录，先核对已有安装，避免重复克隆或覆盖无关配置。
+2. **检查升级配置。** 执行 `uv run --no-project --python 3.13 python scripts/install.py doctor`，识别同名 MCP、重复插件、项目覆盖和已失效路径。
+3. **安装并核对插件。** 执行 `uv run --no-project --python 3.13 python scripts/install.py install --source . --codex`。已有注册需要显式加 `--migrate-codex`；安装器先准备独立运行时并验证真实 MCP 握手，再切换固定入口和注册 `android-use@android-use-managed`，保留其他服务与设备/Jev 设置。
 
    ```bash
    codex plugin marketplace list
@@ -185,35 +185,32 @@ uv run android-use --serial SERIAL ready
 
 ### 安装发行包 ZIP
 
-从 [GitHub Release v0.6.1](https://github.com/JackCaow/android-use/releases/tag/v0.6.1) 下载 `android-use-0.6.1-plugin.zip` 和 `SHA256SUMS`。ZIP 已含编译好的界面、Python 源码与锁文件、技能、双语文档和可注册的本地市场；不包含 Python、ADB、ffmpeg，先按上文准备依赖。首次安装需要联网下载 Python 依赖。
-
-macOS / Linux 下载后执行：
+从 [GitHub Release v0.6.2](https://github.com/JackCaow/android-use/releases/tag/v0.6.2) 下载 `android-use-0.6.2-plugin.zip` 和 `SHA256SUMS`。包内包含编译好的界面、源码与锁文件、固定入口安装器、技能和双语说明；先准备 uv、ADB、ffmpeg 和 Codex CLI，首次安装需下载 Python 依赖。
 
 ```bash
-# 先校验下载文件；Linux 也可使用 sha256sum -c SHA256SUMS。
-shasum -a 256 -c SHA256SUMS
-unzip android-use-0.6.1-plugin.zip -d android-use-v0.6.1
-cd android-use-v0.6.1
-uv sync --frozen --python 3.13
-codex plugin marketplace add .
-codex plugin add android-use@android-use-release
+shasum -a 256 -c SHA256SUMS  # Linux: sha256sum -c SHA256SUMS
+unzip android-use-0.6.2-plugin.zip -d android-use-v0.6.2
+cd android-use-v0.6.2
+uv run --no-project --python 3.13 python scripts/install.py doctor
+uv run --no-project --python 3.13 python scripts/install.py install --source . --codex
 ```
 
-Windows 可用解压工具展开 ZIP，在该目录打开终端执行 uv / Codex 命令；Windows 真机操作尚未完成验收。安装后重新加载工具或新建聊天，启用 Android Use，再完成[手机连接与 READY](#首次连接手机)。发行包市场名为 `android-use-release`，源码市场仍为 `android-use-local`。ZIP 安装无需克隆仓库或再次运行打包脚本。
+从旧插件或手动 Codex MCP 迁移时，核对 doctor 结果并显式加 `--migrate-codex`。已使用托管入口则直接执行普通安装命令。安装成功后可清理解压目录和旧插件缓存；固定管理目录、Python 与 uv 仍需保留。[迁移、私有环境配置与失败恢复](upgrading.md#中文)。
+
+Windows 可用解压工具展开后执行 uv/Codex 命令；Windows 原生升级与设备操作尚未实测。安装后重载工具，核对实际版本、手机 READY 与实时画面。旧的 `android-use-release` 直接市场仍可使用，不要与托管插件同时启用。
 
 ### 从源码安装
 
 先完成上面的项目安装。在仓库根目录执行：
 
 ```bash
-uv run python scripts/package.py
-codex plugin marketplace add .
-codex plugin add android-use@android-use-local
+uv run --no-project --python 3.13 python scripts/install.py doctor
+uv run --no-project --python 3.13 python scripts/install.py install --source . --codex
 ```
 
-**不要跳过打包。** 本地市场的插件目录指向 `dist/android-use`，由 `scripts/package.py` 生成；该目录不随 Git 仓库提交。
+**v0.6.2 已包含：** 新安装器注册 `android-use@android-use-managed`，运行时和固定入口独立于版本缓存。已有安装需显式加 `--migrate-codex`；项目覆盖需先解决。[升级、迁移与回退](upgrading.md#中文)。旧开发市场 `android-use-local` 仍可手动打包使用，不要同时启用两种入口。
 
-安装后在客户端开启新聊天，选择 / 启用 Android Use。若工具未出现，重新加载客户端；支持本地插件目录的桌面客户端也可以在插件设置中选择 `Android Use Local` 来源。可用以下命令检查市场：
+安装后在客户端重载工具或开启新聊天，核对 `Android Use Managed` 来源及实际 MCP 版本。可用以下命令检查市场：
 
 ```bash
 codex plugin marketplace list
@@ -543,16 +540,16 @@ codex mcp add android_use -- uv run --frozen --directory /absolute/path/android-
 
 ## 更新
 
-在原来的本地仓库根目录执行：
+使用 [固定入口安装器](upgrading.md#中文)（v0.6.2 已包含）：
 
 ```bash
 git pull --ff-only
-uv sync --frozen
-uv run python scripts/package.py
-codex plugin add android-use@android-use-local
+uv run --no-project --python 3.13 python scripts/install.py install --source . --codex
 ```
 
-更新插件安装副本后，在客户端新建聊天或重新加载工具。只使用 CLI 或其他 MCP 客户端的用户执行前两条即可；其他 MCP 客户端还需重启 / 重新连接该服务，通常无需修改指向原仓库的启动配置。
+从旧插件或手动 Codex MCP 迁移时先运行 `doctor`，再显式加 `--migrate-codex`。其他客户端省略 `--codex`，使用输出中的固定 `mcp_config`。新运行时完成真实 MCP 握手才切换，后续删除旧源码、ZIP 解压目录或旧缓存不影响入口。更新后重载工具，核对实际版本和 READY。旧 v0.6.1 ZIP 不含安装器，可从当前仓库调用安装器并用 `--source` 指向旧包解压目录。
+
+仅用 CLI 可在固定仓库执行 `git pull --ff-only` 和 `uv sync --frozen`；独立 MCP 不要指向 Codex 版本缓存目录。
 
 ## 常见问题
 

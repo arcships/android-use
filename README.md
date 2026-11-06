@@ -8,7 +8,7 @@
     <a href="#mcp-client-support"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="Standard stdio MCP" /></a>
   </p>
   <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
-  <p><a href="#quick-start"><strong>Get started →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.6.1">Download v0.6.1</a> · <a href="#enable-jev-from-the-screen">Set up Jev</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/JackCaow/android-use/issues">Report an issue</a></p>
+  <p><a href="#quick-start"><strong>Get started →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.6.2">Download v0.6.2</a> · <a href="#enable-jev-from-the-screen">Set up Jev</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/JackCaow/android-use/issues">Report an issue</a></p>
 </div>
 
 ## Bring Android into your agent workflow
@@ -86,7 +86,7 @@ https://github.com/JackCaow/android-use
 Read README.md, docs/guide.md, and skills/android-use/SKILL.md first.
 Reuse existing installs and preserve uncommitted changes and other MCP servers.
 Check dependencies, install missing ones from official sources, and set up the
-current client's local stdio MCP connection. For Codex, build and install the plugin.
+current client's local stdio MCP connection. For Codex, use scripts/install.py to install a stable managed plugin; diagnose conflicts before migration.
 Discover devices, select the intended one, reuse a healthy service or start it once,
 and actually verify ready=true. Open the live screen and check whether video works.
 If new MCP tools are not loaded yet, use the CLI for setup and explain how to reload.
@@ -95,7 +95,7 @@ Ask me to handle USB authorization, unlocking, and required system permissions.
 Report what was installed, which checks passed, and any remaining steps.
 ```
 
-For a client without terminal access, use the manual path below. [Detailed agent setup →](docs/guide.md#agent-led-installation)
+For a client without terminal access, use the manual path below. [Stable upgrades and configuration migration →](docs/upgrading.md) [Detailed agent setup →](docs/guide.md#agent-led-installation)
 
 ### Or install manually
 
@@ -115,12 +115,11 @@ uv sync --frozen --python 3.13
 For a prebuilt plugin ZIP, follow the [release installation steps](docs/guide.md#install-the-release-zip). To install from a source checkout, run from the repository root with the Codex CLI installed:
 
 ```bash
-uv run python scripts/package.py
-codex plugin marketplace add .
-codex plugin add android-use@android-use-local
+uv run --no-project --python 3.13 python scripts/install.py doctor
+uv run --no-project --python 3.13 python scripts/install.py install --source . --codex
 ```
 
-Packaging creates the `dist/android-use` directory used by the local marketplace. Open a new chat or reload tools, then enable Android Use. [Codex guide →](docs/guide.md#codex-plugin)
+**Included in v0.6.2:** installs an independent runtime and a stable launcher, verifies a real MCP handshake before switching, and checks conflicting registrations. Existing installs need the explicit `--migrate-codex` flag. Keep keys/settings while removing versioned-cache dependencies. Reload tools afterward. [Upgrade, migration and rollback →](docs/upgrading.md)
 
 </details>
 
@@ -218,7 +217,7 @@ Development comparisons include **18 source-level trials** and **12 live Agent /
 
 ## Project status
 
-**v0.6.1 · MIT · 367 Python tests · 24 browser tests.** Emulator acceptance covers 15 real stdio MCP scenarios. Earlier physical-device acceptance covers Android 16 / Xiaomi 15 Ultra. New Jev setup and frame changes have local/emulator validation; other manufacturers, host versions and operating systems have different coverage. [Validation evidence →](docs/validation.md)
+**v0.6.2 · MIT · 392 Python tests · 24 browser tests.** Emulator acceptance covers 15 real stdio MCP scenarios. Earlier physical-device acceptance covers Android 16 / Xiaomi 15 Ultra. New Jev setup and frame changes have local/emulator validation; other manufacturers, host versions and operating systems have different coverage. [Validation evidence →](docs/validation.md)
 
 Multi-touch, arbitrary gesture paths, fine-grained text selection and custom-editor input fallbacks are not implemented. A matched UI condition proves that condition; the Agent must verify business outcomes. Control and preview run locally, and tool results are handled by your chosen client/model.
 

@@ -8,7 +8,7 @@
     <a href="#mcp-客户端支持"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="标准 stdio MCP" /></a>
   </p>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
-  <p><a href="#快速开始"><strong>开始使用 →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.6.1">下载 v0.6.1</a> · <a href="#在屏幕中启用-jev">配置 Jev</a> · <a href="docs/guide.zh-CN.md">使用指南</a> · <a href="https://github.com/JackCaow/android-use/issues">反馈问题</a></p>
+  <p><a href="#快速开始"><strong>开始使用 →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.6.2">下载 v0.6.2</a> · <a href="#在屏幕中启用-jev">配置 Jev</a> · <a href="docs/guide.zh-CN.md">使用指南</a> · <a href="https://github.com/JackCaow/android-use/issues">反馈问题</a></p>
 </div>
 
 ## 把 Android 接入你的 Agent 工作流
@@ -86,7 +86,7 @@ https://github.com/JackCaow/android-use
 先阅读 README.md、docs/guide.zh-CN.md 和 skills/android-use/SKILL.md。
 复用已有安装，保留未提交修改和其他 MCP 服务配置。
 检查依赖，从官方来源补齐缺项，为当前客户端配置本地 stdio MCP；
-如果使用 Codex，则打包并安装插件，其他客户端跳过插件打包与市场注册。
+如果使用 Codex，用 scripts/install.py 安装固定入口插件，先检查旧注册冲突；其他客户端使用安装器返回的稳定 MCP 配置。
 发现设备、明确选择目标，复用健康服务或启动一次，实际验证 ready=true。
 打开实时屏幕并检查画面；工具尚未加载时先用 CLI 配置，再说明如何重新加载。
 请实际完成安装，不要只给我手动操作教程。
@@ -114,12 +114,11 @@ uv sync --frozen --python 3.13
 预打包 ZIP 按[发行包安装步骤](docs/guide.zh-CN.md#安装发行包-zip)操作；从源码安装时，先安装 Codex CLI，再在仓库根目录运行：
 
 ```bash
-uv run python scripts/package.py
-codex plugin marketplace add .
-codex plugin add android-use@android-use-local
+uv run --no-project --python 3.13 python scripts/install.py doctor
+uv run --no-project --python 3.13 python scripts/install.py install --source . --codex
 ```
 
-打包会生成本地市场所需的 `dist/android-use`。在新聊天中启用 Android Use，或重新加载工具。[Codex 安装指南 →](docs/guide.zh-CN.md#安装-codex-插件)
+**v0.6.2 已包含：** 完整运行时复制到固定管理目录，真实 MCP 握手通过才切换；启动入口不依赖版本缓存和解压目录。已有安装需显式加 `--migrate-codex`，保留 Key 与原设置，并检查同名配置冲突。完成后重载工具。[升级、迁移与回退 →](docs/upgrading.md#中文)
 
 </details>
 
@@ -219,7 +218,7 @@ v0.5.0 通过 **277 项 Python 测试、17 项界面测试**。内置 OCR 目前
 
 ## 项目状态
 
-**v0.6.1 · MIT · 367 项 Python 测试 · 24 项浏览器测试。** 模拟器验收覆盖 15 项真实 stdio MCP 场景；已有 Android 16 / Xiaomi 15 Ultra 真机验收。新增 Jev 设置和机身界面在本机/模拟器验证，其他厂商、宿主版本及系统的覆盖范围另见[验证记录](docs/validation.md)。
+**v0.6.2 · MIT · 392 项 Python 测试 · 24 项浏览器测试。** 模拟器验收覆盖 15 项真实 stdio MCP 场景；已有 Android 16 / Xiaomi 15 Ultra 真机验收。新增 Jev 设置和机身界面在本机/模拟器验证，其他厂商、宿主版本及系统的覆盖范围另见[验证记录](docs/validation.md)。
 
 多指手势、任意轨迹、精细文本选区及自绘编辑器输入兜底尚未实现。UI 条件满足仅证明该条件，Agent 仍需验收业务结果。控制和预览运行于本机，工具结果由你选择的客户端与模型处理。
 
