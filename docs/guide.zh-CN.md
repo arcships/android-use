@@ -46,8 +46,8 @@ https://github.com/JackCaow/android-use
 ### Agent 的执行顺序
 
 1. **检查并复用环境。** 检查 `git`、`uv`、`adb`、`ffmpeg` 和 `codex`，按本机系统补齐缺失依赖。Python 推荐使用下方已验证的 3.13；普通安装无需 Node.js。仓库已存在时先检查状态，保留用户未提交内容。
-2. **在仓库根目录安装并打包。** 执行 `uv sync --frozen --python 3.13`，再执行 `uv run python scripts/package.py`。确认 `dist/android-use/.codex-plugin/plugin.json` 和 `.mcp.json` 已生成；市场指向此目录，不能省略打包步骤。
-3. **安装并核对插件。** 检查现有市场后，在该仓库根目录执行 `codex plugin marketplace add .` 和 `codex plugin add android-use@android-use-local`；用下面的命令核对本地市场来源、已安装插件版本及路径。若已有同名市场指向另一个目录，先核对已有安装，避免重复克隆或覆盖无关配置。
+2. **检查升级配置。** 执行 `uv run --no-project --python 3.13 python scripts/install.py doctor`，识别同名 MCP、重复插件、项目覆盖和已失效路径。
+3. **安装并核对插件。** 执行 `uv run --no-project --python 3.13 python scripts/install.py install --source . --codex`。已有注册需要显式加 `--migrate-codex`；安装器先准备独立运行时并验证真实 MCP 握手，再切换固定入口和注册 `android-use@android-use-managed`，保留其他服务与设备/Jev 设置。
 
    ```bash
    codex plugin marketplace list
@@ -206,14 +206,13 @@ Windows 可用解压工具展开 ZIP，在该目录打开终端执行 uv / Codex
 先完成上面的项目安装。在仓库根目录执行：
 
 ```bash
-uv run python scripts/package.py
-codex plugin marketplace add .
-codex plugin add android-use@android-use-local
+uv run --no-project --python 3.13 python scripts/install.py doctor
+uv run --no-project --python 3.13 python scripts/install.py install --source . --codex
 ```
 
-**不要跳过打包。** 本地市场的插件目录指向 `dist/android-use`，由 `scripts/package.py` 生成；该目录不随 Git 仓库提交。
+**v0.6.1 之后的源码更新：** 新安装器注册 `android-use@android-use-managed`，运行时和固定入口独立于版本缓存。已有安装需显式加 `--migrate-codex`；项目覆盖需先解决。[升级、迁移与回退](upgrading.md#中文)。旧开发市场 `android-use-local` 仍可手动打包使用，不要同时启用两种入口。
 
-安装后在客户端开启新聊天，选择 / 启用 Android Use。若工具未出现，重新加载客户端；支持本地插件目录的桌面客户端也可以在插件设置中选择 `Android Use Local` 来源。可用以下命令检查市场：
+安装后在客户端重载工具或开启新聊天，核对 `Android Use Managed` 来源及实际 MCP 版本。可用以下命令检查市场：
 
 ```bash
 codex plugin marketplace list
@@ -543,16 +542,16 @@ codex mcp add android_use -- uv run --frozen --directory /absolute/path/android-
 
 ## 更新
 
-在原来的本地仓库根目录执行：
+使用 [固定入口安装器](upgrading.md#中文)（v0.6.1 之后的源码更新）：
 
 ```bash
 git pull --ff-only
-uv sync --frozen
-uv run python scripts/package.py
-codex plugin add android-use@android-use-local
+uv run --no-project --python 3.13 python scripts/install.py install --source . --codex
 ```
 
-更新插件安装副本后，在客户端新建聊天或重新加载工具。只使用 CLI 或其他 MCP 客户端的用户执行前两条即可；其他 MCP 客户端还需重启 / 重新连接该服务，通常无需修改指向原仓库的启动配置。
+从旧插件或手动 Codex MCP 迁移时先运行 `doctor`，再显式加 `--migrate-codex`。其他客户端省略 `--codex`，使用输出中的固定 `mcp_config`。新运行时完成真实 MCP 握手才切换，后续删除旧源码、ZIP 解压目录或旧缓存不影响入口。更新后重载工具，核对实际版本和 READY。旧 v0.6.1 ZIP 不含安装器，可从当前仓库调用安装器并用 `--source` 指向旧包解压目录。
+
+仅用 CLI 可在固定仓库执行 `git pull --ff-only` 和 `uv sync --frozen`；独立 MCP 不要指向 Codex 版本缓存目录。
 
 ## 常见问题
 
