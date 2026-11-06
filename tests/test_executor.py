@@ -494,3 +494,16 @@ def test_one_step_reads_only_bracketed_snapshots(goal_rig):
     assert events[: events.index("tap") + 1] == snapshot_reads * 2 + ["tap"]
     # Effect snapshot, then one context check guarding the returned observation.
     assert events[events.index("tap") + 1 :] == snapshot_reads + ["locked"]
+
+
+def test_jev_policy_path_records_variation(goal_rig):
+    runtime, backend = goal_rig
+    tap = backend.tap
+    def finish(*args):
+        tap(*args)
+        backend.xml = XML.replace("Show", "Done")
+    backend.tap = finish
+    result = run(runtime, Policy(), completion={"text": "Done"},
+                 variation={"seed": 9, "delay_max_seconds": 0.0})
+    assert result["verified"] and len(backend.actions) == 1
+    assert result["steps"][0]["variation"]["seed"] == 9

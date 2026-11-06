@@ -65,6 +65,15 @@ class LocateArgs(StrictModel):
     timeout_seconds: Annotated[float, Field(gt=0, le=60)] = 20.0
 
 
+class InteractionVariation(StrictModel):
+    """Opt-in bounded variation for interaction testing, not an anti-detection promise."""
+
+    seed: Annotated[int, Field(ge=0, le=4294967295)] | None = None
+    delay_max_seconds: Annotated[float, Field(ge=0, le=0.5)] = 0.15
+    point_radius: Annotated[int, Field(ge=0, le=16)] = 4
+    duration_fraction: Annotated[float, Field(ge=0, le=0.25)] = 0.15
+
+
 class TapArgs(ActionArgs):
     selector: Selector | None = None
     x: Annotated[int, Field(ge=0)] | None = None
@@ -72,9 +81,12 @@ class TapArgs(ActionArgs):
     # Jev Box: screenshot -> located box -> pixel recheck -> one tap at the box center.
     visual: LocateArgs | None = None
     observation_id: str | None = None
+    variation: InteractionVariation | None = None
 
     @model_validator(mode="after")
     def target(self):
+        if self.visual is not None and self.variation is not None:
+            raise ValueError("Visual taps require the exact pixel-validated execution path")
         given = [self.selector is not None, self.visual is not None]
         if self.x is not None or self.y is not None:
             if any(given) or self.x is None or self.y is None:
@@ -102,6 +114,7 @@ class DragArgs(ActionArgs):
     end: Point
     duration: Annotated[float, Field(ge=0.1, le=3)] = 0.6
     observation_id: str | None = None
+    variation: InteractionVariation | None = None
 
     @model_validator(mode="after")
     def distinct_points(self):
@@ -129,6 +142,7 @@ class SwipeArgs(ActionArgs):
     region: Region | None = None
     duration: Annotated[float, Field(ge=0.1, le=2)] = 0.4
     observation_id: str | None = None
+    variation: InteractionVariation | None = None
 
 
 class ScrollUntilArgs(StrictModel):
@@ -140,6 +154,7 @@ class ScrollUntilArgs(StrictModel):
     timeout_seconds: Annotated[float, Field(ge=0, le=20)] = 20.0
     settle_seconds: Annotated[float, Field(ge=0.1, le=2)] = 0.4
     observe: Observe = "tree"
+    variation: InteractionVariation | None = None
 
 
 class PressArgs(ActionArgs):
@@ -181,6 +196,7 @@ class ExecuteGoalArgs(StrictModel):
     effect_timeout_seconds: Annotated[float, Field(ge=0.1, le=3)] = 1.0
     # auto: Jev when enabled with a key, otherwise the host Agent via goal_decide.
     decider: Literal["auto", "jev", "host"] = "auto"
+    variation: InteractionVariation | None = None
 
 
 class GoalDecideArgs(StrictModel):

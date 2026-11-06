@@ -20,6 +20,7 @@ from .backend import (
     viewport_from_info,
     write_config,
 )
+from .interaction import Variation
 from .models import ARG_MODELS, BatchStep, Selector, WaitCondition
 from .tree import compact, in_viewport, matches, parse_tree, tap_point
 
@@ -623,6 +624,47 @@ class Runtime:
         self._validate_point((x, y))
         return x, y
 
+    def _variation_prepare(self, options, sampler=None):
+        if options is None:
+            return None
+        sampler = sampler or Variation(options)
+        delay = sampler.delay()
+        if self._deadline is not None and time.monotonic() + delay >= self._deadline:
+            raise UseError("interaction_time_budget", "Variation exceeds remaining time budget")
+        if delay:
+            context = self._checked_context()
+            self._check_paused()
+            nodes = self._nodes()
+            self._usable()
+            if any(n["password"] and in_viewport(n, context["size"]) for n in nodes):
+                raise UseError("authentication_required", "Pause for authentication")
+            end = time.monotonic() + delay
+            while time.monotonic() < end:
+                self._usable()
+                time.sleep(min(.05, max(0, end - time.monotonic())))
+            self._usable()
+            if context != self._checked_context():
+                raise UseError("interaction_context_changed", "App or display changed during delay")
+            after = self._nodes()
+            self._usable()
+            if nodes != after:
+                raise UseError("interaction_context_changed", "UI changed during delay; observe again")
+        if self._deadline is not None and time.monotonic() >= self._deadline:
+            raise UseError("interaction_time_budget", "Variation consumed remaining time budget")
+        return sampler
+
+    @staticmethod
+    def _variation_result(result, sampler):
+        if sampler is not None:
+            result["variation"] = dict(sampler.audit)
+        return result
+
+    def _variation_before_write(self, sampler):
+        if sampler is not None:
+            self._usable()
+            if self._deadline is not None and time.monotonic() >= self._deadline:
+                raise UseError("interaction_time_budget", "No budget remains for this action")
+
     def _validate_point(self, point):
         w, h = self.backend.size()
         if not (0 <= point[0] < w and 0 <= point[1] < h):
@@ -639,16 +681,34 @@ class Runtime:
         kind="tap",
         duration=None,
         interval=None,
+        variation=None,
     ):
+        if variation is not None:
+            self._check_observation(observation_id)
+        sampled = self._variation_prepare(variation)
         self._check_observation(observation_id)
-        x, y = self._target_point(selector, x, y)
+        if sampled is not None and selector:
+            node = self._resolve(selector)
+            size = self.backend.size()
+            point = tap_point(node, size)
+            x, y = sampled.point(point, node["rect"], size)
+            self._validate_point((x, y))
+        else:
+            x, y = self._target_point(selector, x, y)
+        if sampled is not None:
+            sampled.audit["point"] = [x, y]
+            if kind == "long_press":
+                duration = sampled.duration(duration, (.5, 3))
+            elif kind == "double_tap":
+                interval = sampled.duration(interval, (.04, .25), "interval")
+        self._variation_before_write(sampled)
         if kind == "long_press":
             self._write(self.backend.long_press, x, y, duration)
         elif kind == "double_tap":
             self._write(self.backend.double_tap, x, y, interval)
         else:
             self._write(self.backend.tap, x, y)
-        return self._after(observe, wait_for)
+        return self._variation_result(self._after(observe, wait_for), sampled)
 
     def _visual_tap(self, op, args, policy):
         from .vision import visual_point
@@ -661,15 +721,26 @@ class Runtime:
         result["visual"] = located
         return result
 
-    def _drag(self, start, end, duration, observation_id, observe, wait_for=None):
+    def _drag(self, start, end, duration, observation_id, observe, wait_for=None, variation=None):
+        if variation is not None:
+            self._check_observation(observation_id)
+        sampled = self._variation_prepare(variation)
         self._check_observation(observation_id)
         start, end = (start["x"], start["y"]), (end["x"], end["y"])
         self._validate_point(start)
         self._validate_point(end)
+        if sampled is not None:
+            duration = sampled.duration(duration, (.1, 3))
+            sampled.audit.update(start=list(start), end=list(end))
+        self._variation_before_write(sampled)
         self._write(self.backend.drag, start, end, duration)
-        return self._after(observe, wait_for)
+        return self._variation_result(self._after(observe, wait_for), sampled)
 
-    def _swipe(self, direction, region, duration, observation_id, observe, wait_for=None):
+    def _swipe(self, direction, region, duration, observation_id, observe, wait_for=None,
+               variation=None, *, _variation_sampler=None):
+        if variation is not None:
+            self._check_observation(observation_id)
+        sampled = self._variation_prepare(variation, _variation_sampler)
         self._check_observation(observation_id)
         w, h = self.backend.size()
         r = region or {
@@ -689,10 +760,15 @@ class Runtime:
             "left": (right, left),
             "right": (left, right),
         }[direction]
+        if sampled is not None:
+            start, end = sampled.swipe(start, end, (x, y, rw, rh), (w, h), direction)
+            duration = sampled.duration(duration, (.1, 2))
+            sampled.audit.update(start=list(start), end=list(end))
         if start == end:
             raise ValueError("Swipe region is too small for this direction")
+        self._variation_before_write(sampled)
         self._write(self.backend.swipe, start, end, duration)
-        return self._after(observe, wait_for)
+        return self._variation_result(self._after(observe, wait_for), sampled)
 
     def _scroll_until(
         self,
@@ -704,6 +780,7 @@ class Runtime:
         timeout_seconds,
         settle_seconds,
         observe,
+        variation=None,
     ):
         deadline = self._limit_deadline(timeout_seconds)
         context = self._context()
@@ -720,6 +797,8 @@ class Runtime:
         previous = None
         unchanged = 0
         swipes = 0
+        sampler = Variation(variation) if variation is not None else None
+        variations = []
         while True:
             self._usable()
             if context != self._context():
@@ -754,7 +833,15 @@ class Runtime:
                 if time.monotonic() >= deadline:
                     reason = "timeout"
                 else:
-                    self._swipe(direction, region, duration, None, "none")
+                    previous_deadline = self._deadline
+                    self._deadline = deadline
+                    try:
+                        action = self._swipe(direction, region, duration, None, "none",
+                                             variation=variation, _variation_sampler=sampler)
+                    finally:
+                        self._deadline = previous_deadline
+                    if sampler is not None:
+                        variations.append(action["variation"])
                     swipes += 1
                     time.sleep(min(settle_seconds, max(0, deadline - time.monotonic())))
                     continue
@@ -771,6 +858,8 @@ class Runtime:
             if observe != "none":
                 self._usable()
                 result["observation"] = self._observe(observe, nodes=nodes)
+            if sampler is not None:
+                result["variations"] = variations
             return result
 
     @staticmethod

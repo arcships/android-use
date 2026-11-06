@@ -551,10 +551,19 @@ def execute(runtime, args, policy: DecisionPolicy, run=None):
                         runtime, selected["args"], fresh, args.package, deadline, entry, read
                     )
                 else:
+                    action_args = dict(selected["args"])
+                    if args.variation is not None and selected["op"] in {"tap", "long_press", "swipe"}:
+                        action_args["variation"] = args.variation.model_dump()
+                        seed = action_args["variation"]["seed"]
+                        if seed is not None:
+                            action_args["variation"]["seed"] = (seed + len(trace) - 1) % 4294967296
                     params = (
-                        ARG_MODELS[selected["op"]].model_validate(selected["args"]).model_dump()
+                        ARG_MODELS[selected["op"]].model_validate(action_args).model_dump()
                     )
-                    runtime._dispatch(selected["op"], params)
+                    # execute already shares this call's deadline with Runtime.
+                    performed = runtime._dispatch(selected["op"], params)
+                    if args.variation is not None and "variation" in performed:
+                        entry["variation"] = performed["variation"]
                 entry["state"] = "executed"
                 done = {"action": selected["op"], "target": selected["label"]}
                 if "field" in selected:

@@ -129,3 +129,28 @@ def test_auto_prefers_enabled_jev(host_rig, monkeypatch):
     result = start(runtime)
     assert result["stop_reason"] == "model_blocked" and "decision" not in result
     assert start(runtime, decider="host")["status"] == "decision_required"
+
+
+def test_variation_survives_host_decision_round_trip(host_rig):
+    runtime, backend = host_rig
+    first = start(runtime, completion={"text": "Done"},
+                  variation={"seed": 7, "delay_max_seconds": 0.0})
+    done = decide(runtime, first)
+    assert done["verified"] and len(backend.actions) == 1
+    audit = done["steps"][0]["variation"]
+    assert audit["seed"] == 7 and audit["delay_seconds"] == 0
+    assert audit["point"] == list(backend.actions[0][1:])
+    assert audit["spatial_applied"] is False  # Code-owned candidate coordinates stay exact.
+    assert decide(runtime, first)["error"]["code"] == "goal_session_expired"
+    assert len(backend.actions) == 1
+
+
+def test_variation_consumes_goal_budget_without_replaying(host_rig):
+    runtime, backend = host_rig
+    first = start(runtime, timeout_seconds=0.05,
+                  variation={"seed": 0, "delay_max_seconds": 0.5})
+    stopped = decide(runtime, first)
+    assert stopped["stop_reason"] == "interaction_time_budget"
+    assert stopped["steps"][0]["state"] == "failed"
+    assert not backend.actions
+    assert runtime._deadline is None
