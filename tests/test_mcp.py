@@ -115,3 +115,27 @@ def test_real_stdio_handshake_schemas_and_error(tmp_path):
                 assert absent.structuredContent["error"]["code"] == "device_selection_required"
 
     asyncio.run(exercise())
+
+
+def test_screen_resource_uses_utf8_with_windows_legacy_default(monkeypatch):
+    from importlib.resources import files
+
+    from mcp.types import ReadResourceRequest, ReadResourceRequestParams
+
+    from android_use import server
+
+    raw = files("android_use").joinpath("assets/phone-screen.html").read_bytes()
+
+    class LegacyDefault:
+        def joinpath(self, _):
+            return self
+
+        def read_text(self, encoding="cp1252"):
+            return raw.decode(encoding)
+
+    monkeypatch.setattr(server, "files", lambda _: LegacyDefault())
+    request = ReadResourceRequest(
+        method="resources/read", params=ReadResourceRequestParams(uri=server.SCREEN_URI)
+    )
+    result = asyncio.run(server.create_server().request_handlers[ReadResourceRequest](request))
+    assert result.root.contents[0].text == raw.decode("utf-8")

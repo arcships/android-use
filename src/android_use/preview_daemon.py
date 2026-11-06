@@ -112,7 +112,11 @@ def serve(serial, key):
         def do_GET(self):
             if not self._allowed() or self.path != prefix:
                 return self._send(404, b"Not found", "text/plain")
-            html = files("android_use").joinpath("assets/phone-screen.html").read_text()
+            html = (
+                files("android_use")
+                .joinpath("assets/phone-screen.html")
+                .read_text(encoding="utf-8")
+            )
             html = html.replace(
                 "<!--__MODE__-->", "<script>window.__ANDROID_USE_STANDALONE__=true</script>"
             )

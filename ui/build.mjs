@@ -1,6 +1,6 @@
 import { build } from 'esbuild';
 import { readFile, writeFile, readdir } from 'node:fs/promises';
-import { dirname, join, resolve, sep } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 const result = await build({entryPoints:['src/app.ts'],bundle:true,format:'esm',target:'es2022',
   minify:true,write:false,metafile:true,pure:['console.debug'],legalComments:'inline'});
 const html = await readFile('index.html','utf8');
@@ -12,7 +12,7 @@ await writeFile('../src/android_use/assets/phone-screen.html',html
 // Preserve license texts for precisely the packages included in the browser bundle.
 const packages=new Map();
 for(const input of Object.keys(result.metafile.inputs)){
-  if(!input.includes(`node_modules${sep}`))continue;
+  if(!input.replaceAll('\\','/').includes('node_modules/'))continue;
   let directory=dirname(resolve(input));
   while(directory!==dirname(directory)){
     try{
@@ -22,8 +22,7 @@ for(const input of Object.keys(result.metafile.inputs)){
     directory=dirname(directory);
   }
 }
-const notices=['# Third-party notices','',
-  'Android Use source code is licensed under MIT. The bundled browser SDK and its dependencies retain their own licenses, reproduced below. Python dependencies and ffmpeg are installed separately and retain their upstream licenses.',''];
+const notices=[(await readFile('../docs/third-party-introduction.md','utf8')).trimEnd(),''];
 for(const [name,{directory,pkg}] of [...packages.entries()].sort()){
   notices.push(`## ${name}`,'',`Declared license: ${typeof pkg.license==='string'?pkg.license:JSON.stringify(pkg.license)}`,'');
   const licenseFiles=(await readdir(directory)).filter(name=>/^(licen[sc]e|notice|copying)([.\-_]|$)/i.test(name)).sort();

@@ -152,3 +152,25 @@ def test_stopped_preview_reuses_its_private_address_on_restart(preview_factory):
         assert second_url == first_url
         with httpx.Client(trust_env=False) as client:
             assert client.post(second_url + "api/status", json={}).json()["ok"]
+
+
+def test_preview_html_uses_utf8_with_windows_legacy_default(preview, monkeypatch):
+    from importlib.resources import files
+
+    raw = files("android_use").joinpath("assets/phone-screen.html").read_bytes()
+
+    class LegacyDefault:
+        def joinpath(self, _):
+            return self
+
+        def read_text(self, encoding="cp1252"):
+            return raw.decode(encoding)
+
+    monkeypatch.setattr(preview_daemon, "files", lambda _: LegacyDefault())
+    with httpx.Client(trust_env=False) as client:
+        reply = client.get(preview[0])
+    assert reply.status_code == 200
+    assert "Android Use" in reply.text and "__ANDROID_USE_STANDALONE__=true" in reply.text
+    assert reply.text == raw.decode("utf-8").replace(
+        "<!--__MODE__-->", "<script>window.__ANDROID_USE_STANDALONE__=true</script>"
+    )
