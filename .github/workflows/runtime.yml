@@ -3,8 +3,6 @@ name: Standalone runtimes
 on:
   workflow_dispatch:
   workflow_call:
-  push:
-    branches: [codex/standalone-runtime]
   pull_request:
     paths:
       - 'src/android_use/portable.py'
@@ -13,9 +11,15 @@ on:
       - 'scripts/*runtime*'
       - 'scripts/frozen_entry.py'
       - '.github/workflows/runtime.yml'
+      - 'docs/licenses/**'
+      - 'THIRD_PARTY_NOTICES.md'
 
 permissions:
   contents: read
+
+concurrency:
+  group: standalone-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   inputs:
