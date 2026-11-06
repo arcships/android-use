@@ -2,6 +2,8 @@
 
 **Source feature after v0.6.2.** Historical v0.6.2 source-plugin ZIPs do not contain this runtime. The **Standalone runtimes** workflow builds native archives and lightweight Dim plugins; tagged releases publish those artifacts only after their acceptance checks pass. Before a release containing these assets exists, use the workflow artifacts for offline installation. The lightweight plugin's production download URL cannot provision a runtime from an older release that lacks it.
 
+**Optional installation route.** Android Use does not require this runtime. The Agent first reuses a healthy installation, then checks existing Python/uv, ADB, ffmpeg, platform, network and available assets. Use source setup when it fits the host; choose a verified native package when it saves dependency setup. Do not migrate a working source installation solely to use the runtime. Only selecting the lightweight native plugin opts into its runtime bootstrap.
+
 ## What's included
 
 | Component | Default runtime |
@@ -114,6 +116,8 @@ The upgrade fixture builds a distinct `+upgrade-test` version in a disposable so
 Builds reject statically embedded optional DBM/readline modules and exclude their loadable versions. [License audit](license-audit.md). Inputs are pinned in `scripts/runtime-inputs.json`. Archives carry Python/ADB notices and corresponding FFmpeg source/configuration. The legacy source/Codex package and its installer continue to work independently. [Recorded results and limits](validation.md).
 
 ## 中文
+
+**runtime 是可选安装方式，不是使用 Android Use 的前提。** Agent 先复用健康安装，再检查 Python/uv、ADB、ffmpeg、平台、网络和发行包可用性，自主选择源码或独立包；不因提供了 runtime 就迁移已有正常环境。仅选择轻量原生插件时，才使用它的运行包自动安装流程。
 
 这是 v0.6.2 之后的新源码功能，旧 v0.6.2 插件包不包含独立运行时。跨平台工作流生成原生运行包、轻量 Dim 插件与 SHA256；正式发布需要对应 Release 中实际有这些资产，不能把旧 ZIP 当成新包。发布前可使用工作流产物离线安装。
 

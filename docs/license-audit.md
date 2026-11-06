@@ -1,10 +1,10 @@
 # License audit — 2026-11-06
 
-This review covers the Android Use source, dependency declarations, native-package construction and sampled build artifacts. The project remains **MIT**, with its existing copyright notice preserved. A native archive is not uniformly MIT: bundled dependencies retain their own terms.
+This review covers the Android Use source, dependency declarations, native-package construction and sampled build artifacts. The project remains **MIT**, with the project copyright attributed to **Archship**. A native archive is not uniformly MIT: bundled dependencies retain their own terms.
 
 | Component | Observed terms | Packaging treatment |
 | --- | --- | --- |
-| Android Use | MIT | Preserve `LICENSE`, including existing author attribution. |
+| Android Use | MIT | Ship `LICENSE` with the Archship project copyright notice. |
 | [iPhone Use](https://github.com/zhongerxin/iPhone-use) | MIT in the referenced repository | Acknowledge the inspiration in both READMEs. This acknowledgement does not replace license/copyright retention if code is reused. |
 | CPython | PSF and its bundled-component terms | Carry the actual interpreter's license and upstream component notices. Freeze from a modular interpreter so optional DBM/readline modules can be excluded. |
 | Most declared Python packages | MIT, BSD, Apache or related permissive expressions | Copy installed package notices; record exact versions, declarations and native file hashes. The environment inventory can include build-only packages and is labelled as a superset. |
@@ -44,7 +44,7 @@ This PR does not publish a release. Keep the per-platform acceptance artifacts a
 
 ## 中文
 
-项目源码仍采用 MIT，并保留原作者版权。**独立运行包不能整体称为 MIT**：FFmpeg 按当前配置适用 LGPL-2.1-or-later，certifi 采用 MPL-2.0，Python 和各原生库也保留自身条款。PyInstaller 有打包例外，不能仅看到 GPL 标签就推断应用必须改协议。
+项目源码仍采用 MIT，项目版权归属为 **Archship**。**独立运行包不能整体称为 MIT**：FFmpeg 按当前配置适用 LGPL-2.1-or-later，certifi 采用 MPL-2.0，Python 和各原生库也保留自身条款。PyInstaller 有打包例外，不能仅看到 GPL 标签就推断应用必须改协议。
 
 本轮发现首个构建 Python 内置 GNU gdbm；仅排除模块导入不能移除已静态链接的代码。因此增加构建门禁，改用可排除模块的 CPython，并检查原生文件。ADB 只带实际需要的文件，避免附带无关工具；certifi 源码、Python/原生库声明、FFmpeg 对应源码与精确编译选项一并随包提供。中英文 README 已感谢 iPhone Use 的启发；实际代码复用仍需要保留原许可证和版权，不能只用致谢替代。
 

@@ -229,7 +229,7 @@ def build(output, cache, ffmpeg_binary=None):
     shutil.copytree(ROOT / "skills", plugin / "skills")
     shutil.copyfile(ROOT / "LICENSE", plugin / "LICENSE")
     (plugin / "README.md").write_text(
-        "# Android Use for Dim Agent\n\nThis lightweight plugin automatically installs a standalone runtime on first use.\nPython, ADB, ffmpeg and the screen UI are included in that runtime.\n\nDocumentation: https://github.com/arcships/android-use#quick-start\n"
+        "# Android Use for Dim Agent\n\nThis optional native plugin installs a standalone runtime on first use. Agents may instead reuse an existing installation or select source setup for the host environment.\nPython, ADB, ffmpeg and the screen UI are included in that runtime.\n\nDocumentation: https://github.com/arcships/android-use#quick-start\n"
     )
     (plugin / "docs").mkdir()
     for name in (
@@ -247,7 +247,7 @@ def build(output, cache, ffmpeg_binary=None):
     manifest = {
         "name": "android-use",
         "version": __version__,
-        "description": "Android control with an automatically provisioned standalone runtime",
+        "description": "Android control with an optional standalone runtime installation",
         "skills": "./skills/",
         "mcpServers": "./.mcp.json",
         "interface": {"displayName": "Android Use"},

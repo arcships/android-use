@@ -5,6 +5,8 @@ description: 通过 Android Use 的 MCP 工具或 CLI 操作 ADB 已授权的 An
 
 # Android Use
 
+安装或升级时，独立 runtime 是可选项。先检查已有 MCP/插件是否健康，再检查 Python/uv、ADB、ffmpeg、平台、网络和可用发行资产；由 Agent 按环境选择源码方式或已校验的独立包。已有依赖可继续源码安装，缺少依赖且有匹配原生包时可选独立包。不为采用 runtime 迁移正常安装，不重复注册 MCP；保留设备、Jev 设置和其他服务。安装细节见 README 与 `docs/standalone.md`。
+
 优化目标按完成任务的端到端速度、成功率、宿主大模型往返次数排序。Jev token 费用不作为路由约束，usage 只作辅助记录。连续局部决策在一次 `aua_execute_goal` 内处理，不逐个动作交回宿主审批；复用安全返回的 observation 规划后续步骤，避免紧接着重复读树。已知路径仍用更直接的 batch / scroll_until，遇到不确定、接管、业务验收时由 Agent 处理。
 
 `aua_execute_goal` 的 `input_macros=true` 默认将有稳定唯一标识的非密码输入框提供为“聚焦→精确输入→原生回读”候选，需同时允许 tap/type_text。无稳定标识或界面意外变化时沿用单步或交回，不强行输入；输入法覆盖层同样会停止。宏不提交、不换行、不生成新文本。max_steps 统计候选次数，一个输入宏最多两次原生动作；检查 steps[].substeps 的执行、partial/uncertain 和验证状态，handoff.completed_actions 统计原生子动作，不能据此重放整个宏。需要对照或禁用宏时传 input_macros=false。

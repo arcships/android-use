@@ -16,6 +16,7 @@ on:
       - 'ui/build.mjs'
       - 'tests/fixtures/runtime-sample.h264'
       - 'THIRD_PARTY_NOTICES.md'
+      - 'LICENSE'
       - '.gitattributes'
 
 permissions:
