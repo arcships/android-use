@@ -1,6 +1,6 @@
 # Third-party notices
 
-Android Use source code is licensed under MIT. The bundled browser SDK and its dependencies retain their own licenses, reproduced below. Python dependencies and ffmpeg are installed separately and retain their upstream licenses.
+Android Use source code is licensed under MIT. The bundled browser SDK and its dependencies retain their own licenses, reproduced below. Source installations obtain Python dependencies and ffmpeg separately. Standalone runtime archives include CPython, Python dependencies, Android Platform Tools and a minimal FFmpeg build; they retain their upstream licenses. Each runtime carries CPython and Python-package notices under `licenses/`, Android Platform Tools notices under `tools/adb/`, and the corresponding FFmpeg source archive plus exact configure options under `licenses/`. Native runtime inputs and SHA256 values are pinned in `scripts/runtime-inputs.json`. The optional macOS OCR component uses the system Vision framework and is distributed separately.
 
 ## @modelcontextprotocol/ext-apps@1.7.5
 

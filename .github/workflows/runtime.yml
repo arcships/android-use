@@ -1,0 +1,69 @@
+name: Standalone runtimes
+
+on:
+  workflow_dispatch:
+  workflow_call:
+  push:
+    branches: [codex/standalone-runtime]
+  pull_request:
+    paths:
+      - 'src/android_use/portable.py'
+      - 'src/android_use/screen.py'
+      - 'src/android_use/ocr.py'
+      - 'scripts/*runtime*'
+      - 'scripts/frozen_entry.py'
+      - '.github/workflows/runtime.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux-x86_64
+          - os: macos-15
+            platform: macos-arm64
+          - os: macos-15-intel
+            platform: macos-x86_64
+          - os: windows-2022
+            platform: windows-x86_64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.13.7'
+      - name: Prepare Windows compiler
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: make mingw-w64-x86_64-gcc diffutils pkgconf
+      - name: Expose Windows compiler
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          'C:\msys64\mingw64\bin' >> $env:GITHUB_PATH
+          'C:\msys64\usr\bin' >> $env:GITHUB_PATH
+      - run: uv sync --frozen --python 3.13.7
+      - run: uv pip install -r scripts/runtime-build-requirements.txt
+      - name: Build native runtime and Dim plugin
+        run: uv run --no-sync python scripts/build_runtime.py
+      - name: Build a distinct upgrade version in a disposable source tree
+        run: uv run --no-sync python scripts/build_runtime_upgrade_fixture.py
+      - name: Test install, upgrade, rollback and bundled tools
+        run: uv run --no-sync python scripts/accept_runtime.py --archive dist/runtime/android-use-runtime-${{ matrix.platform }}.zip --upgrade-archive dist/runtime-upgrade/android-use-runtime-${{ matrix.platform }}.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: runtime-${{ matrix.platform }}
+          path: |
+            dist/runtime/*.zip
+            dist/runtime/*SHA256SUMS
+            dist/runtime/acceptance.json
+          retention-days: 14

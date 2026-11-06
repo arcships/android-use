@@ -15,7 +15,7 @@ Agent 负责理解任务、规划、编写文本和验收；Jev 是决策模型�
 
 首次使用执行 `aua_setup(action="status")`。服务缺失时调用一次 `aua_setup(action="start")`，再调用 `aua_ready(screenshot=false)`。多台设备先 discover，按用户目标 configure(serial=...)，不随意选第一台。USB 未授权或锁屏让用户在手机上完成信任/解锁，再 READY。服务不会自动重启；启动失败按返回原因诊断，不循环 start。
 
-READY 自动关联本聊天的实时手机屏幕侧边栏；同一聊天复用同一个面板，不反复打开新面板。用户单独要求看屏幕时调用一次 `aua_screen()`，无需为打开预览重复 READY。视频由独立的 ADB screenrecord H.264 通道提供；需要宿主安装 ffmpeg，缺失时按工具返回处理。预览没有可见 viewer 5 秒后停止手机端采集；前端读取的是内存中缓存的视频帧，不轮询手机截图或 XML。侧边栏失败不自动判定控制通道失效。
+READY 自动关联本聊天的实时手机屏幕侧边栏；同一聊天复用同一个面板，不反复打开新面板。用户单独要求看屏幕时调用一次 `aua_screen()`，无需为打开预览重复 READY。视频由独立的 ADB screenrecord H.264 通道提供；独立运行包已内置 ffmpeg；源码安装需要宿主提供，缺失时按工具返回处理。预览没有可见 viewer 5 秒后停止手机端采集；前端读取的是内存中缓存的视频帧，不轮询手机截图或 XML。侧边栏失败不自动判定控制通道失效。
 
 `aua_screen_frame`、`aua_screen_action` 仅供预览 App 自己使用，模型不要调用它们刷新画面或模拟用户点击。模型需要看图片仍用 aua_observe，侧边栏 Live 不替代模型观察。用户可以在预览中点击、滑动、返回、Home 或将当前视频画面复制为剪贴板 PNG 图片；这些动作会改变真实页面，下一次模型观察按实际状态继续。CLI 的 `screen` 返回本机预览 URL，可作为 Codex 的右侧浏览器面板打开。
 
@@ -39,4 +39,6 @@ batch 中动作等待超时停止为 postcondition_timeout，scroll_until 未找
 
 aua_apps 查询已安装的第三方 **包名**，不支持按 App 显示名查找。不要连续猜包名。aua_launch_app 使用已核实的 package，不强停或清除 App 数据。发送、下单等外部变更需用户授权，并核对目标与内容，执行一次后验收结果。
 
-MCP 不可用时使用同一仓库 CLI：`uv run --frozen --directory <仓库路径> android-use <操作> '<JSON>'`。CLI 截图保存到 image_paths 中的本机绝对路径，使用图片查看工具实际查看。MCP 图片必须转发 image 块，不输出 base64。CLI 的每次运行是新 Runtime，不能跨进程传 observation_id。
+独立运行包的固定入口也支持 `cli <操作> '<JSON>'`，使用安装返回的启动命令，将最后的 `auto-serve` 改为 `cli` 并追加操作及参数，无需 uv。回滚使用固定入口的 `rollback`；后台更新只影响后续 MCP 会话，不重启当前任务。
+
+MCP 不可用且使用源码安装时，使用同一仓库 CLI：`uv run --frozen --directory <仓库路径> android-use <操作> '<JSON>'`。CLI 截图保存到 image_paths 中的本机绝对路径，使用图片查看工具实际查看。MCP 图片必须转发 image 块，不输出 base64。CLI 的每次运行是新 Runtime，不能跨进程传 observation_id。
