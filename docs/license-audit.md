@@ -22,6 +22,8 @@ This review covers the Android Use source, dependency declarations, native-packa
 3. **Package-level MIT metadata was insufficient:** certifi is MPL-2.0 and image/crypto wheels include native dependencies. Add source-form certifi files, original package notices, pinned native notices and a machine-readable inventory.
 4. **FFmpeg flags could previously be a superset:** checking only required flags could allow an unexpected extra feature/license option in a supplied binary. The builder now requires an exact option set. FFmpeg is a separate executable; the program's Python code is not linked against libavcodec. The FFmpeg executable and its own static libraries remain covered by their applicable terms and corresponding source materials.
 
+5. **Notice regeneration and checkout fidelity:** the browser build now reads the maintained native-distribution introduction instead of overwriting it with source-only text. Windows checkouts preserve pinned upstream license bytes rather than converting LF to CRLF; a real Git checkout regression verifies the SHA256 stays unchanged.
+
 ## Evidence carried by each runtime
 
 - `licenses/CPython-LICENSE.txt`: from the interpreter actually used to build it.

@@ -5,13 +5,16 @@ on:
   workflow_call:
   pull_request:
     paths:
-      - 'src/android_use/portable.py'
-      - 'src/android_use/screen.py'
-      - 'src/android_use/ocr.py'
+      - 'src/android_use/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
       - 'scripts/*runtime*'
       - 'scripts/frozen_entry.py'
       - '.github/workflows/runtime.yml'
       - 'docs/licenses/**'
+      - 'docs/third-party-introduction.md'
+      - 'ui/build.mjs'
+      - 'tests/fixtures/runtime-sample.h264'
       - 'THIRD_PARTY_NOTICES.md'
       - '.gitattributes'
 
