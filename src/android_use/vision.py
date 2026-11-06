@@ -63,7 +63,7 @@ def questions_for():
         "present": {
             "type": "noul",
             "instructions": "Is the element described by state.target visible in `screen`? " + note,
-            # "Clearly visible" made small or dimmed icons score ~0.5 on real apps (Taobao).
+            # "Clearly visible" made small or dimmed icons score ~0.5 on a real e-commerce app.
             "criteria": {
                 "true": "An element matching the description is present in the screenshot, "
                 "even if small, dimmed or partly covered",
@@ -167,7 +167,7 @@ def inside(point, rect):
 def text_conflict(box, tap, nodes):
     """Why a box is a region around tree text rather than one element, with candidates.
 
-    Measured on Taobao: for small text (prices, tags) Box confidently returned a box
+    Measured on a real e-commerce app: for small text (prices, tags) Box confidently returned a box
     around a whole text row or two, and its center fell between labels. A box matching
     one labeled or clickable node (e.g. an icon tile with badge and caption) is an element.
     """

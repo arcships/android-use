@@ -106,7 +106,7 @@ def test_box_matching_one_element_is_not_a_text_conflict():
 
 
 def test_box_over_a_text_row_lists_tree_candidates():
-    # Taobao: a price box covered the price and the sales count beside it.
+    # E-commerce feed: a price box covered the price and the sales count beside it.
     nodes = [node([40, 900, 160, 50], "¥385.34"), node([210, 905, 150, 40], "1万+人付款")]
     reason, candidates = text_conflict([30, 880, 360, 90], [210, 925], nodes)
     assert reason == "box_spans_text_nodes"
