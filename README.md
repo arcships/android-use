@@ -8,7 +8,7 @@
     <a href="#mcp-client-support"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="Standard stdio MCP" /></a>
   </p>
   <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
-  <p><a href="#quick-start"><strong>Use in Dim Agent →</strong></a> · <a href="https://github.com/JackCaow/android-use/releases/tag/v0.6.2">Download v0.6.2</a> · <a href="#enable-jev-from-the-screen">Set up Jev</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/arcships/android-use/issues">Report an issue</a></p>
+  <p><a href="#quick-start"><strong>Use in Dim Agent →</strong></a> · <a href="https://github.com/arcships/android-use/releases/tag/v0.7.0">Download v0.7.0</a> · <a href="#enable-jev-from-the-screen">Set up Jev</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/arcships/android-use/issues">Report an issue</a></p>
 </div>
 
 ## Android tasks, inside Dim Agent
@@ -34,13 +34,13 @@ For workflows that need repeated UI decisions, enable **Jev**. Your Agent keeps 
 | Dependencies missing, matching verified native assets available | Use the optional standalone runtime to avoid installing dependencies individually. |
 | Offline, unsupported native target, or no native release assets yet | Use a suitable local archive or source setup; report any missing prerequisites. |
 
-### Optional standalone runtime (new source feature)
+### Optional standalone runtime · v0.7.0
 
 **Python, ADB, ffmpeg, the screen UI and the control service in one native package.** The lightweight Dim plugin installs it automatically on first use. Later MCP connections start the installed version immediately and check for updates in the background; verified updates take effect on the next connection. Failed updates retain the previous version; rollback rechecks it before switching.
 
 **macOS OCR is an optional add-on**, omitted from the default package. Tree interaction, Agent screenshot inspection and Jev can be used without it. Users choosing this package do not need Python, uv, Git, Node.js, a JDK or Xcode tools; public-release bootstrap uses standard OS utilities. Private-release bootstrap additionally supports GitHub CLI with a private token; offline native installation avoids that requirement.
 
-This is newer than the published v0.6.2 source-plugin ZIP. Use native workflow artifacts for offline trials until a release containing the runtime assets is published. [Install, automatic updates, optional OCR and rollback →](docs/standalone.md)
+Available in v0.7.0 as separate source-plugin, lightweight Dim-plugin and native-runtime downloads. Choose the route for your environment; older v0.6.2 source ZIPs do not include the native runtime. [Install, automatic updates, optional OCR and rollback →](docs/standalone.md)
 
 ## Quick start
 
@@ -114,15 +114,9 @@ Dim Agent calls the Android tools and opens the screen through `aua_screen`. In 
 
 ## A phone screen you can follow
 
-<table>
-  <tr><th align="center">Light</th><th align="center">Dark</th></tr>
-  <tr>
-    <td align="center"><img src="docs/images/sidebar-light.jpg" alt="Phone-frame Android Use preview in light mode" width="260" /></td>
-    <td align="center"><img src="docs/images/sidebar-dark.jpg" alt="Phone-frame Android Use preview in dark mode" width="260" /></td>
-  </tr>
-</table>
+![Dim Agent using Android Use with a live phone view](docs/images/dim-agent-live-screen.png)
 
-The actual UI, rendered with synthetic phone content for documentation. The frame adapts to theme, window size and orientation. Tap or swipe inside the screen, use Back/Home, or copy a PNG frame. [Live-screen guide →](docs/guide.md#live-screen)
+Android Use in Dim Agent: describe a task in the chat and follow the live phone view beside it. Tap or swipe inside the screen, use Back/Home, or copy a PNG frame. [Live-screen guide →](docs/guide.md#live-screen)
 
 ## Agent plans. Jev decides. Android Use acts.
 
@@ -263,11 +257,11 @@ The preview URL is a private local video endpoint, **not a remote MCP endpoint**
 
 In v0.5.1, supported devices record continuously; legacy segments reuse one connection and decoder. Brief known-health recovery keeps the picture visible. [Recovery behavior and troubleshooting →](docs/guide.md#live-screen).
 
-## Optional interaction variation (source update)
+## Optional interaction variation · v0.7.0
 
 Add `variation` to a gesture or local goal to sample bounded delays, selector touch points and swipe timing/endpoints. Fixed seeds reproduce samples; explicit coordinates and text stay exact. Added waits revalidate the page and share existing budgets. Default behavior is unchanged. This is interaction testing, with no anti-detection guarantee. [Parameters, audit and boundaries →](docs/interaction-variation.md)
 
-Source development is synchronized to [arcships/android-use](https://github.com/arcships/android-use); published archives through v0.6.2 remain linked to their original release location.
+Source and v0.7.0 releases are hosted at [arcships/android-use](https://github.com/arcships/android-use).
 
 ## A smaller loop, with explicit outcomes
 
@@ -313,7 +307,7 @@ Development comparisons include **18 source-level trials** and **12 live Agent /
 
 ## Project status
 
-**v0.6.2 · MIT · 392 Python tests · 24 browser tests.** Emulator acceptance covers 15 real stdio MCP scenarios. Earlier physical-device acceptance covers Android 16 / Xiaomi 15 Ultra. New Jev setup and frame changes have local/emulator validation; other manufacturers, host versions and operating systems have different coverage. [Validation evidence →](docs/validation.md)
+**v0.7.0 · MIT · 481 Python tests · 24 browser tests.** Native install/upgrade/rollback acceptance passed on macOS ARM64/Intel (15 scenarios each), Linux x86_64 and Windows x86_64 (13 each). These package checks use no phone or model; earlier Android 16 physical-device and emulator acceptance remain separate. [Validation evidence →](docs/validation.md)
 
 Multi-touch, arbitrary gesture paths, fine-grained text selection and custom-editor input fallbacks are not implemented. A matched UI condition proves that condition; the Agent must verify business outcomes. Control and preview run locally, and tool results are handled by your chosen client/model.
 

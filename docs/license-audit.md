@@ -40,7 +40,7 @@ The FFmpeg source is inside the same downloadable native archive as its binary. 
 
 Metadata and filename checks alone cannot prove every statically linked component's provenance. The pinned notices and Python build gate reduce known risks; they are not a blanket legal certification for every OS, wheel and future dependency update. In particular, Windows distributions may contain Microsoft runtime DLLs with separate redistribution terms; the native inventory records their actual filenames. Those binaries are not reclassified as MIT or open source by this project.
 
-This PR does not publish a release. Keep the per-platform acceptance artifacts and inventory with the release review, and repeat the scan when the interpreter, wheels, compiler or FFmpeg configuration changes. The first pre-audit local artifacts are diagnostic evidence, not the release-approved packages.
+The audit was prepared with the standalone-runtime change. Keep the per-platform acceptance artifacts and inventory with every release, and repeat the scan when the interpreter, wheels, compiler or FFmpeg configuration changes. The first pre-audit local artifacts are diagnostic evidence, not the release-approved packages.
 
 ## 中文
 
@@ -48,4 +48,4 @@ This PR does not publish a release. Keep the per-platform acceptance artifacts a
 
 本轮发现首个构建 Python 内置 GNU gdbm；仅排除模块导入不能移除已静态链接的代码。因此增加构建门禁，改用可排除模块的 CPython，并检查原生文件。ADB 只带实际需要的文件，避免附带无关工具；certifi 源码、Python/原生库声明、FFmpeg 对应源码与精确编译选项一并随包提供。中英文 README 已感谢 iPhone Use 的启发；实际代码复用仍需要保留原许可证和版权，不能只用致谢替代。
 
-审计按当前声明、构建和产物执行，不把元数据扫描等同于完整二进制溯源或法律认证。Windows 可能包含微软可再分发运行库，其条款单独适用。本次保持 PR 审阅，不发布新版本；后续更新基础环境或依赖时，应连同原生清单一起复查。
+审计按当前声明、构建和产物执行，不把元数据扫描等同于完整二进制溯源或法律认证。Windows 可能包含微软可再分发运行库，其条款单独适用。每次发布都应保留原生验收记录与随包声明；后续更新基础环境或依赖时，应连同原生清单一起复查。

@@ -1,6 +1,6 @@
 # Optional interaction variation
 
-Experimental source update after v0.6.2. The published v0.6.2 ZIP does not contain these fields. Use the current source and reload MCP tools to advertise the updated schemas. Existing tool names and defaults remain compatible.
+Experimental and optional in v0.7.0. Older v0.6.2 ZIPs do not contain these fields. Update the installation and reconnect MCP to advertise the schemas; existing tool names and defaults remain compatible.
 
 This is bounded variation for interaction testing. It does not hide the UiAutomator execution channel or promise that third-party apps cannot recognize automation. Native swipe/drag paths remain straight; this feature does not add multi-touch, arbitrary curves or synthetic per-character typing.
 
