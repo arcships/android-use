@@ -2,6 +2,16 @@
 
 日期：2026-11-03 至 2026-11-06。手机序列号、账号内容和截图不提交到源码中。
 
+## 2026-11-06：可选独立运行包、升级与协议检查
+
+- **runtime 可选**：Agent 按用户已有安装、Python/uv、ADB、ffmpeg、平台、网络及发行资产选择源码或独立包，不迁移健康环境。原有 MCP 工具和源码方式继续可用。项目 MIT 版权归属改为 **Archship**；第三方保留自身协议。
+- 481 项 Python 回归、24 项浏览器测试、Ruff 通过；干净提交索引导出的 wheel、sdist 与源码插件 ZIP 构建通过。最终源码 ZIP 的项目 LICENSE 已核对为 Archship。
+- macOS ARM64 本机原生包通过 15 项验收，执行环境 PATH 移除了系统 Python、uv、ADB 与 ffmpeg。覆盖真实 MCP 握手和 UI 资源、首次安装、不同版本升级时旧会话继续服务、新连接切换、删除原解压目录、坏包/版本健康失败保留旧版、回滚再验证、暂停自动更新、私有设置保留、CLI/守护进程分派、实际 H.264→JPEG，以及可选 OCR 安装/识别与失败更新保留。
+- 原生工作流在 macOS ARM64/Intel、Linux x86_64、Windows x86_64 上构建两份不同版本并执行真实 MCP 验收。本记录已收录 CI macOS ARM64 的 15 项和 Linux 的 13 项通过快照；各平台后续结果及 `acceptance.json` 以 [PR 的最新检查与产物](https://github.com/arcships/android-use/pull/1/checks) 为准，不将尚未完成的矩阵视作通过。
+- 协议扫描发现首个本机构建 Python 内置 GNU gdbm，旧诊断包不作为交付包；现用可排除模块的 Python，构建门禁拒绝已静态嵌入的 DBM/readline，并检查原生文件。随包提供 CPython/依赖声明、certifi 源码、FFmpeg 对应源码/精确编译参数和原生清单。前端重新构建保留这些声明。[协议审计](license-audit.md)。
+- **保留首轮失败**：Windows 的 Bash 路径、上游下载超时、make 目标、Git CRLF 导致声明 SHA256 变化，HTML 按默认编码读取失败，以及首次引导缺少 PowerShell `Get-FileHash` 函数均记录在脱敏报告；引导改用 .NET 哈希和解压。编码问题已在 MCP 资源和 HTTP 预览两条路径加回归，声明字节通过真实 Git 检出回归验证。
+- 本轮没有手机操作、真机视频或 Jev 请求；首次公开/私有下载仅对传输层使用本地桩，不能据此宣称真实 GitHub Release 下载已验收。macOS/Windows 未签名，也未覆盖新用户的系统安全提示和 OEM 驱动。当前版本继续执行，升级只影响后续连接；强杀残留锁需确认进程退出后处理。没有合并 PR 或发布新版本，历史 v0.6.2 ZIP 不含此功能。[脱敏记录](benchmarks/standalone-runtime.json) · [安装与边界](standalone.md)。
+
 ## 2026-11-06：可选交互变化（v0.6.2 之后的源码更新）
 
 - 437 项 Python 回归、Ruff 通过，新增覆盖固定种子、边界、默认路径读取次数、参数拒绝、页面/锁屏/旋转/接管变化、预算、不确定动作不重放、滚动与 Agent/Jev 配置透传。Jev 在此轮使用假决策接口测试，没有发出真实模型请求。

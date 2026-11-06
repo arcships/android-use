@@ -2,7 +2,7 @@
 
 v0.4.0 可选功能：[可选 Jev 决策集成与对比测试](jev.zh-CN.md)。默认关闭，原有工具兼容保留；v0.4.0 Release ZIP 已包含。
 
-v0.5.1 已包含[只读自动 OCR 与执行守卫](jev.zh-CN.md#自动只读-ocr)，并修复预览自动恢复；v0.5.2 进一步加入[稳定预览入口与新帧确认重连](preview-reconnection.md)；v0.6.0 新增[无 Key 宿主决策与可选 Jev Box 视觉定位](jev.zh-CN.md#无-key宿主决策模式)；v0.6.1 在 Box 框住多个文字标签时返回 `ambiguous` 和树中候选；内置 OCR 需要 macOS 与 Xcode Command Line Tools。
+v0.5.1 已包含[只读自动 OCR 与执行守卫](jev.zh-CN.md#自动只读-ocr)，并修复预览自动恢复；v0.5.2 进一步加入[稳定预览入口与新帧确认重连](preview-reconnection.md)；v0.6.0 新增[无 Key 宿主决策与可选 Jev Box 视觉定位](jev.zh-CN.md#无-key宿主决策模式)；v0.6.1 在 Box 框住多个文字标签时返回 `ambiguous` 和树中候选；源码方式的本地 OCR 需要 macOS 与 Xcode Command Line Tools；可选独立包使用另行安装的预编译 OCR 组件。
 
 [English](guide.md) · **简体中文** · [返回项目首页](../README.zh-CN.md)
 
