@@ -12,6 +12,11 @@ from android_use import portable as runtime
 from android_use.installation import InstallError, probe
 
 
+@pytest.fixture(autouse=True)
+def isolated_download_credentials(monkeypatch):
+    monkeypatch.delenv("ANDROID_USE_GITHUB_TOKEN", raising=False)
+
+
 @pytest.fixture
 def bundle(tmp_path):
     if os.name == "nt":
@@ -354,3 +359,95 @@ def test_cli_relative_install_root_returns_absolute_stable_config(
     result = json.loads(capsys.readouterr().out)
     assert Path(result["mcp_config"]["args"][0]).is_absolute()
     assert runtime.current_id(tmp_path / "relative root") == result["release"]
+
+
+def test_private_asset_auth_is_scoped_and_removed_on_redirect(tmp_path, monkeypatch):
+    import httpx
+
+    seen = []
+    original = httpx.Client
+    monkeypatch.setenv("ANDROID_USE_GITHUB_TOKEN", "private-test-token")
+
+    def transport(request):
+        seen.append((str(request.url), request.headers.get("Authorization")))
+        if request.url.host == "api.github.com":
+            return httpx.Response(
+                302, headers={"Location": "https://objects.githubusercontent.com/runtime.zip"}
+            )
+        return httpx.Response(200, content=b"verified-by-caller")
+
+    monkeypatch.setattr(
+        httpx,
+        "Client",
+        lambda **kwargs: original(transport=httpx.MockTransport(transport), **kwargs),
+    )
+    output = tmp_path / "download"
+    runtime.fetch(f"https://api.github.com/repos/{runtime.REPOSITORY}/releases/assets/12", output)
+    assert seen[0][1] == "Bearer private-test-token"
+    assert seen[1][1] is None
+    assert output.read_bytes() == b"verified-by-caller"
+
+
+def test_downloader_refuses_plain_http_redirect_and_size_overflow(tmp_path, monkeypatch):
+    import httpx
+
+    original = httpx.Client
+    requests = []
+
+    def redirect(request):
+        requests.append(str(request.url))
+        return httpx.Response(302, headers={"Location": "http://insecure.example/file"})
+
+    monkeypatch.setattr(
+        httpx,
+        "Client",
+        lambda **kwargs: original(transport=httpx.MockTransport(redirect), **kwargs),
+    )
+    with pytest.raises(InstallError, match="requires_https"):
+        runtime.fetch("https://example.test/file", tmp_path / "file")
+    assert len(requests) == 1
+    monkeypatch.setattr(
+        httpx,
+        "Client",
+        lambda **kwargs: original(
+            transport=httpx.MockTransport(lambda _: httpx.Response(200, content=b"too large")),
+            **kwargs,
+        ),
+    )
+    with pytest.raises(InstallError, match="too_large"):
+        runtime.fetch("https://example.test/file", tmp_path / "file", limit=2)
+
+
+def test_private_release_uses_validated_api_asset_endpoints(tmp_path, bundle, monkeypatch):
+    root = tmp_path / "install"
+    runtime.activate(root, *bundle())
+    archive, digest = bundle("2.0.0")
+    monkeypatch.setenv("ANDROID_USE_GITHUB_TOKEN", "test-only")
+    name = f"android-use-runtime-{runtime.target()}.zip"
+    base = f"https://api.github.com/repos/{runtime.REPOSITORY}/releases/assets/"
+    prefix = f"https://github.com/{runtime.REPOSITORY}/releases/download/v2.0.0/"
+    info = {
+        "tag_name": "v2.0.0",
+        "assets": [
+            {
+                "name": "SHA256SUMS",
+                "url": base + "1",
+                "browser_download_url": prefix + "SHA256SUMS",
+            },
+            {"name": name, "url": base + "2", "browser_download_url": prefix + name},
+        ],
+    }
+    requested = []
+
+    def fetch(url, destination, limit=runtime.MAX_DOWNLOAD):
+        requested.append(url)
+        if url.endswith("/latest"):
+            destination.write_text(json.dumps(info))
+        elif url.endswith("/1"):
+            destination.write_text(digest + "  " + name + "\n")
+        else:
+            destination.write_bytes(archive.read_bytes())
+
+    monkeypatch.setattr(runtime, "fetch", fetch)
+    assert runtime.checked_update(root)["version"] == "2.0.0"
+    assert requested[1:] == [base + "1", base + "2"]

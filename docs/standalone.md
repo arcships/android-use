@@ -29,7 +29,11 @@ dim plugin install /absolute/path/to/extracted-dim-plugin
 
 This is a **Dim** plugin: its MCP root placeholder follows Dim's plugin loader. It is separate from the historical Codex/source plugin ZIP. Keep one Android Use registration enabled to avoid duplicate tools and competing device operations.
 
-On first use, its OS bootstrap downloads the matching runtime and checks SHA256 before executing its installer. POSIX bootstrap uses `/bin/sh`, curl, unzip and sha256sum/shasum; Windows uses the built-in PowerShell/.NET tools. Only the initial download needs these OS utilities; managed launches use the native runtime. Bootstrap diagnostics go to stderr, keeping stdout reserved for MCP. Initial provisioning needs network access and may take longer than the client's startup timeout; let the Agent run the bootstrap/setup first, then reconnect MCP if necessary.
+On first use, its OS bootstrap downloads the matching runtime and checks SHA256 before executing its installer. For public releases, POSIX bootstrap uses `/bin/sh`, curl, unzip and sha256sum/shasum; Windows uses the built-in PowerShell/.NET tools. Only the initial download needs these OS utilities; managed launches use the native runtime. Bootstrap diagnostics go to stderr, keeping stdout reserved for MCP. Initial provisioning needs network access and may take longer than the client's startup timeout; let the Agent run the bootstrap/setup first, then reconnect MCP if necessary.
+
+### Private releases
+
+Public releases use unauthenticated HTTPS downloads. For a private repository, set `ANDROID_USE_GITHUB_TOKEN` in the MCP client's private environment to a token with read access to the release assets. Never put it in a chat or commit it. Native updates and optional OCR downloads use validated GitHub API asset URLs; authorization is stripped on cross-origin redirects. The bootstrap can use GitHub CLI for the first private download when the token is set; alternatively install the native archive offline first. GitHub CLI is not needed afterward. Missing access leaves an existing runtime unchanged.
 
 ### Offline/manual native package
 
@@ -77,7 +81,7 @@ On macOS/Linux, use the same fixed launcher for management:
 
 Rollback rechecks the previous runtime before switching. It pauses automatic updates to keep that selected version in place; an explicit successful `update` resumes checking. `ANDROID_USE_AUTO_UPDATE=0` in the MCP environment also disables automatic checks. Runtime directories are retained, including versions used by existing processes. No automatic deletion of potentially active versions occurs.
 
-Installation/promotion and rollback are serialized by `runtime.lock`; background downloads use `download.lock`. A forced process/OS termination can leave a lock. Confirm that no corresponding installer/updater is running before removing it. Pointer replacement is atomic; filesystem corruption, host process termination and external edits remain outside that guarantee. Release SHA256 fetched from the same trusted HTTPS release protects transfer integrity, not a compromised publishing account. The update repository is fixed to `arcships/android-use`.
+Installation/promotion and rollback are serialized by `runtime.lock`; background downloads use `download.lock`. A forced process/OS termination can leave a lock. Confirm that no corresponding installer/updater is running before removing it. Pointer replacement is atomic; filesystem corruption, host process termination and external edits remain outside that guarantee. Release SHA256 fetched from the same trusted HTTPS release protects transfer integrity, not a compromised publishing account. The update repository is fixed to `arcships/android-use`. HTTPS-only requests use the bundled Python HTTP client and CA bundle.
 
 ## Optional macOS OCR
 
@@ -120,3 +124,5 @@ Inputs are pinned in `scripts/runtime-inputs.json`. Archives carry Python/ADB no
 后续连接立即使用已安装版本，每 24 小时最多后台检查一次更新。新包验证和真实 MCP 握手通过后才切换单一指针；当前会话继续执行，下一次 MCP 连接使用新版。失败保留旧版，不自动降级，不覆盖下载期间发生的其他安装。回滚先验证旧包，再切换，并暂停自动更新；显式成功执行 `update` 后恢复检查，也可用 `ANDROID_USE_AUTO_UPDATE=0` 禁用。没有实现正在运行的 MCP 进程热替换。
 
 固定目录、已有版本和可选组件保留，设备/Jev 设置不清除。迁移旧源码入口时要保留 MCP 的 `env` 和 `ANDROID_USE_STATE_DIR`；旧安装器的 `launch.env` 不会自动导入，应私下迁移必要配置，或在界面重新设置 Jev。普通升级不依赖解压目录或系统 Python；宿主仍需重连以加载新版。强制终止残留的锁必须确认进程已退出后处理。
+
+私有发行包需要下载权限：可在 MCP 私有环境中设置 `ANDROID_USE_GITHUB_TOKEN`。首次自动安装还需 GitHub CLI，也可先离线安装运行包；后续更新和 OCR 下载使用包内 HTTP 客户端，无需 GitHub CLI。令牌仅发送到固定仓库的 GitHub API，跨域重定向不携带令牌，不在输出中回显。

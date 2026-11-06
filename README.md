@@ -27,7 +27,7 @@ For workflows that need repeated UI decisions, enable **Jev**. Your Agent keeps 
 
 **Python, ADB, ffmpeg, the screen UI and the control service in one native package.** The lightweight Dim plugin installs it automatically on first use. Later MCP connections start the installed version immediately and check for updates in the background; verified updates take effect on the next connection. Failed updates retain the previous version; rollback rechecks it before switching.
 
-**macOS OCR is an optional add-on**, omitted from the default package. Tree interaction, Agent screenshot inspection and Jev can be used without it. Ordinary users do not need Python, uv, Git, Node.js, a JDK or Xcode tools; the first-download bootstrap uses standard OS utilities.
+**macOS OCR is an optional add-on**, omitted from the default package. Tree interaction, Agent screenshot inspection and Jev can be used without it. Ordinary users do not need Python, uv, Git, Node.js, a JDK or Xcode tools; public-release bootstrap uses standard OS utilities. Private-release bootstrap additionally supports GitHub CLI with a private token; offline native installation avoids that requirement.
 
 This is newer than the published v0.6.2 source-plugin ZIP. Use native workflow artifacts for offline trials until a release containing the runtime assets is published. [Install, automatic updates, optional OCR and rollback →](docs/standalone.md)
 

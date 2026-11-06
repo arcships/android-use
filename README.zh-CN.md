@@ -27,7 +27,7 @@ Android Use 把你自己的 Android 手机或模拟器接入 **Dim Agent**，也
 
 **Python、ADB、ffmpeg、实时界面和控制服务，打成一个原生运行包。** 轻量 Dim 插件首次自动安装；后续 MCP 连接立即使用已安装版本，并在后台检查更新。新包校验、握手通过后，下一次连接使用新版；失败保留旧版，回滚前也会重新验证。
 
-**macOS OCR 是可选组件，默认包不带。** 控件树操作、Agent 看图和 Jev 均可独立使用。普通用户无需准备 Python、uv、Git、Node.js、JDK 或 Xcode 工具，首次下载只使用系统基础工具。
+**macOS OCR 是可选组件，默认包不带。** 控件树操作、Agent 看图和 Jev 均可独立使用。普通用户无需准备 Python、uv、Git、Node.js、JDK 或 Xcode 工具，公开发行包首次下载只使用系统基础工具。私有发行包自动安装支持 GitHub CLI 与私有令牌，也可用原生离线包省去此依赖。
 
 此功能晚于已发布的 v0.6.2 源码插件 ZIP。正式 Release 尚未包含这些资产时，可用原生构建工作流产物离线体验。[安装、自动更新、可选 OCR 与回滚 →](docs/standalone.md#中文)
 

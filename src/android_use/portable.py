@@ -12,7 +12,6 @@ import subprocess
 import sys
 import tempfile
 import time
-import urllib.request
 import uuid
 from pathlib import Path
 from zipfile import ZipFile
@@ -301,34 +300,93 @@ def rollback(root):
 
 
 def fetch(url, destination, limit=MAX_DOWNLOAD):
+    import httpx
+
     if not url.startswith("https://"):
         raise InstallError("runtime_download_requires_https")
-    request = urllib.request.Request(
-        url, headers={"User-Agent": "android-use-runtime", "Accept": "application/octet-stream"}
+    asset_api = re.fullmatch(
+        r"https://api.github.com/repos/arcships/android-use/releases/assets/[0-9]+", url
     )
-    with urllib.request.urlopen(request, timeout=15) as response, destination.open("wb") as stream:
-        total = 0
-        while block := response.read(1024 * 1024):
-            total += len(block)
-            if total > limit:
-                raise InstallError("runtime_download_too_large")
-            stream.write(block)
+    headers = {
+        "User-Agent": "android-use-runtime",
+        "Accept": "application/octet-stream"
+        if asset_api or not url.startswith("https://api.github.com/")
+        else "application/vnd.github+json",
+    }
+    token = os.environ.get("ANDROID_USE_GITHUB_TOKEN")
+    if token and url.startswith(f"https://api.github.com/repos/{REPOSITORY}/"):
+        headers["Authorization"] = "Bearer " + token
+
+    def https_only(request):
+        if request.url.scheme != "https":
+            raise InstallError("runtime_download_requires_https")
+
+    # HTTPX removes Authorization on cross-origin redirects and includes bundled CAs.
+    with httpx.Client(
+        follow_redirects=True, timeout=15, event_hooks={"request": [https_only]}
+    ) as client:
+        with client.stream("GET", url, headers=headers) as response:
+            response.raise_for_status()
+            with destination.open("wb") as stream:
+                total = 0
+                for block in response.iter_bytes(1024 * 1024):
+                    total += len(block)
+                    if total > limit:
+                        raise InstallError("runtime_download_too_large")
+                    stream.write(block)
+
+
+def release_info(temporary, version=None):
+    if version is not None and not re.fullmatch(VERSION, version):
+        raise InstallError("invalid_runtime_version")
+    endpoint = "latest" if version is None else "tags/v" + version
+    release = temporary / "release.json"
+    fetch(f"https://api.github.com/repos/{REPOSITORY}/releases/{endpoint}", release, 2_000_000)
+    info = json.loads(release.read_text())
+    tag = info.get("tag_name", "")
+    if info.get("draft") or info.get("prerelease") or not re.fullmatch("v" + VERSION, tag):
+        raise InstallError("invalid_runtime_release")
+    if version and tag != "v" + version:
+        raise InstallError("runtime_release_version_mismatch")
+    return info
+
+
+def download_asset(info, name, temporary):
+    prefix = f"https://github.com/{REPOSITORY}/releases/download/{info['tag_name']}/"
+    assets = {a["name"]: a for a in info.get("assets", [])}
+
+    def asset_url(filename):
+        asset = assets.get(filename, {})
+        if asset.get("browser_download_url") != prefix + filename:
+            raise InstallError("runtime_release_assets_missing")
+        if os.environ.get("ANDROID_USE_GITHUB_TOKEN"):
+            url = asset.get("url", "")
+            if not re.fullmatch(
+                r"https://api.github.com/repos/arcships/android-use/releases/assets/[0-9]+", url
+            ):
+                raise InstallError("invalid_private_asset_url")
+            return url
+        return prefix + filename
+
+    sums = temporary / "SHA256SUMS"
+    fetch(asset_url("SHA256SUMS"), sums, 1_000_000)
+    matches = [
+        line.split()[0]
+        for line in sums.read_text().splitlines()
+        if len(line.split()) == 2 and line.split()[1].lstrip("*") == name
+    ]
+    if len(matches) != 1:
+        raise InstallError("runtime_checksum_missing")
+    archive = temporary / name
+    fetch(asset_url(name), archive)
+    return archive, matches[0]
 
 
 def update(root, version=None):
     with tempfile.TemporaryDirectory(prefix="android-use-update-") as temporary:
         temporary = Path(temporary)
-        release = temporary / "release.json"
-        if version is not None and not re.fullmatch(VERSION, version):
-            raise InstallError("invalid_runtime_version")
-        endpoint = "latest" if version is None else "tags/v" + version
-        fetch(f"https://api.github.com/repos/{REPOSITORY}/releases/{endpoint}", release, 2_000_000)
-        info = json.loads(release.read_text())
-        tag = info.get("tag_name", "")
-        if info.get("draft") or info.get("prerelease") or not re.fullmatch("v" + VERSION, tag):
-            raise InstallError("invalid_runtime_release")
-        if version and tag != "v" + version:
-            raise InstallError("runtime_release_version_mismatch")
+        info = release_info(temporary, version)
+        tag = info["tag_name"]
         installed = status(root)
         installed_version = installed.get("version")
         if installed_version == tag[1:]:
@@ -340,26 +398,11 @@ def update(root, version=None):
 
             if numbers(installed_version) >= numbers(tag[1:]):
                 return installed
-        name = f"android-use-runtime-{target()}.zip"
-        prefix = f"https://github.com/{REPOSITORY}/releases/download/{tag}/"
-        assets = {a["name"]: a.get("browser_download_url") for a in info.get("assets", [])}
-        if assets.get(name) != prefix + name or assets.get("SHA256SUMS") != prefix + "SHA256SUMS":
-            raise InstallError("runtime_release_assets_missing")
-        checksums = temporary / "SHA256SUMS"
-        fetch(prefix + "SHA256SUMS", checksums, 1_000_000)
-        matches = [
-            line.split()[0]
-            for line in checksums.read_text().splitlines()
-            if len(line.split()) == 2 and line.split()[1].lstrip("*") == name
-        ]
-        if len(matches) != 1:
-            raise InstallError("runtime_checksum_missing")
-        archive = temporary / name
-        fetch(prefix + name, archive)
+        archive, digest = download_asset(info, f"android-use-runtime-{target()}.zip", temporary)
         return activate(
             root,
             archive,
-            matches[0],
+            digest,
             expected_version=tag[1:],
             expected_current=installed.get("release"),
         )
@@ -496,22 +539,11 @@ def install_ocr(root, archive, digest):
 
 def download_ocr(root):
     version = metadata(root / "releases" / release_id(current_id(root)))["version"]
-    name = f"android-use-ocr-{target()}.zip"
-    prefix = f"https://github.com/{REPOSITORY}/releases/download/v{version}/"
     with tempfile.TemporaryDirectory(prefix="android-use-ocr-download-") as folder:
         folder = Path(folder)
-        sums = folder / "SHA256SUMS"
-        fetch(prefix + "SHA256SUMS", sums, 1_000_000)
-        matches = [
-            line.split()[0]
-            for line in sums.read_text().splitlines()
-            if len(line.split()) == 2 and line.split()[1].lstrip("*") == name
-        ]
-        if len(matches) != 1:
-            raise InstallError("ocr_component_checksum_missing")
-        archive = folder / name
-        fetch(prefix + name, archive)
-        return install_ocr(root, archive, matches[0])
+        info = release_info(folder, version)
+        archive, digest = download_asset(info, f"android-use-ocr-{target()}.zip", folder)
+        return install_ocr(root, archive, digest)
 
 
 def health():

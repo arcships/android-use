@@ -19,8 +19,19 @@ $name = 'android-use-runtime-windows-x86_64.zip'
 $work = Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $work | Out-Null
 try {
-    Invoke-WebRequest -UseBasicParsing -TimeoutSec 180 "$base/SHA256SUMS" -OutFile (Join-Path $work 'SHA256SUMS')
-    Invoke-WebRequest -UseBasicParsing -TimeoutSec 180 "$base/$name" -OutFile (Join-Path $work $name)
+    if ($env:ANDROID_USE_GITHUB_TOKEN) {
+        if (-not (Get-Command gh -ErrorAction SilentlyContinue)) { throw 'Private bootstrap requires GitHub CLI, or offline runtime installation' }
+        $previousToken = $env:GH_TOKEN
+        try {
+            $env:GH_TOKEN = $env:ANDROID_USE_GITHUB_TOKEN
+            $downloadOutput = & gh release download --repo arcships/android-use --pattern SHA256SUMS --pattern $name --dir $work
+            if ($downloadOutput) { [Console]::Error.WriteLine(($downloadOutput -join [Environment]::NewLine)) }
+            if ($LASTEXITCODE -ne 0) { throw 'Private runtime download failed' }
+        } finally { $env:GH_TOKEN = $previousToken }
+    } else {
+        Invoke-WebRequest -UseBasicParsing -TimeoutSec 180 "$base/SHA256SUMS" -OutFile (Join-Path $work 'SHA256SUMS')
+        Invoke-WebRequest -UseBasicParsing -TimeoutSec 180 "$base/$name" -OutFile (Join-Path $work $name)
+    }
     $lines = @(Get-Content (Join-Path $work 'SHA256SUMS') | Where-Object { $_ -match "^[a-fA-F0-9]{64}\s+\*?$([regex]::Escape($name))$" })
     if ($lines.Count -ne 1) { throw 'Missing runtime checksum' }
     $expected = ($lines[0] -split '\s+')[0].ToLowerInvariant()

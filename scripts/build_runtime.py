@@ -11,8 +11,12 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import time
+import uuid
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
+
+import httpx
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -47,13 +51,28 @@ def run(args, cwd=None):
 
 def locked_input(cache, item):
     path = cache / item["filename"]
-    if not path.exists():
-        fetch(item["url"], path)
-    with path.open("rb") as stream:
-        digest = hashlib.file_digest(stream, "sha256").hexdigest()
-    if digest != item["sha256"]:
-        raise ValueError("Build input checksum mismatch: " + path.name)
-    return path
+    if path.exists():
+        with path.open("rb") as stream:
+            if hashlib.file_digest(stream, "sha256").hexdigest() == item["sha256"]:
+                return path
+    temporary = cache / (item["filename"] + ".download-" + uuid.uuid4().hex)
+    try:
+        for attempt in range(3):
+            try:
+                fetch(item["url"], temporary)
+                break
+            except (OSError, httpx.TransportError):
+                if attempt == 2:
+                    raise
+                time.sleep(attempt + 1)
+        with temporary.open("rb") as stream:
+            digest = hashlib.file_digest(stream, "sha256").hexdigest()
+        if digest != item["sha256"]:
+            raise ValueError("Build input checksum mismatch: " + path.name)
+        os.replace(temporary, path)
+        return path
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def archive_folder(folder, destination):

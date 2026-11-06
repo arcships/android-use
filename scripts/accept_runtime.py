@@ -290,6 +290,37 @@ shutil.copyfile(source,sys.argv[sys.argv.index('-o')+1])
             passed.append(
                 "packaged_plugin_first_install_and_clean_stdio_with_stubbed_download_transport"
             )
+            fakebin = folder / "private-fakebin"
+            fakebin.mkdir()
+            driver = fakebin / "gh_driver.py"
+            driver.write_text(f"""import os,sys,shutil
+from pathlib import Path
+assert os.environ.get('GH_TOKEN') == 'fixture-private-token'
+assert sys.argv[1:3] == ['release','download']
+assert sys.argv[sys.argv.index('--repo')+1] == 'arcships/android-use'
+output=Path(sys.argv[sys.argv.index('--dir')+1])
+shutil.copyfile({str(sums)!r},output/'SHA256SUMS')
+shutil.copyfile({str(archive)!r},output/{archive.name!r})
+""")
+            if os.name == "nt":
+                (fakebin / "gh.cmd").write_bytes(
+                    (
+                        f'@echo off\r\n"{Path(sys.executable).resolve()}" "{driver}" %*\r\nexit /b %errorlevel%\r\n'
+                    ).encode()
+                )
+            else:
+                gh = fakebin / "gh"
+                gh.write_text(f"#!{Path(sys.executable).resolve()}\n" + driver.read_text())
+                gh.chmod(0o755)
+            private_env = {
+                **bootstrap_env,
+                "ANDROID_USE_RUNTIME_DIR": str(folder / "private-bootstrap-runtime"),
+                "ANDROID_USE_GITHUB_TOKEN": "fixture-private-token",
+                "PATH": str(fakebin) + os.pathsep + os.environ.get("PATH", ""),
+            }
+            assert await connected(launch, private_env) == version
+            passed.append("private_plugin_bootstrap_with_stubbed_github_cli_and_clean_stdio")
+
         return {
             "platform": target(),
             "version": version,

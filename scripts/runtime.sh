@@ -15,8 +15,13 @@ base=https://github.com/arcships/android-use/releases/latest/download
 name=android-use-runtime-$target.zip
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT HUP INT TERM
-curl -fL --retry 2 --connect-timeout 15 --max-time 180 "$base/SHA256SUMS" -o "$work/SHA256SUMS" >&2
-curl -fL --retry 2 --connect-timeout 15 --max-time 180 "$base/$name" -o "$work/$name" >&2
+if [ -n "${ANDROID_USE_GITHUB_TOKEN:-}" ]; then
+  command -v gh >/dev/null 2>&1 || { echo 'Private bootstrap requires GitHub CLI, or install the runtime archive offline first' >&2; exit 1; }
+  GH_TOKEN="$ANDROID_USE_GITHUB_TOKEN" gh release download --repo arcships/android-use --pattern SHA256SUMS --pattern "$name" --dir "$work" >&2
+else
+  curl -fL --retry 2 --connect-timeout 15 --max-time 180 "$base/SHA256SUMS" -o "$work/SHA256SUMS" >&2
+  curl -fL --retry 2 --connect-timeout 15 --max-time 180 "$base/$name" -o "$work/$name" >&2
+fi
 expected=$(awk -v file="$name" '$2==file {print $1}' "$work/SHA256SUMS")
 case "$expected" in ''|*[!a-fA-F0-9]*) echo 'Invalid runtime checksum' >&2; exit 1;; esac
 [ "${#expected}" -eq 64 ] || exit 1

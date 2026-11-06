@@ -18,7 +18,22 @@ permissions:
   contents: read
 
 jobs:
+  inputs:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.13.7'
+      - run: uv run --frozen python scripts/fetch_runtime_inputs.py --cache dist/runtime-inputs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: standalone-build-inputs
+          path: dist/runtime-inputs/*
+          retention-days: 7
   build:
+    needs: inputs
     strategy:
       fail-fast: false
       matrix:
@@ -54,6 +69,10 @@ jobs:
           (Join-Path $msys 'mingw64/bin') >> $env:GITHUB_PATH
           (Join-Path $msys 'usr/bin') >> $env:GITHUB_PATH
           "ANDROID_USE_BUILD_BASH=$(Join-Path $msys 'usr/bin/bash.exe')" >> $env:GITHUB_ENV
+      - uses: actions/download-artifact@v4
+        with:
+          name: standalone-build-inputs
+          path: dist/runtime-build
       - run: uv sync --frozen --python 3.13.7
       - run: uv pip install -r scripts/runtime-build-requirements.txt
       - name: Build native runtime and Dim plugin
