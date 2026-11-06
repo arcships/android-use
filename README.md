@@ -23,6 +23,14 @@ For workflows that need repeated UI decisions, enable **Jev**. Your Agent keeps 
 
 **No root, Appium, signing setup, or keyboard APK.** The compiled UI is included. Use USB or already-authorized wireless ADB.
 
+## Standalone runtime (new source feature)
+
+**Python, ADB, ffmpeg, the screen UI and the control service in one native package.** The lightweight Dim plugin installs it automatically on first use. Later MCP connections start the installed version immediately and check for updates in the background; verified updates take effect on the next connection. Failed updates retain the previous version; rollback rechecks it before switching.
+
+**macOS OCR is an optional add-on**, omitted from the default package. Tree interaction, Agent screenshot inspection and Jev can be used without it. Ordinary users do not need Python, uv, Git, Node.js, a JDK or Xcode tools; the first-download bootstrap uses standard OS utilities.
+
+This is newer than the published v0.6.2 source-plugin ZIP. Use native workflow artifacts for offline trials until a release containing the runtime assets is published. [Install, automatic updates, optional OCR and rollback →](docs/standalone.md)
+
 ## Quick start
 
 ### Use in Dim Agent
@@ -39,8 +47,9 @@ https://github.com/arcships/android-use
 
 Read README.md, docs/guide.md and skills/android-use/SKILL.md.
 Reuse existing installations and preserve other MCP servers and uncommitted work.
-Check Git, uv, ADB and ffmpeg; install missing dependencies from official sources.
-Use scripts/install.py install --source . to create a stable managed runtime.
+Read docs/standalone.md. Prefer the matching standalone runtime/Dim plugin when
+available; verify its release SHA256. For a source-install fallback, check Git, uv,
+ADB and ffmpeg, then use scripts/install.py install --source . for a stable runtime.
 Register its returned mcp_config as Dim's local stdio server named android_use;
 use Dim's MCP management or dim mcp add. Check for duplicate registrations first.
 Discover devices, select my intended phone, call aua_setup(action="status"),
@@ -54,7 +63,7 @@ and unlocking. Leave Jev disabled for now.
 <details>
 <summary>Manual Dim setup — stable MCP entry</summary>
 
-Prepare the dependencies and [clone the repository](#or-install-manually), then run from its root:
+Prefer the [standalone package](docs/standalone.md), which returns a stable `mcp_config` without requiring a user Python/uv installation. For the source fallback, prepare dependencies and [clone the repository](#or-install-manually), then run from its root:
 
 ```bash
 uv run --no-project --python 3.13 python scripts/install.py install --source .
@@ -62,14 +71,14 @@ uv run --no-project --python 3.13 python scripts/install.py install --source .
 
 The JSON result contains `mcp_config.command` and `mcp_config.args`. In Dim's **MCP management**, add a **local stdio** server named `android_use`, using that command and the arguments in their original order. The installer creates an independent runtime and verifies its MCP handshake before switching versions.
 
-With the Dim CLI, the equivalent is below. Replace the two quoted placeholders with the exact `command` and `args[0]` returned by the installer:
+With the Dim CLI, register the returned command and **all** arguments in order. This example is the standalone macOS/Linux entry; replace the launcher path with your actual install result:
 
 ```bash
-dim mcp add --scope user android_use -- \
-  "/absolute/path/from/mcp_config.command" \
-  "/absolute/path/from/mcp_config.args[0]" serve
+dim mcp add --scope user android_use -- /bin/sh "/absolute/path/runtime/launcher.sh" auto-serve
 dim mcp test android_use --json
 ```
+
+For Windows or the source installer, use their returned `mcp_config` instead of copying these arguments. See [native package installation](docs/standalone.md#offlinemanual-native-package).
 
 Check that the MCP test returns a non-empty tool list. Some Dim CLI versions can return `success=true` with `tools=[]`; that alone does not confirm tools are loaded. In a new Dim chat, actually call `aua_setup` and `aua_ready`. If Android Use is already registered, inspect that entry before adding another. [Upgrade and rollback →](docs/upgrading.md)
 
@@ -294,6 +303,10 @@ Development comparisons include **18 source-level trials** and **12 live Agent /
 **v0.6.2 · MIT · 392 Python tests · 24 browser tests.** Emulator acceptance covers 15 real stdio MCP scenarios. Earlier physical-device acceptance covers Android 16 / Xiaomi 15 Ultra. New Jev setup and frame changes have local/emulator validation; other manufacturers, host versions and operating systems have different coverage. [Validation evidence →](docs/validation.md)
 
 Multi-touch, arbitrary gesture paths, fine-grained text selection and custom-editor input fallbacks are not implemented. A matched UI condition proves that condition; the Agent must verify business outcomes. Control and preview run locally, and tool results are handled by your chosen client/model.
+
+## Acknowledgements
+
+Thank you to [iPhone Use](https://github.com/zhongerxin/iPhone-use), its author and contributors for inspiring Android Use's phone-agent workflow, guided setup and live-screen experience.
 
 ## Explore and contribute
 

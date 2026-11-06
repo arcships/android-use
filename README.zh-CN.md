@@ -23,6 +23,14 @@ Android Use 把你自己的 Android 手机或模拟器接入 **Dim Agent**，也
 
 **无需 root、Appium、签名配置或键盘 APK。** 已包含编译好的界面，通过 USB 或已授权的无线 ADB 连接。
 
+## 独立运行包（新源码功能）
+
+**Python、ADB、ffmpeg、实时界面和控制服务，打成一个原生运行包。** 轻量 Dim 插件首次自动安装；后续 MCP 连接立即使用已安装版本，并在后台检查更新。新包校验、握手通过后，下一次连接使用新版；失败保留旧版，回滚前也会重新验证。
+
+**macOS OCR 是可选组件，默认包不带。** 控件树操作、Agent 看图和 Jev 均可独立使用。普通用户无需准备 Python、uv、Git、Node.js、JDK 或 Xcode 工具，首次下载只使用系统基础工具。
+
+此功能晚于已发布的 v0.6.2 源码插件 ZIP。正式 Release 尚未包含这些资产时，可用原生构建工作流产物离线体验。[安装、自动更新、可选 OCR 与回滚 →](docs/standalone.md#中文)
+
 ## 快速开始
 
 ### 在 Dim Agent 中使用
@@ -39,8 +47,8 @@ https://github.com/arcships/android-use
 
 先阅读 README.md、docs/guide.zh-CN.md 和 skills/android-use/SKILL.md。
 复用已有安装，保留其他 MCP 服务和未提交改动。
-检查 Git、uv、ADB、ffmpeg，从官方来源补齐依赖。
-用 scripts/install.py install --source . 创建固定入口的独立运行时。
+先读 docs/standalone.md，有对应原生包时优先使用独立运行包或轻量 Dim 插件，校验发行 SHA256。
+只有回退源码安装时，才检查 Git、uv、ADB、ffmpeg，并用 scripts/install.py install --source . 创建固定入口。
 把返回的 mcp_config 注册为 Dim 的本地 stdio MCP，名称 android_use；
 使用 Dim 的 MCP 管理或 dim mcp add，先检查已有注册，避免重复配置。
 发现设备，明确选择我的目标手机，先调用 aua_setup(action="status")，
@@ -53,7 +61,7 @@ https://github.com/arcships/android-use
 <details>
 <summary>手动配置 Dim：使用固定 MCP 入口</summary>
 
-准备依赖并[克隆仓库](#或者手动安装)，在仓库根目录执行：
+优先使用[独立运行包](docs/standalone.md#中文)，它会返回固定 `mcp_config`，无需用户安装 Python/uv。回退源码安装时，准备依赖并[克隆仓库](#或者手动安装)，在仓库根目录执行：
 
 ```bash
 uv run --no-project --python 3.13 python scripts/install.py install --source .
@@ -61,14 +69,14 @@ uv run --no-project --python 3.13 python scripts/install.py install --source .
 
 返回的 JSON 包含 `mcp_config.command` 和 `mcp_config.args`。在 Dim 的 **MCP 管理**中添加**本地 stdio** 服务，名称填 `android_use`，命令与参数按返回值逐项填写，保持参数顺序。安装器会创建独立运行时，真实 MCP 握手通过后才切换版本。
 
-已安装 Dim CLI 时，也可使用下方命令。两处带引号的占位路径分别替换为安装器返回的 `command` 和 `args[0]`：
+已安装 Dim CLI 时，将返回的命令和**全部参数**依次注册。下方示例是独立包的 macOS/Linux 入口，启动器路径按安装结果替换：
 
 ```bash
-dim mcp add --scope user android_use -- \
-  "/absolute/path/from/mcp_config.command" \
-  "/absolute/path/from/mcp_config.args[0]" serve
+dim mcp add --scope user android_use -- /bin/sh "/absolute/path/runtime/launcher.sh" auto-serve
 dim mcp test android_use --json
 ```
+
+Windows 和源码安装器请使用各自返回的 `mcp_config`，不要照抄此参数。[原生包安装 →](docs/standalone.md#offlinemanual-native-package)
 
 检查 MCP 测试返回的工具列表是否非空；部分 Dim CLI 版本会返回 `success=true`、`tools=[]`，不能据此判断工具已加载。请在新的 Dim 聊天中实际调用 `aua_setup` 和 `aua_ready`。已有 Android Use 注册时，先检查原条目再配置。[升级与回退 →](docs/upgrading.md#中文)
 
@@ -294,6 +302,10 @@ v0.5.0 通过 **277 项 Python 测试、17 项界面测试**。内置 OCR 目前
 **v0.6.2 · MIT · 392 项 Python 测试 · 24 项浏览器测试。** 模拟器验收覆盖 15 项真实 stdio MCP 场景；已有 Android 16 / Xiaomi 15 Ultra 真机验收。新增 Jev 设置和机身界面在本机/模拟器验证，其他厂商、宿主版本及系统的覆盖范围另见[验证记录](docs/validation.md)。
 
 多指手势、任意轨迹、精细文本选区及自绘编辑器输入兜底尚未实现。UI 条件满足仅证明该条件，Agent 仍需验收业务结果。控制和预览运行于本机，工具结果由你选择的客户端与模型处理。
+
+## 致谢
+
+感谢 [iPhone Use](https://github.com/zhongerxin/iPhone-use) 的作者与贡献者，为 Android Use 在手机 Agent 交互、引导式安装和实时画面方面带来的启发。
 
 ## 文档与贡献
 
