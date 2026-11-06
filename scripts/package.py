@@ -36,7 +36,7 @@ def main():
                 "node_modules",
                 "test-results",
                 "playwright-report",
-            }.intersection(p.parts)
+            }.intersection(p.relative_to(root).parts)
         )
     with ZipFile(output, "w", ZIP_DEFLATED) as archive:
         for path in sorted(files):

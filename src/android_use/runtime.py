@@ -216,12 +216,15 @@ class Runtime:
         self.mutation_attempted = False
         try:
             if op == "doctor":
+                from .installation import diagnose
+
                 return {
                     "ok": True,
                     "devices": discover(),
                     "configured": bool(read_config()),
                     "python": os.sys.version.split()[0],
                     "state_dir": str(state_dir()),
+                    "installation": diagnose(),
                 }
             if op == "setup":
                 return self._setup(**args)
