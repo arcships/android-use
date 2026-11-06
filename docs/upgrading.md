@@ -1,6 +1,6 @@
 # Stable installation and upgrades
 
-This installer is a **source update after v0.6.1**. The existing v0.6.1 release ZIP does not contain it. Use the current checkout's `scripts/install.py`; it can also install a previously downloaded, verified release directory with `--source /path/to/extracted-release`.
+This installer ships in **v0.6.2** and later source/ZIP installations. Verify the release checksum, extract it, and run its `scripts/install.py`. The older v0.6.1 ZIP does not contain the installer; a current installer can also install an older extracted release with `--source /path/to/extracted-release`.
 
 ## Codex: one command, one registration
 
@@ -64,7 +64,7 @@ Regression coverage includes installation roots and environment-file paths with 
 
 ## 中文
 
-这是 v0.6.1 之后的源码更新，旧 v0.6.1 ZIP 不含安装器。当前仓库执行：
+安装器已纳入 v0.6.2；校验并解压发行包后，或在当前仓库中执行（旧 v0.6.1 ZIP 不含安装器）：
 
 ```bash
 uv run --no-project --python 3.13 python scripts/install.py doctor

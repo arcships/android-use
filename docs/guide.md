@@ -142,21 +142,19 @@ Choose a release ZIP or a source checkout. If you already use `android-use-local
 
 ### Install the release ZIP
 
-Download `android-use-0.6.1-plugin.zip` and `SHA256SUMS` from [GitHub Release v0.6.1](https://github.com/JackCaow/android-use/releases/tag/v0.6.1). The ZIP includes the compiled UI, Python source/lockfile, skills, bilingual docs, and a ready-to-register local marketplace. It does not bundle Python, ADB, or ffmpeg; prepare the dependencies above. First installation needs network access to install Python dependencies.
-
-On macOS/Linux, extract it and run:
+Download `android-use-0.6.2-plugin.zip` and `SHA256SUMS` from [GitHub Release v0.6.2](https://github.com/JackCaow/android-use/releases/tag/v0.6.2). The ZIP includes the compiled UI, Python source/lockfile, stable installer, skills, bilingual docs and a local marketplace. Prepare uv, ADB, ffmpeg and the Codex CLI; dependencies are downloaded on first installation.
 
 ```bash
-# Check the downloaded archive first (Linux can use sha256sum -c SHA256SUMS).
-shasum -a 256 -c SHA256SUMS
-unzip android-use-0.6.1-plugin.zip -d android-use-v0.6.1
-cd android-use-v0.6.1
-uv sync --frozen --python 3.13
-codex plugin marketplace add .
-codex plugin add android-use@android-use-release
+shasum -a 256 -c SHA256SUMS  # Linux: sha256sum -c SHA256SUMS
+unzip android-use-0.6.2-plugin.zip -d android-use-v0.6.2
+cd android-use-v0.6.2
+uv run --no-project --python 3.13 python scripts/install.py doctor
+uv run --no-project --python 3.13 python scripts/install.py install --source . --codex
 ```
 
-On Windows, extract the ZIP with your archive tool, open a terminal in that directory, and run the uv/Codex commands. Windows device operation remains outside completed native acceptance. Reload tools/start a new chat and enable Android Use, then complete [device setup and READY](#connect-a-device). The release marketplace is named `android-use-release`; the source-checkout marketplace remains `android-use-local`. Registering the ZIP does not require cloning the repository or running `scripts/package.py`.
+For an existing local/release plugin or direct Codex MCP entry, review the doctor result and explicitly add `--migrate-codex`. Already-managed installs use the normal install command. The managed copy survives removal of the extracted directory and old plugin caches; keep the managed directory and Python/uv installations. [Migration, environment settings and failure recovery](upgrading.md).
+
+On Windows, extract with your archive tool, then run the uv/Codex commands. Windows native upgrade/device acceptance is not complete. Reload the host's tools and verify the active version, device READY and preview. The older direct `android-use-release` marketplace remains supported, but do not enable it alongside the managed plugin.
 
 ### Install from source
 
@@ -167,7 +165,7 @@ uv run --no-project --python 3.13 python scripts/install.py doctor
 uv run --no-project --python 3.13 python scripts/install.py install --source . --codex
 ```
 
-**Source update after v0.6.1:** this installer prepares an independent runtime and registers `android-use@android-use-managed` against a stable launcher. Existing Android Use registrations require `--migrate-codex`. It backs up and preserves unrelated settings. [Upgrade and rollback contract](upgrading.md). The older development `android-use-local` route still uses `scripts/package.py`; do not enable both.
+**Included in v0.6.2:** this installer prepares an independent runtime and registers `android-use@android-use-managed` against a stable launcher. Existing Android Use registrations require `--migrate-codex`. It backs up and preserves unrelated settings. [Upgrade and rollback contract](upgrading.md). The older development `android-use-local` route still uses `scripts/package.py`; do not enable both.
 
 Start a new chat or reload the client tools, then enable Android Use. Check the installation with:
 
@@ -424,7 +422,7 @@ Open the phone view, choose the **Jev** button, enter your TypeSafe API Key, the
 
 ## Updating
 
-Use the [stable installer](upgrading.md), available in source after v0.6.1:
+Use the [stable installer](upgrading.md), included in v0.6.2:
 
 ```bash
 git pull --ff-only

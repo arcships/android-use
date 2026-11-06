@@ -185,21 +185,19 @@ uv run android-use --serial SERIAL ready
 
 ### 安装发行包 ZIP
 
-从 [GitHub Release v0.6.1](https://github.com/JackCaow/android-use/releases/tag/v0.6.1) 下载 `android-use-0.6.1-plugin.zip` 和 `SHA256SUMS`。ZIP 已含编译好的界面、Python 源码与锁文件、技能、双语文档和可注册的本地市场；不包含 Python、ADB、ffmpeg，先按上文准备依赖。首次安装需要联网下载 Python 依赖。
-
-macOS / Linux 下载后执行：
+从 [GitHub Release v0.6.2](https://github.com/JackCaow/android-use/releases/tag/v0.6.2) 下载 `android-use-0.6.2-plugin.zip` 和 `SHA256SUMS`。包内包含编译好的界面、源码与锁文件、固定入口安装器、技能和双语说明；先准备 uv、ADB、ffmpeg 和 Codex CLI，首次安装需下载 Python 依赖。
 
 ```bash
-# 先校验下载文件；Linux 也可使用 sha256sum -c SHA256SUMS。
-shasum -a 256 -c SHA256SUMS
-unzip android-use-0.6.1-plugin.zip -d android-use-v0.6.1
-cd android-use-v0.6.1
-uv sync --frozen --python 3.13
-codex plugin marketplace add .
-codex plugin add android-use@android-use-release
+shasum -a 256 -c SHA256SUMS  # Linux: sha256sum -c SHA256SUMS
+unzip android-use-0.6.2-plugin.zip -d android-use-v0.6.2
+cd android-use-v0.6.2
+uv run --no-project --python 3.13 python scripts/install.py doctor
+uv run --no-project --python 3.13 python scripts/install.py install --source . --codex
 ```
 
-Windows 可用解压工具展开 ZIP，在该目录打开终端执行 uv / Codex 命令；Windows 真机操作尚未完成验收。安装后重新加载工具或新建聊天，启用 Android Use，再完成[手机连接与 READY](#首次连接手机)。发行包市场名为 `android-use-release`，源码市场仍为 `android-use-local`。ZIP 安装无需克隆仓库或再次运行打包脚本。
+从旧插件或手动 Codex MCP 迁移时，核对 doctor 结果并显式加 `--migrate-codex`。已使用托管入口则直接执行普通安装命令。安装成功后可清理解压目录和旧插件缓存；固定管理目录、Python 与 uv 仍需保留。[迁移、私有环境配置与失败恢复](upgrading.md#中文)。
+
+Windows 可用解压工具展开后执行 uv/Codex 命令；Windows 原生升级与设备操作尚未实测。安装后重载工具，核对实际版本、手机 READY 与实时画面。旧的 `android-use-release` 直接市场仍可使用，不要与托管插件同时启用。
 
 ### 从源码安装
 
@@ -210,7 +208,7 @@ uv run --no-project --python 3.13 python scripts/install.py doctor
 uv run --no-project --python 3.13 python scripts/install.py install --source . --codex
 ```
 
-**v0.6.1 之后的源码更新：** 新安装器注册 `android-use@android-use-managed`，运行时和固定入口独立于版本缓存。已有安装需显式加 `--migrate-codex`；项目覆盖需先解决。[升级、迁移与回退](upgrading.md#中文)。旧开发市场 `android-use-local` 仍可手动打包使用，不要同时启用两种入口。
+**v0.6.2 已包含：** 新安装器注册 `android-use@android-use-managed`，运行时和固定入口独立于版本缓存。已有安装需显式加 `--migrate-codex`；项目覆盖需先解决。[升级、迁移与回退](upgrading.md#中文)。旧开发市场 `android-use-local` 仍可手动打包使用，不要同时启用两种入口。
 
 安装后在客户端重载工具或开启新聊天，核对 `Android Use Managed` 来源及实际 MCP 版本。可用以下命令检查市场：
 
@@ -542,7 +540,7 @@ codex mcp add android_use -- uv run --frozen --directory /absolute/path/android-
 
 ## 更新
 
-使用 [固定入口安装器](upgrading.md#中文)（v0.6.1 之后的源码更新）：
+使用 [固定入口安装器](upgrading.md#中文)（v0.6.2 已包含）：
 
 ```bash
 git pull --ff-only
