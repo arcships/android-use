@@ -48,9 +48,15 @@ v0.7.0 分别提供源码插件、轻量 Dim 插件和原生运行包，按用�
 
 **在连接 Android 手机的电脑上打开 Dim Agent 桌面端。** 安装一次 Android Use，之后在聊天中描述任务，在右侧手机画面跟随执行过程。Jev 可选；不配置额外模型 Key，也能由当前 Agent 决策。
 
+**在插件市场安装。** 打开 Dim Agent 的**插件 → 插件市场**，搜索 **AndroidUse**，点击 **+** 安装。条目右侧显示勾号，表示已经安装。
+
+![Dim Agent 插件市场中的 AndroidUse 安装入口](docs/images/dim-plugin-marketplace.png)
+
 **1. 连接手机。** 开启开发者选项和 USB 调试，插入数据线，在手机上接受调试授权并保持解锁。ADB 需要运行在 Dim 实际执行命令的电脑上；如果使用远程会话，手机应连接到那台执行主机。
 
-**2. 让 Dim Agent 完成安装配置。** 将下面整段发到有本机终端权限的聊天中：
+**2. 让 Dim Agent 完成配置。** 从插件市场安装后，让 Agent 复用已安装的 AndroidUse，检查依赖与设备连接，验证 READY 并打开实时画面，保留已有 MCP 注册。
+
+从 GitHub 安装时，将下面整段发到有本机终端权限的聊天中：
 
 ```text
 请在这台电脑上为 Dim Agent 安装并配置 Android Use：
