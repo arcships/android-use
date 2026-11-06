@@ -113,3 +113,45 @@ def test_changed_upstream_notice_blocks_packaging(tmp_path):
     bundle.mkdir()
     with pytest.raises(ValueError, match="notice was modified"):
         runtime_licenses.collect(root, bundle)
+
+
+def test_git_checkout_preserves_pinned_license_bytes_under_windows_line_endings(tmp_path):
+    import subprocess
+
+    repository = tmp_path / "git checkout"
+    (repository / "docs/licenses").mkdir(parents=True)
+    hooks = repository / "empty-hooks"
+    hooks.mkdir()
+    original = b"upstream license\noriginal LF bytes\n"
+    notice = repository / "docs/licenses/LICENSE.fixture.txt"
+    notice.write_bytes(original)
+    (repository / ".gitattributes").write_bytes((ROOT / ".gitattributes").read_bytes())
+
+    def git(*args):
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repository),
+                "-c",
+                "core.autocrlf=true",
+                "-c",
+                "core.hooksPath=" + str(hooks),
+                "-c",
+                "commit.gpgsign=false",
+                "-c",
+                "user.name=Fixture",
+                "-c",
+                "user.email=fixture@example.invalid",
+                *args,
+            ],
+            check=True,
+            capture_output=True,
+        )
+
+    git("init")
+    git("add", ".")
+    git("commit", "-m", "Fixture")
+    notice.unlink()
+    git("checkout", "--", "docs/licenses/LICENSE.fixture.txt")
+    assert notice.read_bytes() == original
