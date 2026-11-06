@@ -70,6 +70,7 @@ def test_native_package_contains_original_notices_and_mpl_source_form(tmp_path):
     bundle = tmp_path / "bundle"
     (bundle / "app").mkdir(parents=True)
     (bundle / "app/android-use-runtime").write_bytes(b"test-native-runtime")
+    (bundle / "app/Python").write_bytes(b"\xcf\xfa\xed\xfe" + b"test-framework-library")
     runtime_licenses.collect(ROOT, bundle)
     licenses = bundle / "licenses"
     assert (licenses / "CPython-LICENSE.txt").is_file()
@@ -80,7 +81,9 @@ def test_native_package_contains_original_notices_and_mpl_source_form(tmp_path):
         p["name"].lower() == "certifi" and p["declared_license"] == "MPL-2.0"
         for p in inventory["packages"]
     )
-    assert inventory["native_files"][0]["file"] == "app/android-use-runtime"
+    assert {"app/android-use-runtime", "app/Python"} <= {
+        item["file"] for item in inventory["native_files"]
+    }
 
 
 def test_unexpected_gdbm_native_binary_blocks_packaging(tmp_path):

@@ -90,7 +90,22 @@ def collect(root, bundle):
             shutil.copyfile(source, destination)
     native_files = []
     for file in sorted(bundle.rglob("*")):
-        if file.is_file() and (
+        if not file.is_file():
+            continue
+        with file.open("rb") as stream:
+            magic = stream.read(4)
+        executable_magic = magic.startswith(b"MZ") or magic in {
+            b"\x7fELF",
+            b"\xcf\xfa\xed\xfe",
+            b"\xfe\xed\xfa\xcf",
+            b"\xce\xfa\xed\xfe",
+            b"\xfe\xed\xfa\xce",
+            b"\xca\xfe\xba\xbe",
+            b"\xbe\xba\xfe\xca",
+            b"\xca\xfe\xba\xbf",
+            b"\xbf\xba\xfe\xca",
+        }
+        if executable_magic or (
             file.suffix in {".dll", ".so", ".dylib", ".pyd", ".exe"}
             or str(file.relative_to(bundle))
             in {"app/android-use-runtime", "tools/adb/adb", "tools/ffmpeg"}
