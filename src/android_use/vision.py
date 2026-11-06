@@ -149,6 +149,44 @@ def classify(answer, tap, args):
     return "located"
 
 
+def iou(a, b):
+    left, top = max(a[0], b[0]), max(a[1], b[1])
+    right, bottom = min(a[0] + a[2], b[0] + b[2]), min(a[1] + a[3], b[1] + b[3])
+    overlap = max(0, right - left) * max(0, bottom - top)
+    return overlap / (a[2] * a[3] + b[2] * b[3] - overlap)
+
+
+def label(node):
+    return node.get("text") or node.get("description") or ""
+
+
+def inside(point, rect):
+    return rect[0] <= point[0] < rect[0] + rect[2] and rect[1] <= point[1] < rect[1] + rect[3]
+
+
+def text_conflict(box, tap, nodes):
+    """Why a box is a region around tree text rather than one element, with candidates.
+
+    Measured on Taobao: for small text (prices, tags) Box confidently returned a box
+    around a whole text row or two, and its center fell between labels. A box matching
+    one labeled or clickable node (e.g. an icon tile with badge and caption) is an element.
+    """
+    if any((n["clickable"] or label(n)) and iou(box, n["rect"]) >= 0.6 for n in nodes):
+        return None, []
+    area = box[2] * box[3]
+    found = {}
+    for n in nodes:
+        x, y, w, h = n["rect"]
+        if label(n) and w * h < area * 0.5 and inside((x + w / 2, y + h / 2), box):
+            found.setdefault(tuple(n["rect"]), {"label": label(n)[:80], "rect": n["rect"]})
+    candidates = list(found.values())
+    if len(candidates) >= 2:
+        return "box_spans_text_nodes", candidates
+    if candidates and not any(label(n) and inside(tap, n["rect"]) for n in nodes):
+        return "tap_between_labels", candidates
+    return None, []
+
+
 def locate(runtime, values, policy, *, keep=False):
     args = LocateArgs.model_validate(values)
     start = time.monotonic()
@@ -192,9 +230,16 @@ def locate(runtime, values, policy, *, keep=False):
             min(box[1] + box[3] // 2, roi["y"] + roi["height"] - 1),
         ]
         status = classify(answer, tap, args)
+        reason, spans = (
+            text_conflict(box, tap, snap["nodes"]) if status == "located" else (None, [])
+        )
+        if reason:
+            # These targets have tree nodes: return them for a selector instead of guessing.
+            status = "ambiguous"
         result = {
             "ok": True,
             "status": status,
+            **({"reason": reason, "tree_candidates": spans[:10]} if reason else {}),
             "found": status == "located",
             "presence": answer["presence"],
             "count": answer["count"],
