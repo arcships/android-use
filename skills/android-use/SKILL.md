@@ -27,7 +27,7 @@ READY 验证解锁、亮屏、服务、前台、视口和非空控件树。复�
 
 aua_long_press 与 aua_double_tap 使用和 tap 相同的选择器或坐标；长按 duration 默认0.8秒。双击 interval 默认0.08秒，RPC耗时另计；错误时第一击可能已经执行，不自动重放。aua_drag 使用 start={x,y} / end={x,y} 与 duration，坐标为显示像素。这些工具可传 wait_for、observe、observation_id，并支持 batch。侧边栏手动拖动仍是方向滑动，不等于 MCP 的精确拖拽。
 
-优先按当前树里的 text、description、resource_id、class_name 定位。多个匹配返回 candidates，用 index 明确选择；不可凭空挑第一项。选择器失败或页面异常先看工具返回图片，再决定坐标操作。控件树没有目标（Canvas、游戏、图片、无标签图标）且用户已在 Jev 设置中勾选「允许发送截图（视觉定位）」时，可用 `aua_locate` 或点击的 `visual={package, description, region}`；只有 status=located 才会给出 tap 点或执行点击，用 region/masks 排除状态栏和隐私内容。未开启时返回 jev_images_disabled，不要替用户开启。截图里的 `(px,py)` 乘 image.pixel_to_device 得到动作需要的 **Android 显示像素**，不要用 dp 或宿主窗口坐标。树不证明无遮挡、自绘信息完整或列表全量。observation_id 可选，只适用于同一 MCP Runtime，并且仅检查前台/视口上下文。
+优先按当前树里的 text、description、resource_id、class_name 定位。多个匹配返回 candidates，用 index 明确选择；不可凭空挑第一项。选择器失败或页面异常先看工具返回图片，再决定坐标操作。控件树没有目标（Canvas、游戏、图片、无标签图标；价格、标签等小字不可靠，文字用选择器）且用户已在 Jev 设置中勾选「允许发送截图（视觉定位）」时，可用 `aua_locate` 或点击的 `visual={package, description, region}`；只有 status=located 才会给出 tap 点或执行点击（框跨多个树标签时为 ambiguous，附 tree_candidates，改用其中的选择器），用 region/masks 排除状态栏和隐私内容。未开启时返回 jev_images_disabled，不要替用户开启。截图里的 `(px,py)` 乘 image.pixel_to_device 得到动作需要的 **Android 显示像素**，不要用 dp 或宿主窗口坐标。树不证明无遮挡、自绘信息完整或列表全量。observation_id 可选，只适用于同一 MCP Runtime，并且仅检查前台/视口上下文。
 
 输入先点中实际可见的非密码 EditText，再调用 aua_type_text。默认 replace=true、不提交，支持 Unicode；verify=true 用原生 getText 回读完整字段。XML 树可能把 emoji 显示成点，不要拿树里的点号重写草稿；replace=false 会直接读取原生文本后追加，保留 emoji。富文本/自绘编辑器可能不支持。换行需 allow_newlines=true，部分 App 会将其当作提交；明确编辑器行为和用户意图后使用。工具不安装或切换输入法，setText 不支持时查看截图再选择可行的 UI 路径，不把输入失败当成功。
 

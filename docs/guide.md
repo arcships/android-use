@@ -2,7 +2,7 @@
 
 Optional feature in v0.4.0: [optional Jev decision integration and comparison](jev.md). Default off; original tools remain compatible. Included in the v0.4.0 release ZIP.
 
-v0.5.1 includes [read-only automatic OCR and execution guards](jev.md#automatic-read-only-ocr), plus automatic preview recovery. v0.5.2 adds [stable preview endpoints and frame-confirmed reconnection](preview-reconnection.md). v0.6.0 adds the [keyless host decider and opt-in Jev Box visual location](jev.md#no-key-host-decider). Built-in OCR requires macOS and Xcode Command Line Tools.
+v0.5.1 includes [read-only automatic OCR and execution guards](jev.md#automatic-read-only-ocr), plus automatic preview recovery. v0.5.2 adds [stable preview endpoints and frame-confirmed reconnection](preview-reconnection.md). v0.6.0 adds the [keyless host decider and opt-in Jev Box visual location](jev.md#no-key-host-decider). v0.6.1 returns `ambiguous` with tree candidates when a Box spans several text labels. Built-in OCR requires macOS and Xcode Command Line Tools.
 
 **English** · [简体中文](guide.zh-CN.md) · [Project home](../README.md)
 
@@ -142,15 +142,15 @@ Choose a release ZIP or a source checkout. If you already use `android-use-local
 
 ### Install the release ZIP
 
-Download `android-use-0.6.0-plugin.zip` and `SHA256SUMS` from [GitHub Release v0.6.0](https://github.com/JackCaow/android-use/releases/tag/v0.6.0). The ZIP includes the compiled UI, Python source/lockfile, skills, bilingual docs, and a ready-to-register local marketplace. It does not bundle Python, ADB, or ffmpeg; prepare the dependencies above. First installation needs network access to install Python dependencies.
+Download `android-use-0.6.1-plugin.zip` and `SHA256SUMS` from [GitHub Release v0.6.1](https://github.com/JackCaow/android-use/releases/tag/v0.6.1). The ZIP includes the compiled UI, Python source/lockfile, skills, bilingual docs, and a ready-to-register local marketplace. It does not bundle Python, ADB, or ffmpeg; prepare the dependencies above. First installation needs network access to install Python dependencies.
 
 On macOS/Linux, extract it and run:
 
 ```bash
 # Check the downloaded archive first (Linux can use sha256sum -c SHA256SUMS).
 shasum -a 256 -c SHA256SUMS
-unzip android-use-0.6.0-plugin.zip -d android-use-v0.6.0
-cd android-use-v0.6.0
+unzip android-use-0.6.1-plugin.zip -d android-use-v0.6.1
+cd android-use-v0.6.1
 uv sync --frozen --python 3.13
 codex plugin marketplace add .
 codex plugin add android-use@android-use-release

@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw
 
 from android_use.backend import UseError
 from android_use.jev import JevConfig, JevPolicy
-from android_use.vision import fit_image, locate
+from android_use.vision import fit_image, locate, text_conflict
 
 PACKAGE = "demo.app"
 XML = """<hierarchy><node package="demo.app" class="android.view.View"
@@ -92,6 +92,51 @@ def test_region_offsets_box(screen):
     region = {"x": 540, "y": 0, "width": 540, "height": 1200}
     result = locate(runtime, request(region=region), vision_policy())
     assert result["box"] == [972, 120, 54, 60]
+
+
+def node(rect, text="", clickable=False):
+    return {"rect": rect, "text": text, "description": "", "clickable": clickable}
+
+
+def test_box_matching_one_element_is_not_a_text_conflict():
+    # An icon tile whose caption and badge are separate nodes is still one element.
+    tile = node([46, 1215, 198, 243], "", clickable=True)
+    parts = [node([60, 1400, 170, 40], "重置密码"), node([200, 1220, 30, 30], "5")]
+    assert text_conflict([50, 1220, 190, 235], [145, 1337], [tile, *parts]) == (None, [])
+
+
+def test_box_over_a_text_row_lists_tree_candidates():
+    # E-commerce feed: a price box covered the price and the sales count beside it.
+    nodes = [node([40, 900, 160, 50], "¥385.34"), node([210, 905, 150, 40], "1万+人付款")]
+    reason, candidates = text_conflict([30, 880, 360, 90], [210, 925], nodes)
+    assert reason == "box_spans_text_nodes"
+    assert [c["label"] for c in candidates] == ["¥385.34", "1万+人付款"]
+
+
+def test_box_center_between_labels_is_a_text_conflict():
+    nodes = [node([0, 0, 100, 40], "双11热销爆款")]
+    assert text_conflict([0, 0, 400, 100], [200, 50], nodes)[0] == "tap_between_labels"
+    assert text_conflict([0, 0, 200, 100], [50, 20], nodes) == (None, [])
+
+
+def test_text_merged_into_one_large_node_is_not_checked():
+    # Flutter merges a card's title and subtitle into one node; the tree cannot tell.
+    card = node([557, 297, 477, 230], "会议\n纪要都处理完了", clickable=True)
+    assert text_conflict([583, 389, 303, 90], [734, 434], [card]) == (None, [])
+
+
+def test_located_box_spanning_tree_labels_becomes_ambiguous(screen):
+    runtime, backend, _ = screen
+    backend.xml = XML.replace(
+        "</hierarchy>",
+        '<node package="demo.app" text="¥385" enabled="true" bounds="[870,250][960,280]"/>'
+        '<node package="demo.app" text="包邮" enabled="true" bounds="[870,320][960,350]"/>'
+        "</hierarchy>",
+    )
+    result = locate(runtime, request(), vision_policy())
+    assert result["status"] == "ambiguous" and result["reason"] == "box_spans_text_nodes"
+    assert result["tap"] is None and not result["found"]
+    assert {c["label"] for c in result["tree_candidates"]} == {"¥385", "包邮"}
 
 
 @pytest.mark.parametrize(

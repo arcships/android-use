@@ -108,12 +108,14 @@ DESCRIPTIONS = {
     "for ambiguous symbols. Optional sum_check validates same-currency Decimal sums in code; "
     "no device actions. verified=false always requires Agent business verification.",
     "locate": "Read-only Jev Box location for elements the accessibility tree lacks (canvas, "
-    "games, WebView images, icons without labels). Sends one masked screenshot of region (default "
+    "games, WebView images, icons without labels); small text such as prices or tags is "
+    "unreliable, so select text with selectors. Sends one masked screenshot of region (default "
     "full display) to TypeSafe, so it needs Jev plus the separate images opt-in "
     "(允许发送截图（视觉定位） in screen settings, or ANDROID_USE_JEV_IMAGES=1); otherwise "
     "jev_images_disabled. Refuses password/OTP screens and paused devices. One request asks "
     "presence, match count and a box; status is located, not_found, ambiguous, low_confidence "
-    "or masked. box=[x,y,width,height] and tap=[x,y] are display pixels; tap is set only when "
+    "or masked; a box spanning several tree labels is ambiguous with reason and tree_candidates. "
+    "box=[x,y,width,height] and tap=[x,y] are display pixels; tap is set only when "
     "located. masks blank sensitive areas before upload. Prefer trees/selectors when they work; "
     "a located box is a model judgment, not verification.",
     "execute_goal": "Agent plans, a decision policy selects candidate IDs, Android Use executes. "
