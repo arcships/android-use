@@ -1,0 +1,38 @@
+{
+  "name": "android-use",
+  "displayName": "Android Use",
+  "version": "0.7.1",
+  "description": "通过 ADB 和 UiAutomator2 操作 Android，支持控件树、截图、中文输入、批处理和浏览器实时屏幕。",
+  "author": {
+    "name": "arcships",
+    "url": "https://github.com/arcships"
+  },
+  "homepage": "https://github.com/arcships/android-use#quick-start",
+  "repository": "https://github.com/arcships/android-use",
+  "license": "MIT",
+  "keywords": [
+    "android",
+    "adb",
+    "mcp",
+    "uiautomator2"
+  ],
+  "commands": {
+    "screen": {
+      "description": "在浏览器中打开 Android 实时屏幕",
+      "content": "Claude Code 终端不内嵌手机画面，改用本机浏览器预览。\n\n1. 运行 `uv run --frozen --directory \"${CLAUDE_PLUGIN_ROOT}\" android-use screen`。\n2. 结果 `ok` 为 true 时，用系统默认浏览器打开返回的 `url`（macOS 用 `open`，Linux 用 `xdg-open`，Windows 用 `start`）。\n3. 该 URL 含本机私有令牌：不要写进文件、提交或发给任何外部服务，只告诉用户画面已在浏览器打开。\n4. 结果 `ok` 为 false 时，按返回的错误码说明原因，不要重试循环。\n"
+    }
+  },
+  "mcpServers": {
+    "android_use": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "--frozen",
+        "--directory",
+        "${CLAUDE_PLUGIN_ROOT}",
+        "android-use-mcp"
+      ]
+    }
+  }
+}

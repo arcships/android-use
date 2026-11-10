@@ -21,6 +21,7 @@ def versions(root):
 
     return {
         ".codex-plugin/plugin.json": json.loads(read(".codex-plugin/plugin.json"))["version"],
+        ".claude-plugin/plugin.json": json.loads(read(".claude-plugin/plugin.json"))["version"],
         "pyproject.toml": tomllib.loads(read("pyproject.toml"))["project"]["version"],
         "uv.lock": search("uv.lock", r'name = "android-use"\nversion = "([^"]+)"'),
         "src/android_use/__init__.py": search(

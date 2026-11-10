@@ -182,6 +182,12 @@ def serve(serial, key):
                         result = settings_action(action, args)
                     elif action in {"home", "back"} and not args:
                         result = runtime.call("press_button", name=action)
+                    elif action == "resume" and not args:
+                        # The user's own click in the panel is the confirmation
+                        # that authentication is finished. Same shared flag as
+                        # aua_resume; a locked phone still stays paused.
+                        device_paths(key)[1].unlink(missing_ok=True)
+                        result = {"ok": True, "paused": False}
                     elif action == "save" and not args:
                         result = hub.save_frame()
                     elif action == "tap":

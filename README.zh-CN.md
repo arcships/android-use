@@ -8,7 +8,7 @@
     <a href="#mcp-客户端支持"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="标准 stdio MCP" /></a>
   </p>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
-  <p><a href="#快速开始"><strong>在 Dim Agent 中使用 →</strong></a> · <a href="https://github.com/arcships/android-use/releases/tag/v0.7.0">下载 v0.7.0</a> · <a href="#在屏幕中启用-jev">配置 Jev</a> · <a href="docs/guide.zh-CN.md">使用指南</a> · <a href="https://github.com/arcships/android-use/issues">反馈问题</a></p>
+  <p><a href="#快速开始"><strong>在 Dim Agent 中使用 →</strong></a> · <a href="https://github.com/arcships/android-use/releases/tag/v0.7.1">下载 v0.7.1</a> · <a href="#在屏幕中启用-jev">配置 Jev</a> · <a href="docs/guide.zh-CN.md">使用指南</a> · <a href="https://github.com/arcships/android-use/issues">反馈问题</a></p>
 </div>
 
 ## 在 Dim Agent 中，直接完成 Android 任务
@@ -209,6 +209,20 @@ uv run --no-project --python 3.13 python scripts/install.py install --source . -
 </details>
 
 <details>
+<summary><strong>Claude Code 插件</strong> — MCP 工具与使用技能，实时画面在浏览器中打开</summary>
+
+需要本机已安装 `uv`、ADB 和 ffmpeg。在 Claude Code 中运行：
+
+```text
+/plugin marketplace add arcships/android-use
+/plugin install android-use@arcships
+```
+
+从源码调试时，在任意项目目录用 `claude --plugin-dir /absolute/path/android-use` 加载。首次启动由 `uv` 创建环境，之后直接复用。Claude Code 终端不内嵌手机画面：运行 `/android-use:screen`，实时画面会在同一台电脑的浏览器中打开。
+
+</details>
+
+<details>
 <summary><strong>标准 MCP</strong> — Claude Desktop、Cursor、VS Code 及其他本地 stdio 客户端</summary>
 
 无需安装 Codex CLI 或打包插件。使用 `mcpServers` 的客户端可合并下方配置，并替换仓库绝对路径：
@@ -311,7 +325,7 @@ v0.5.0 通过 **277 项 Python 测试、17 项界面测试**。内置 OCR 目前
 
 ## 项目状态
 
-**v0.7.0 · MIT · 481 项 Python 测试 · 24 项浏览器测试。** 原生安装、升级和回滚在 macOS ARM64/Intel 各通过 15 项，Linux x86_64/Windows x86_64 各通过 13 项。这些包验收不操作手机、不调用模型；历史 Android 16 真机与模拟器验收分开记录。[验证记录](docs/validation.md)。
+**v0.7.1 · MIT · 487 项 Python 测试 · 25 项浏览器测试。** 原生安装、升级和回滚验收最近一次针对 v0.7.0 执行，在 macOS ARM64/Intel 各通过 15 项，Linux x86_64/Windows x86_64 各通过 13 项。这些包验收不操作手机、不调用模型；历史 Android 16 真机与模拟器验收分开记录。[验证记录](docs/validation.md)。
 
 多指手势、任意轨迹、精细文本选区及自绘编辑器输入兜底尚未实现。UI 条件满足仅证明该条件，Agent 仍需验收业务结果。控制和预览运行于本机，工具结果由你选择的客户端与模型处理。
 

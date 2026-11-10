@@ -1,0 +1,15 @@
+{
+  "name": "arcships",
+  "description": "Android Use for Claude Code",
+  "owner": {
+    "name": "arcships",
+    "url": "https://github.com/arcships"
+  },
+  "plugins": [
+    {
+      "name": "android-use",
+      "source": "./",
+      "description": "Operate ADB-authorized Android phones and emulators over MCP"
+    }
+  ]
+}

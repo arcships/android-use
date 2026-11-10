@@ -125,6 +125,20 @@ def test_idle_preview_listener_remains_reachable(preview):
     assert result.status_code == 200 and result.json()["ok"]
 
 
+def test_panel_resume_clears_the_shared_pause_flag_and_rejects_arguments(preview):
+    url, _ = preview
+    paused = preview_daemon.device_paths("test-settings")[1]
+    paused.touch()
+    with httpx.Client(trust_env=False) as client:
+        rejected = client.post(url + "api/action", json={"action": "resume", "x": 1})
+        assert rejected.status_code == 400 and paused.exists()
+        reply = client.post(url + "api/action", json={"action": "resume"})
+        assert reply.status_code == 200 and reply.json() == {"ok": True, "paused": False}
+        assert not paused.exists()
+        again = client.post(url + "api/action", json={"action": "resume"})
+        assert again.status_code == 200  # Idempotent, like aua_resume.
+
+
 @pytest.mark.parametrize("action", ["tap", "swipe"])
 def test_preview_coordinate_actions_require_geometry_even_for_old_clients(
     preview, monkeypatch, action

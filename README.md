@@ -8,7 +8,7 @@
     <a href="#mcp-client-support"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="Standard stdio MCP" /></a>
   </p>
   <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
-  <p><a href="#quick-start"><strong>Use in Dim Agent →</strong></a> · <a href="https://github.com/arcships/android-use/releases/tag/v0.7.0">Download v0.7.0</a> · <a href="#enable-jev-from-the-screen">Set up Jev</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/arcships/android-use/issues">Report an issue</a></p>
+  <p><a href="#quick-start"><strong>Use in Dim Agent →</strong></a> · <a href="https://github.com/arcships/android-use/releases/tag/v0.7.1">Download v0.7.1</a> · <a href="#enable-jev-from-the-screen">Set up Jev</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/arcships/android-use/issues">Report an issue</a></p>
 </div>
 
 ## Android tasks, inside Dim Agent
@@ -213,6 +213,20 @@ uv run --no-project --python 3.13 python scripts/install.py install --source . -
 </details>
 
 <details>
+<summary><strong>Claude Code plugin</strong> — MCP tools and the usage skill; the live screen opens in a browser</summary>
+
+Requires `uv`, ADB and ffmpeg on this computer. In Claude Code, run:
+
+```text
+/plugin marketplace add arcships/android-use
+/plugin install android-use@arcships
+```
+
+To load a source checkout instead, start Claude Code from any project with `claude --plugin-dir /absolute/path/android-use`. `uv` creates the environment on first start and reuses it afterwards. The Claude Code terminal does not embed the phone screen: run `/android-use:screen` to open the live screen in a browser on the same computer.
+
+</details>
+
+<details>
 <summary><strong>Standard MCP</strong> — Claude Desktop, Cursor, VS Code, and other local stdio clients</summary>
 
 No Codex CLI or plugin build is needed. For clients using `mcpServers`, merge this entry into the existing config and replace the repository path:
@@ -313,7 +327,7 @@ Development comparisons include **18 source-level trials** and **12 live Agent /
 
 ## Project status
 
-**v0.7.0 · MIT · 481 Python tests · 24 browser tests.** Native install/upgrade/rollback acceptance passed on macOS ARM64/Intel (15 scenarios each), Linux x86_64 and Windows x86_64 (13 each). These package checks use no phone or model; earlier Android 16 physical-device and emulator acceptance remain separate. [Validation evidence →](docs/validation.md)
+**v0.7.1 · MIT · 487 Python tests · 25 browser tests.** Native install/upgrade/rollback acceptance was last run for v0.7.0 and passed on macOS ARM64/Intel (15 scenarios each), Linux x86_64 and Windows x86_64 (13 each). These package checks use no phone or model; earlier Android 16 physical-device and emulator acceptance remain separate. [Validation evidence →](docs/validation.md)
 
 Multi-touch, arbitrary gesture paths, fine-grained text selection and custom-editor input fallbacks are not implemented. A matched UI condition proves that condition; the Agent must verify business outcomes. Control and preview run locally, and tool results are handled by your chosen client/model.
 

@@ -145,6 +145,20 @@ test('a device without screenrecord explains the limit instead of retrying',asyn
   await expect(page.locator('#frame')).not.toHaveAttribute('src',/.+/);
   await expect(page.locator('#home')).toBeDisabled();
 });
+test('user can end an authentication pause from the panel but not a device lock',async({page})=>{
+  const api=await standalone(page);
+  await expect(page.locator('#resume')).toBeHidden();
+  api.set({...sample(),paused:true,pause_reason:'device_locked',frame:null,frame_available:false});
+  await expect(page.locator('#app')).toHaveAttribute('data-state','paused');
+  await expect(page.locator('#resume')).toBeHidden();
+  api.set({...sample(),paused:true,pause_reason:'authentication',frame:null,frame_available:false});
+  await expect(page.locator('#resume')).toBeVisible();
+  api.set(sample());
+  await page.locator('#resume').click();
+  await expect(page.locator('#app')).toHaveAttribute('data-state','live');
+  await expect(page.locator('#resume')).toBeHidden();
+  expect(api.calls.filter(call=>call.args.action==='resume')).toHaveLength(1);
+});
 test('authentication during video recovery keeps the frame cleared',async({page})=>{
   const api=await standalone(page);
   api.set({...sample(),error:'video_stream_ended',frame:null});

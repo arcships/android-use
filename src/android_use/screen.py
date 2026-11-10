@@ -21,10 +21,16 @@ from PIL import Image
 from .backend import Backend, UseError, device_lock, state_dir
 
 LEASE_SECONDS = 5
+# A hidden viewer stops receiving frames at once, but the encoder lingers so
+# returning to the panel does not pay a multi-second restart. Pause and lock
+# still stop capture immediately.
+LINGER_SECONDS = 30
+# One slow or failed lock-state read is not a disconnected phone.
+LOCK_PROBE_FAILURE_LIMIT = 3
 MAX_FRAME_BYTES = 3 * 1024 * 1024
 # Replace older daemons so their browser UI/recovery behavior is upgraded too.
 PREVIEW_PROTOCOL_VERSION = 3
-PREVIEW_IMPLEMENTATION_VERSION = 4
+PREVIEW_IMPLEMENTATION_VERSION = 5
 PREVIEW_BOOTSTRAP_ENV = "ANDROID_USE_PREVIEW_BOOTSTRAP"
 # Exit status is always 0, so a missing binary is distinguishable from an ADB failure.
 RECORDER_PROBE = ["sh", "-c", "command -v screenrecord || echo missing"]
@@ -267,7 +273,7 @@ class ScreenHub:
         self.seq = 0
         self.stream_id = uuid.uuid4().hex
         self.received = None
-        self.lease_until = 0
+        self.lease_until = float("-inf")
         self.last_activity = time.monotonic()
         self.last_health = 0
         self.locked = True  # Fail closed until the independent metadata check completes.
@@ -283,6 +289,8 @@ class ScreenHub:
         self.failures = 0
         self.pipeline_starts = 0
         self.health_failures = 0
+        self.lock_probe_failures = 0
+        self.closers = []
         self.metadata_failures = 0
         self.last_health_failure = None
         self.stream_failures = 0
@@ -297,7 +305,7 @@ class ScreenHub:
                 and not self.closed.is_set()
                 and not self.pause_path.exists()
                 and not self.locked
-                and time.monotonic() < self.lease_until
+                and time.monotonic() < self.lease_until + LINGER_SECONDS
             ):
                 self.seq += 1
                 self.frame_data, self.frame_size = raw, size
@@ -319,7 +327,14 @@ class ScreenHub:
     def _stop_video(self, *, clear=True):
         pipeline, self.pipeline = self.pipeline, None
         if pipeline:
-            pipeline.close()
+            # Device-side cleanup can take seconds. Callers hold the hub lock, so
+            # closing inline would stall every viewer's frame request. A detached
+            # pipeline can no longer publish or report failure.
+            closer = threading.Thread(
+                target=pipeline.close, daemon=True, name="android-use-video-close"
+            )
+            self.closers = [t for t in self.closers if t.is_alive()] + [closer]
+            closer.start()
         if clear:
             self.frame_data = self.frame_size = self.received = None
 
@@ -329,11 +344,17 @@ class ScreenHub:
         except Exception:
             with self.lock:
                 self.health_failures += 1
+                self.lock_probe_failures += 1
                 self.last_health_failure = "lock_state"
-                self.connected = False
+                # Controls fail closed at once; the video survives a transient
+                # probe failure and stops only after repeated ones.
                 self.geometry_ready = False
+                if self.lock_probe_failures >= LOCK_PROBE_FAILURE_LIMIT:
+                    self.connected = False
                 self.last_health = time.monotonic()
             return
+        with self.lock:
+            self.lock_probe_failures = 0
         if locked:
             with self.lock:
                 self.locked, self.connected = True, True
@@ -396,9 +417,10 @@ class ScreenHub:
         while not self.closed.is_set():
             now = time.monotonic()
             with self.lock:
-                active = now < self.lease_until
+                lingering = now < self.lease_until + LINGER_SECONDS
                 paused = self.pause_path.exists()
-            if active and not paused and now - self.last_health > 1:
+            if lingering and not paused and now - self.last_health > 1:
+                # Keep watching lock state while the encoder lingers unviewed.
                 self._health()
             with self.lock:
                 # A health probe may finish after close(), pause or lease expiry.
@@ -408,14 +430,20 @@ class ScreenHub:
                     break
                 now = time.monotonic()
                 active = now < self.lease_until
+                lingering = now < self.lease_until + LINGER_SECONDS
                 paused = self.pause_path.exists()
-                if paused or not active or self.locked or not self.connected:
+                if paused or not lingering or self.locked or not self.connected:
                     self._stop_video()
                 elif self.recorder is False:
                     # Permanent for this device: no encoder starts and no retry loop.
                     self._stop_video()
                     self.error = "preview_unsupported_device"
-                elif self.pipeline is None and self.geometry_ready and now >= self.retry_at:
+                elif (
+                    self.pipeline is None
+                    and active  # Only a visible viewer may start an encoder.
+                    and self.geometry_ready
+                    and now >= self.retry_at
+                ):
                     try:
                         pipeline = self.pipeline_factory(
                             self.serial,
@@ -521,6 +549,11 @@ class ScreenHub:
     def close(self):
         self.closed.set()
         self.stop_capture()
+        # Process exit must not orphan the phone-side recorder.
+        with self.lock:
+            closers = list(self.closers)
+        for closer in closers:
+            closer.join(timeout=5)
 
 
 class ScreenClient:
