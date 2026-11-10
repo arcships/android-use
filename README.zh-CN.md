@@ -8,7 +8,7 @@
     <a href="#mcp-客户端支持"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="标准 stdio MCP" /></a>
   </p>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
-  <p><a href="#快速开始"><strong>在 Dim Agent 中使用 →</strong></a> · <a href="https://github.com/arcships/android-use/releases/tag/v0.7.1">下载 v0.7.1</a> · <a href="#在屏幕中启用-jev">配置 Jev</a> · <a href="docs/guide.zh-CN.md">使用指南</a> · <a href="https://github.com/arcships/android-use/issues">反馈问题</a></p>
+  <p><a href="#快速开始"><strong>在 Dim Agent 中使用 →</strong></a> · <a href="https://github.com/arcships/android-use/releases/tag/v0.8.0">下载 v0.8.0</a> · <a href="#在屏幕中启用-jev">配置 Jev</a> · <a href="docs/guide.zh-CN.md">使用指南</a> · <a href="https://github.com/arcships/android-use/issues">反馈问题</a></p>
 </div>
 
 ## 在 Dim Agent 中，直接完成 Android 任务
@@ -158,6 +158,10 @@ Dim Agent 会调用 Android 工具，通过 `aua_screen` 在桌面端右侧打�
 | **减少往返** | 动作、等待、观察合并；自动滚动按次数和时间停止。 |
 | **输入与核对** | 中文、emoji、替换/追加和原生回读；稳定输入框可一次决策完成聚焦→输入→回读。 |
 | **清楚交接控制** | 认证由用户接管；保留 partial/uncertain 动作账本，不自动重放。 |
+
+## 改完代码，手机上立刻看到 · v0.8.0
+
+Agent 在本机开发 Android App 时，`aua_hot_swap` 约一秒内把改动送进运行中的可调试 App：类在进程内重定义，资源重新加载，不重装、不重启。Compose 保留 remember 状态，View 页面保留滚动位置和已输入的文字，实时屏幕里直接看到结果。Gradle 工程无需配置；不能热更新的改动自动退回完整构建。[说明](docs/hot-swap.md)
 
 ## 其他客户端与手动安装
 
@@ -325,7 +329,7 @@ v0.5.0 通过 **277 项 Python 测试、17 项界面测试**。内置 OCR 目前
 
 ## 项目状态
 
-**v0.7.1 · MIT · 487 项 Python 测试 · 25 项浏览器测试。** 原生安装、升级和回滚验收最近一次针对 v0.7.0 执行，在 macOS ARM64/Intel 各通过 15 项，Linux x86_64/Windows x86_64 各通过 13 项。这些包验收不操作手机、不调用模型；历史 Android 16 真机与模拟器验收分开记录。[验证记录](docs/validation.md)。
+**v0.8.0 · MIT · 497 项 Python 测试 · 25 项浏览器测试。** 原生安装、升级和回滚验收最近一次针对 v0.7.0 执行，在 macOS ARM64/Intel 各通过 15 项，Linux x86_64/Windows x86_64 各通过 13 项。这些包验收不操作手机、不调用模型；历史 Android 16 真机与模拟器验收分开记录。[验证记录](docs/validation.md)。
 
 多指手势、任意轨迹、精细文本选区及自绘编辑器输入兜底尚未实现。UI 条件满足仅证明该条件，Agent 仍需验收业务结果。控制和预览运行于本机，工具结果由你选择的客户端与模型处理。
 

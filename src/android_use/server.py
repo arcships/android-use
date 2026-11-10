@@ -141,6 +141,21 @@ DESCRIPTIONS = {
     "and returns the next decision, completion or handoff. An unknown option ID keeps the token; "
     "any other outcome consumes it. Tokens expire after 5 idle minutes and need the same MCP "
     "server process. timeout_seconds counts device time only, not host thinking time.",
+    "hot_swap": "For developing an Android app whose source is on this computer: after editing "
+    "its code or resources, push the edits into the running debuggable app in about a second, "
+    "without reinstalling or restarting it. project is the absolute path of a Gradle root "
+    "or module directory (auto-detected; settings go to build/, project files stay untouched), "
+    "or of a directory with a hotswap.json. action=swap (default) compiles what changed and "
+    "redefines the classes in place; Compose recomposes with remembered state, View screens are "
+    "rebuilt with scroll position and input text kept. It falls back to a full build, install "
+    "and launch when needed (first call, app not running, manifest/build file change, refused "
+    "swap): result is swapped, installed or unchanged, with reason for a fallback. The first "
+    "call can take minutes (Gradle). action=build forces the full build; action=status reports "
+    "the host toolchain, pending edits and what the next swap would do, changing nothing. "
+    "A compile error returns compile_failed with compiler output and leaves the app as it was: "
+    "fix the source and call again. observe returns the screen after the swap in the same "
+    "call; verified=false: check the UI yourself. Needs a JDK and the Android SDK (NDK once "
+    "per device ABI). Debuggable builds only; module/variant default to :app/Debug.",
     "doctor": "Read local ADB device inventory and configuration. Does not start a phone service.",
     "setup": "First use: status/discover, start once if needed, then ready. configure selects a serial. "
     "start pushes a pinned JAR and reuses/starts UiAutomator without root or keyboard APK.",
@@ -212,6 +227,8 @@ def create_server(runtime=None):
         "Actions accept wait_for={selector,state:visible|gone,timeout_seconds}; "
         "use scroll_until for bounded list search. An unmet condition never replays the action. "
         "Execute actions once; do not replay uncertain mutations. "
+        "When developing an Android app from local source, apply each edit with aua_hot_swap "
+        "(project path) instead of rebuilding and reinstalling; it keeps the app's UI state. "
         "Password/PIN/OTP authentication belongs to the user: pause, ask, await confirmation, "
         "resume and observe. Verify final business outcomes from actual device state.",
     )

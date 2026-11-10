@@ -280,7 +280,17 @@ class BatchStep(StrictModel):
     args: dict = Field(default_factory=dict)
 
 
+class HotSwapArgs(StrictModel):
+    project: Annotated[str, Field(min_length=1, max_length=1000)]
+    action: Literal["swap", "build", "status"] = "swap"
+    refresh: Literal["auto", "recreate", "none"] = "auto"
+    module: Annotated[str, Field(min_length=1, max_length=200)] | None = None
+    variant: Annotated[str, Field(min_length=1, max_length=100)] | None = None
+    observe: Observe = "none"
+
+
 ARG_MODELS = {
+    "hot_swap": HotSwapArgs,
     "read_fields": ReadFieldsArgs,
     "locate": LocateArgs,
     "execute_goal": ExecuteGoalArgs,

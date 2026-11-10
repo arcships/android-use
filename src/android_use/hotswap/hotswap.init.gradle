@@ -1,0 +1,69 @@
+// Init script used only by hotswap.py's own Gradle runs; the project's files are untouched.
+// It exports what hotswap.py needs to compile one module's sources exactly the way
+// Gradle does, and lets a resource relink keep the resource IDs of the installed build.
+//   -Dhotswap.module=:app -Dhotswap.variant=Debug -Dhotswap.out=/path/info.json
+//   -Dhotswap.stableIds=FILE   link resources with the IDs listed in FILE
+allprojects { project ->
+    if (project.path != System.getProperty("hotswap.module")) return
+    // Through the variant API, registered as soon as the Android plugin is applied.
+    project.plugins.withId("com.android.application") {
+        def stableIds = System.getProperty("hotswap.stableIds")
+        def components = project.extensions.getByName("androidComponents")
+        components.onVariants(components.selector().all()) { variant ->
+            if (stableIds) variant.androidResources.aaptAdditionalParameters.addAll(
+                    ["--stable-ids", stableIds])
+        }
+    }
+    project.afterEvaluate {
+        project.tasks.register("hotswapInfo") {
+            doLast {
+                def variant = System.getProperty("hotswap.variant")
+                def lower = variant.uncapitalize()
+                def android = project.extensions.getByName("android")
+                def javac = project.tasks.findByName("compile${variant}JavaWithJavac")
+                def kotlin = project.tasks.findByName("compile${variant}Kotlin")
+                def paths = { files -> files.collect { it.absolutePath } }
+                def info = [:]
+                def app = android.applicationVariants.find { it.name == lower }
+                info.package = app.applicationId
+                info.min_api = android.defaultConfig.minSdk
+                info.boot = paths(android.bootClasspath)
+                info.sources = []
+                info.res = []
+                info.manifests = []
+                app.sourceSets.each { set ->
+                    info.sources += paths(set.javaDirectories)
+                    if (set.hasProperty("kotlinDirectories")) info.sources += paths(set.kotlinDirectories)
+                    info.res += paths(set.resDirectories)
+                    info.manifests << set.manifestFile.absolutePath
+                }
+                info.classpath = paths(javac.classpath.files)
+                info.classes_dirs = [javac.destinationDirectory.get().asFile.absolutePath]
+                info.javac_args = ["-source", javac.sourceCompatibility, "-target", javac.targetCompatibility]
+                if (kotlin != null) {
+                    info.classes_dirs << kotlin.destinationDirectory.get().asFile.absolutePath
+                    info.classpath = (paths(kotlin.libraries.files) + info.classpath).unique()
+                    info.kotlin_compiler_classpath = paths(
+                            project.configurations.getByName("kotlinCompilerClasspath").files)
+                    def options = kotlin.compilerOptions
+                    def args = ["-no-stdlib", "-no-reflect",
+                                "-jvm-target", options.jvmTarget.get().target,
+                                // internal members are name-mangled with the module name
+                                "-module-name", options.moduleName.get()]
+                    args += options.freeCompilerArgs.get()
+                    kotlin.pluginClasspath.files.each { args << "-Xplugin=${it.absolutePath}".toString() }
+                    kotlin.pluginOptions.get().each { config ->
+                        config.allOptions().each { id, values ->
+                            values.each { args << "-P" << "plugin:${id}:${it.key}=${it.value}".toString() }
+                        }
+                    }
+                    info.kotlinc_args = args
+                }
+                info.module_dir = project.projectDir.absolutePath
+                info.build_files = [project.buildFile.absolutePath, project.rootProject.buildFile.absolutePath]
+                new File(System.getProperty("hotswap.out")).text = groovy.json.JsonOutput.prettyPrint(
+                        groovy.json.JsonOutput.toJson(info))
+            }
+        }
+    }
+}

@@ -331,7 +331,10 @@ def test_real_mcp_upgrade_and_fresh_host_after_deleted_sources(tmp_path, monkeyp
         for name in (".codex-plugin/plugin.json", "pyproject.toml", "uv.lock",
                      "src/android_use/__init__.py"):
             path = source_root / name
-            path.write_text(path.read_text().replace(version, ver))
+            # Only this project's own entry: a locked dependency may share the version.
+            old = f'name = "android-use"\nversion = "{version}"' if name == "uv.lock" else version
+            assert path.read_text().count(old) == 1
+            path.write_text(path.read_text().replace(old, old.replace(version, ver)))
     root = tmp_path / "stable install with spaces"
     env_file = tmp_path / "environment with spaces.env"
     env_file.write_text("ANDROID_USE_UPGRADE_SENTINEL=private-fixture\n")

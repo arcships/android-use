@@ -39,6 +39,8 @@ batch 中动作等待超时停止为 postcondition_timeout，scroll_until 未找
 
 密码、PIN、验证码和生物认证由用户本人完成。先 aua_pause，再用宿主提问工具等待用户明确完成（首个选项「已完成继续」）；接管期间不读取、不截图、不操作。用户完成后 aua_resume，再重新观察；真正锁屏还需要 READY。pause 状态在该设备的 CLI 和 MCP 之间共享，不影响用户直接操作手机。
 
+开发本机源码的 Android App 时，每次改完代码或资源调用 `aua_hot_swap(project=<工程绝对路径>)`，不要重新构建安装：改动约一秒内进入运行中的可调试 App，不重启，页面、滚动位置、输入内容和 Compose 状态保留。project 可以是 Gradle 根目录或模块目录（自动识别，无需配置）。首次调用、App 未运行或改了 Manifest/构建文件时自动完整构建并安装（result=installed，带 reason，可能需要几分钟）；result=swapped 为已热更新，unchanged 为无改动。`compile_failed` 附带编译器输出，App 保持原状，改正源码后再调用。传 observe=tree/screenshot 在同一次调用里拿到更新后的界面；verified=false，界面效果由你验收。先用 action=status 可查看主机工具链和下次调用会做什么。仅适用于 debug 构建。
+
 aua_apps 查询已安装的第三方 **包名**，不支持按 App 显示名查找。不要连续猜包名。aua_launch_app 使用已核实的 package，不强停或清除 App 数据。发送、下单等外部变更需用户授权，并核对目标与内容，执行一次后验收结果。
 
 独立运行包的固定入口也支持 `cli <操作> '<JSON>'`，使用安装返回的启动命令，将最后的 `auto-serve` 改为 `cli` 并追加操作及参数，无需 uv。回滚使用固定入口的 `rollback`；后台更新只影响后续 MCP 会话，不重启当前任务。

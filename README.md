@@ -8,7 +8,7 @@
     <a href="#mcp-client-support"><img src="https://img.shields.io/badge/MCP-stdio-3DDC84" alt="Standard stdio MCP" /></a>
   </p>
   <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
-  <p><a href="#quick-start"><strong>Use in Dim Agent →</strong></a> · <a href="https://github.com/arcships/android-use/releases/tag/v0.7.1">Download v0.7.1</a> · <a href="#enable-jev-from-the-screen">Set up Jev</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/arcships/android-use/issues">Report an issue</a></p>
+  <p><a href="#quick-start"><strong>Use in Dim Agent →</strong></a> · <a href="https://github.com/arcships/android-use/releases/tag/v0.8.0">Download v0.8.0</a> · <a href="#enable-jev-from-the-screen">Set up Jev</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/arcships/android-use/issues">Report an issue</a></p>
 </div>
 
 ## Android tasks, inside Dim Agent
@@ -161,6 +161,10 @@ Enabling Jev sends the subgoal, visible UI text and supplied input values to Typ
 | **Reduce round trips** | Combine action, wait and observation. Search lists with bounded auto-scroll. |
 | **Input with verification** | Unicode/emoji, replace/append and native text readback. A stable field can offer one focus → input → readback decision. |
 | **Keep control clear** | User takeover for authentication, partial/uncertain action ledgers and no automatic replay. |
+
+## Edit code, see it on the phone · v0.8.0
+
+When the agent is developing an Android app from local source, `aua_hot_swap` pushes each edit into the running debuggable app in about a second. Classes are redefined in place and resources reloaded, so the app is not reinstalled or restarted: Compose keeps its remembered state, View screens keep scroll position and typed text, and the live screen shows the result. Gradle projects need no setup; anything that cannot be swapped falls back to a full build. [Hot swap →](docs/hot-swap.md)
 
 ## Other clients and manual setup
 
@@ -327,7 +331,7 @@ Development comparisons include **18 source-level trials** and **12 live Agent /
 
 ## Project status
 
-**v0.7.1 · MIT · 487 Python tests · 25 browser tests.** Native install/upgrade/rollback acceptance was last run for v0.7.0 and passed on macOS ARM64/Intel (15 scenarios each), Linux x86_64 and Windows x86_64 (13 each). These package checks use no phone or model; earlier Android 16 physical-device and emulator acceptance remain separate. [Validation evidence →](docs/validation.md)
+**v0.8.0 · MIT · 497 Python tests · 25 browser tests.** Native install/upgrade/rollback acceptance was last run for v0.7.0 and passed on macOS ARM64/Intel (15 scenarios each), Linux x86_64 and Windows x86_64 (13 each). These package checks use no phone or model; earlier Android 16 physical-device and emulator acceptance remain separate. [Validation evidence →](docs/validation.md)
 
 Multi-touch, arbitrary gesture paths, fine-grained text selection and custom-editor input fallbacks are not implemented. A matched UI condition proves that condition; the Agent must verify business outcomes. Control and preview run locally, and tool results are handled by your chosen client/model.
 

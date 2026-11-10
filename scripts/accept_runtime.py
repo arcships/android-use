@@ -45,7 +45,7 @@ async def connected(command, env):
             read, write, read_timeout_seconds=timedelta(seconds=30)
         ) as session:
             started = await session.initialize()
-            assert len((await session.list_tools()).tools) == 26
+            assert len((await session.list_tools()).tools) == 27
             resource = (await session.list_resources()).resources[0]
             content = (await session.read_resource(resource.uri)).contents[0].text
             assert "Android Use" in content and len(content) > 10000
@@ -90,7 +90,7 @@ async def exercise(archive, upgrade_archive):
         result, first = run(
             [exe, "--root", root, "install", "--archive", archive, "--sha256", digest(archive)], env
         )
-        assert result.returncode == 0 and first["tool_count"] == 26, first
+        assert result.returncode == 0 and first["tool_count"] == 27, first
         config = first["mcp_config"]
         command = [config["command"], *config["args"]]
         assert await connected(command, env) == version
@@ -128,7 +128,7 @@ async def exercise(archive, upgrade_archive):
                 )
                 assert result.returncode == 0 and upgraded["previous"] == first["release"], upgraded
                 assert upgraded["mcp_config"] == config
-                assert len((await active.list_tools()).tools) == 26
+                assert len((await active.list_tools()).tools) == 27
                 assert await connected(command, env) == upgraded["version"]
                 passed.append("upgrade_switches_new_sessions_without_interrupting_old_session")
                 shutil.rmtree(unpacked)
@@ -156,7 +156,7 @@ async def exercise(archive, upgrade_archive):
                 result, rolled = run([*command[:-1], "rollback"], env)
                 assert result.returncode == 0 and rolled["version"] == version, rolled
                 assert await connected(command, env) == version
-                assert len((await active.list_tools()).tools) == 26
+                assert len((await active.list_tools()).tools) == 27
                 assert json.loads((root / "update-policy.json").read_text())["paused"]
                 passed.append("rollback_reprobes_previous_runtime_and_pauses_auto_update")
         assert preference.read_bytes() == preference_before

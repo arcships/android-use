@@ -29,7 +29,11 @@ def test_real_stdio_handshake_schemas_and_error(tmp_path):
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 tools = (await session.list_tools()).tools
-                assert len(tools) == 26
+                assert len(tools) == 27
+                swap = next(t for t in tools if t.name == "aua_hot_swap")
+                assert swap.inputSchema["required"] == ["project"]
+                assert swap.inputSchema["properties"]["action"]["default"] == "swap"
+                assert not swap.annotations.readOnlyHint
                 assert "aua_read_fields" in {t.name for t in tools}
                 assert next(
                     t for t in tools if t.name == "aua_read_fields"

@@ -144,12 +144,12 @@ Choose a release ZIP or a source checkout. If you already use `android-use-local
 
 ### Install the release ZIP
 
-Download `android-use-0.7.1-plugin.zip` and `SHA256SUMS` from [GitHub Release v0.7.1](https://github.com/arcships/android-use/releases/tag/v0.7.1). The ZIP includes the compiled UI, Python source/lockfile, stable installer, skills, bilingual docs and a local marketplace. Prepare uv, ADB, ffmpeg and the Codex CLI; dependencies are downloaded on first installation.
+Download `android-use-0.8.0-plugin.zip` and `SHA256SUMS` from [GitHub Release v0.8.0](https://github.com/arcships/android-use/releases/tag/v0.8.0). The ZIP includes the compiled UI, Python source/lockfile, stable installer, skills, bilingual docs and a local marketplace. Prepare uv, ADB, ffmpeg and the Codex CLI; dependencies are downloaded on first installation.
 
 ```bash
 shasum -a 256 -c SHA256SUMS  # Linux: sha256sum -c SHA256SUMS
-unzip android-use-0.7.1-plugin.zip -d android-use-v0.7.1
-cd android-use-v0.7.1
+unzip android-use-0.8.0-plugin.zip -d android-use-v0.8.0
+cd android-use-v0.8.0
 uv run --no-project --python 3.13 python scripts/install.py doctor
 uv run --no-project --python 3.13 python scripts/install.py install --source . --codex
 ```
@@ -414,6 +414,7 @@ uv run android-use tools
 | `aua_scroll_until` | Bounded visible-target search without clicking. |
 | `aua_apps / aua_launch_app / aua_press_button` | Package IDs, app launch, system buttons. |
 | `aua_batch` | Bounded serial batches. |
+| `aua_hot_swap` | Apply source edits to the running debuggable app without reinstalling. [Hot swap →](hot-swap.md) |
 | `aua_pause / aua_resume` | User authentication handoff. |
 | `aua_screen` | Open/reuse live preview. |
 | `aua_screen_frame / aua_screen_action` | App-only cached video/UI interfaces; not agent refresh tools. |

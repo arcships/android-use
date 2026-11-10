@@ -188,12 +188,12 @@ uv run android-use --serial SERIAL ready
 
 ### 安装发行包 ZIP
 
-从 [GitHub Release v0.7.1](https://github.com/arcships/android-use/releases/tag/v0.7.1) 下载 `android-use-0.7.1-plugin.zip` 和 `SHA256SUMS`。包内包含编译好的界面、源码与锁文件、固定入口安装器、技能和双语说明；先准备 uv、ADB、ffmpeg 和 Codex CLI，首次安装需下载 Python 依赖。
+从 [GitHub Release v0.8.0](https://github.com/arcships/android-use/releases/tag/v0.8.0) 下载 `android-use-0.8.0-plugin.zip` 和 `SHA256SUMS`。包内包含编译好的界面、源码与锁文件、固定入口安装器、技能和双语说明；先准备 uv、ADB、ffmpeg 和 Codex CLI，首次安装需下载 Python 依赖。
 
 ```bash
 shasum -a 256 -c SHA256SUMS  # Linux: sha256sum -c SHA256SUMS
-unzip android-use-0.7.1-plugin.zip -d android-use-v0.7.1
-cd android-use-v0.7.1
+unzip android-use-0.8.0-plugin.zip -d android-use-v0.8.0
+cd android-use-v0.8.0
 uv run --no-project --python 3.13 python scripts/install.py doctor
 uv run --no-project --python 3.13 python scripts/install.py install --source . --codex
 ```
@@ -405,6 +405,7 @@ MCP 工具以 `aua_` 为前缀：
 | `aua_scroll_until` | 有界滚动查找可见目标，不自动点击 |
 | `aua_apps / aua_launch_app / aua_press_button` | 包名查询、启动与系统按钮 |
 | `aua_batch` | 有界批处理 |
+| `aua_hot_swap` | 把源码改动热更新到运行中的可调试 App，不重装、不重启。[说明](hot-swap.md) |
 | `aua_pause / aua_resume` | 用户认证接管 |
 | `aua_screen` | 打开 / 复用实时屏幕侧边栏 |
 | `aua_screen_frame / aua_screen_action` | App 专属视频缓存和工具栏接口，供 UI 使用 |
