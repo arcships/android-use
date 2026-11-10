@@ -1,0 +1,8 @@
+{
+  "package": "lab.hotswap",
+  "activity": ".MainActivity",
+  "manifest": "AndroidManifest.xml",
+  "sources": ["src"],
+  "res": ["res"],
+  "min_api": 26
+}

@@ -1,7 +1,7 @@
 {
   "name": "android-use",
   "displayName": "Android Use",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "通过 ADB 和 UiAutomator2 操作 Android，支持控件树、截图、中文输入、批处理和浏览器实时屏幕。",
   "author": {
     "name": "arcships",

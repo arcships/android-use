@@ -244,6 +244,8 @@ class Runtime:
                 if any(step.get("visual") for _, step in args["steps"]):
                     # A paid, screenshot-sending location is never queued behind other actions.
                     raise ValueError("Visual taps are not allowed in batch")
+            if op == "hot_swap":
+                return self._hot_swap(**args)
             goal_config = session = None
             if op in {"execute_goal", "read_fields"}:
                 from .jev import JevConfig
@@ -355,6 +357,40 @@ class Runtime:
             except Exception as snapshot_error:
                 error["screenshot_unavailable"] = type(snapshot_error).__name__
         return error
+
+    def _hot_swap(self, project, action, refresh, module, variant, observe):
+        # Compiling can take minutes on a first build and needs no UiAutomator, so the
+        # cross-process device lock is only taken for the optional observation.
+        from .hotswap import engine
+
+        self._connect()
+        if action != "status":
+            self._check_paused()
+        tools = None
+        try:
+            tools = engine.Tools(self.serial)
+            result = engine.run_action(
+                action, project, refresh=refresh, module=module, variant=variant, tools=tools
+            )
+        except engine.Fail as exc:
+            self.mutation_attempted = bool(tools and tools.touched)
+            # Compiler output names the caller's own sources; keep the tail, where errors are.
+            raise UseError(exc.code, str(exc)[-4000:]) from None
+        result = {"ok": True, **result}
+        if action == "status":
+            return result
+        result["verified"] = False
+        if observe != "none":
+            # The agent answers before the UI has redrawn; a fresh install also has to start.
+            time.sleep(0.5 if result["result"] == "swapped" else 2.0)
+            try:
+                with self._guard():
+                    self._usable()
+                    result["observation"] = self._observe(observe)
+            except UseError as exc:
+                result["observation_error"] = exc.as_dict()
+        self._check_paused()
+        return result
 
     def _guard(self):
         from contextlib import contextmanager
