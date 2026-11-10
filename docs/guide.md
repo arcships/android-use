@@ -144,12 +144,12 @@ Choose a release ZIP or a source checkout. If you already use `android-use-local
 
 ### Install the release ZIP
 
-Download `android-use-0.7.0-plugin.zip` and `SHA256SUMS` from [GitHub Release v0.7.0](https://github.com/arcships/android-use/releases/tag/v0.7.0). The ZIP includes the compiled UI, Python source/lockfile, stable installer, skills, bilingual docs and a local marketplace. Prepare uv, ADB, ffmpeg and the Codex CLI; dependencies are downloaded on first installation.
+Download `android-use-0.7.1-plugin.zip` and `SHA256SUMS` from [GitHub Release v0.7.1](https://github.com/arcships/android-use/releases/tag/v0.7.1). The ZIP includes the compiled UI, Python source/lockfile, stable installer, skills, bilingual docs and a local marketplace. Prepare uv, ADB, ffmpeg and the Codex CLI; dependencies are downloaded on first installation.
 
 ```bash
 shasum -a 256 -c SHA256SUMS  # Linux: sha256sum -c SHA256SUMS
-unzip android-use-0.7.0-plugin.zip -d android-use-v0.7.0
-cd android-use-v0.7.0
+unzip android-use-0.7.1-plugin.zip -d android-use-v0.7.1
+cd android-use-v0.7.1
 uv run --no-project --python 3.13 python scripts/install.py doctor
 uv run --no-project --python 3.13 python scripts/install.py install --source . --codex
 ```

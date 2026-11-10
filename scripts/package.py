@@ -24,6 +24,8 @@ def main():
             ".gitignore",
             ".env.example",
             ".codex-plugin/plugin.json",
+            # Claude Code reads this manifest; its MCP entry overrides .mcp.json there.
+            ".claude-plugin/plugin.json",
         )
     ]
     for directory in ("src", "skills", "scripts", "docs", "tests", "ui"):

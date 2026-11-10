@@ -64,6 +64,7 @@ SCHEMAS.update(
                         "tap",
                         "swipe",
                         "save",
+                        "resume",
                         "jev_status",
                         "jev_save",
                         "jev_test",

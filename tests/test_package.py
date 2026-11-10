@@ -25,6 +25,7 @@ def test_release_archive_is_an_installable_marketplace_without_local_state(tmp_p
         ".gitignore": "",
         ".env.example": "TYPESAFE_API_KEY=\n",
         ".codex-plugin/plugin.json": json.dumps({"name": "android-use", "version": "0.3.0"}),
+        ".claude-plugin/plugin.json": json.dumps({"name": "android-use", "version": "0.3.0"}),
         "src/android_use/assets/phone-screen.html": "compiled UI",
         "src/android_use/assets/ocr.swift": "local OCR helper",
         "skills/android-use/SKILL.md": "skill",
@@ -56,6 +57,7 @@ def test_release_archive_is_an_installable_marketplace_without_local_state(tmp_p
             "src/android_use/assets/phone-screen.html",
             "src/android_use/assets/ocr.swift",
             ".codex-plugin/plugin.json",
+            ".claude-plugin/plugin.json",
             ".env.example",
         } <= names
         assert not any(

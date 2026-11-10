@@ -6,7 +6,14 @@ import pytest
 from PIL import Image
 
 from android_use.backend import UseError
-from android_use.screen import RECORDER_PROBE, JPEGParser, ScreenHub, unlimited_recording
+from android_use.screen import (
+    LINGER_SECONDS,
+    LOCK_PROBE_FAILURE_LIMIT,
+    RECORDER_PROBE,
+    JPEGParser,
+    ScreenHub,
+    unlimited_recording,
+)
 
 
 def until(predicate, timeout=3):
@@ -123,7 +130,8 @@ def test_pause_clears_frames_stops_stream_and_refuses_late_publish(monkeypatch, 
         data = hub.frame()
         assert data["paused"] and data["pause_reason"] == "authentication"
         assert data["frame"] is None and not data["frame_available"]
-        assert pipeline.closed
+        assert hub.pipeline is None
+        until(lambda: pipeline.closed)
         hub._publish(pipeline, b"late secret frame", (54, 120))
         assert hub.frame_data is None
         hub.pause_path.unlink()
@@ -153,10 +161,114 @@ def test_visibility_lease_expiration_stops_capture(monkeypatch, tmp_path):
         hub.frame()
         until(lambda: hub.frame_data is not None)
         pipeline = hub.pipeline
-        hub.lease_until = time.monotonic() - 1
+        hub.lease_until = time.monotonic() - LINGER_SECONDS - 1
         until(lambda: pipeline.closed)
         assert hub.frame_data is None
     finally:
+        hub.close()
+
+
+def test_hidden_viewer_keeps_encoder_briefly_and_returns_without_restart(monkeypatch, tmp_path):
+    hub, _ = make_hub(monkeypatch, tmp_path)
+    hub.start()
+    try:
+        hub.frame()
+        until(lambda: hub.frame_data is not None)
+        pipeline = hub.pipeline
+        hub.lease_until = time.monotonic() - 1  # Viewer hidden, still inside the linger.
+        time.sleep(0.5)
+        assert hub.pipeline is pipeline and not pipeline.closed
+        result = hub.frame()
+        assert result["frame_available"] and result["frame"] is not None
+        assert len(Video.instances) == 1
+    finally:
+        hub.close()
+
+
+def test_hidden_viewer_never_starts_an_encoder(monkeypatch, tmp_path):
+    hub, _ = make_hub(monkeypatch, tmp_path)
+    hub.start()
+    try:
+        hub.frame()
+        until(lambda: hub.frame_data is not None)
+        with hub.lock:
+            hub.lease_until = time.monotonic() - 1
+            hub._stop_video()
+        time.sleep(0.5)
+        assert hub.pipeline is None and len(Video.instances) == 1
+    finally:
+        hub.close()
+
+
+def test_pause_stops_a_lingering_encoder_immediately(monkeypatch, tmp_path):
+    hub, _ = make_hub(monkeypatch, tmp_path)
+    hub.start()
+    try:
+        hub.frame()
+        until(lambda: hub.frame_data is not None)
+        pipeline = hub.pipeline
+        hub.lease_until = time.monotonic() - 1
+        hub.pause_path.touch()
+        until(lambda: pipeline.closed)
+        assert hub.frame_data is None
+    finally:
+        hub.close()
+
+
+def test_transient_lock_probe_failure_keeps_video_but_blocks_controls(monkeypatch, tmp_path):
+    hub, metadata = make_hub(monkeypatch, tmp_path)
+    try:
+        hub.lease_until = time.monotonic() + 60
+        hub._health()
+        pipeline = Video("usb", hub._publish, hub._failed)
+        hub.pipeline = pipeline
+        pipeline.start()
+        metadata.offline = True
+        for _ in range(LOCK_PROBE_FAILURE_LIMIT - 1):
+            hub._health()
+        result = hub.frame()
+        assert result["connected"] and result["frame_available"]
+        assert not result["interaction_ready"]
+        assert hub.pipeline is pipeline and not pipeline.closed
+        metadata.offline = False
+        hub._health()
+        assert hub.frame()["interaction_ready"]
+        metadata.offline = True
+        for _ in range(LOCK_PROBE_FAILURE_LIMIT - 1):
+            hub._health()
+        assert hub.frame()["connected"]  # The failure streak restarted after a success.
+        hub._health()
+        assert not hub.frame()["connected"]
+        until(lambda: pipeline.closed)
+    finally:
+        hub.close()
+
+
+def test_stopping_video_does_not_hold_the_hub_lock_for_device_cleanup(monkeypatch, tmp_path):
+    import threading
+
+    hub, _ = make_hub(monkeypatch, tmp_path)
+    release = threading.Event()
+
+    class SlowClose(Video):
+        def close(self):
+            release.wait(5)
+            self.closed = True
+
+    hub.pipeline_factory = SlowClose
+    hub.start()
+    try:
+        hub.frame()
+        until(lambda: hub.frame_data is not None)
+        pipeline = hub.pipeline
+        began = time.monotonic()
+        hub.stop_capture()
+        assert hub.frame()["ok"] and time.monotonic() - began < 1
+        assert not pipeline.closed
+        release.set()
+        until(lambda: pipeline.closed)
+    finally:
+        release.set()
         hub.close()
 
 
@@ -188,7 +300,8 @@ def test_rollover_restarts_automatically_and_error_clears_only_on_new_frame(monk
         hub._failed(old)
         data = hub.frame(after_seq=seq)
         assert data["connected"] and data["error"] == "video_stream_ended"
-        assert data["frame_available"] and old.closed
+        assert data["frame_available"]
+        until(lambda: old.closed)
         hub._publish(old, b"late", (54, 120))
         assert hub.seq == seq
         until(lambda: hub.pipeline is not None)
@@ -331,9 +444,10 @@ def test_geometry_failure_keeps_video_but_blocks_controls_until_metadata_recover
         hub.require_interaction_ready()
         assert hub.pipeline is pipeline
         metadata.offline = True
-        hub._health()
+        for _ in range(LOCK_PROBE_FAILURE_LIMIT):
+            hub._health()
         assert not hub.frame()["frame_available"]
-        assert pipeline.closed
+        until(lambda: pipeline.closed)
         assert hub.frame()["video"]["last_health_failure"] == "lock_state"
     finally:
         hub.close()

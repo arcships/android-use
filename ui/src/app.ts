@@ -15,9 +15,10 @@ const overlayDetail=document.querySelector<HTMLElement>('#overlay-detail')!;
 const statusText=document.querySelector<HTMLElement>('#status-text')!;
 const notice=document.querySelector<HTMLElement>('#notice')!;
 const pointer=document.querySelector<HTMLElement>('#pointer')!;
+const resumeButton=document.querySelector<HTMLButtonElement>('#resume')!;
 const buttons=Object.fromEntries(['refresh','back','home','copy'].map(id=>[id,document.getElementById(id) as HTMLButtonElement]));
 const standalone=window.__ANDROID_USE_STANDALONE__===true;
-const app=standalone?undefined:new App({name:'Android Use Screen',version:'0.7.0'},
+const app=standalone?undefined:new App({name:'Android Use Screen',version:'0.7.1'},
   {availableDisplayModes:['fullscreen']},{autoResize:false});
 let preview:Preview|undefined,seq=0,stream='',disposed=false,inFlight=false,acting=false;
 let suspended=false,timer:ReturnType<typeof setTimeout>|undefined;
@@ -49,6 +50,8 @@ function setState(state:string,message?:string,detail?:string){
   root.dataset.state=state;statusText.textContent=labels[state];
   overlay.hidden=state==='live'||state==='buffering';
   if(!overlay.hidden){overlayText.textContent=message??'正在连接手机…';overlayDetail.textContent=detail??'实时视频将在这里显示';}
+  // Only an authentication takeover can be ended here; a locked phone resumes by itself.
+  resumeButton.hidden=!(state==='paused'&&preview?.pause_reason==='authentication');
   for(const id of ['home','back','copy']) buttons[id].disabled=acting||state!=='live';
   buttons.refresh.disabled=acting;
 }
@@ -133,7 +136,7 @@ function apply(data:Preview){
   if(data.paused){
     // Remove even the previously decoded frame from the DOM during authentication.
     clearFrame();waitingAfterSeq=undefined;interruptedAt=undefined;
-    setState('paused','请在手机上接管操作',data.pause_reason==='device_locked'?'手机已锁定，解锁后自动恢复':'认证完成后由 agent 恢复预览');return;
+    setState('paused','请在手机上接管操作',data.pause_reason==='device_locked'?'手机已锁定，解锁后自动恢复':'认证完成后点击下方按钮，或由 agent 恢复预览');return;
   }
   if(!data.connected){clearFrame();setState('offline','手机未连接','请检查 USB 或无线 ADB 连接');return;}
   if(data.error==='video_stream_ended'){
@@ -197,6 +200,14 @@ async function action(action:string,args:Record<string,unknown>={}){
   }
   finally{acting=false;setState(root.dataset.state||'connecting');schedule(50);}
 }
+// The user's own click is the takeover confirmation; it clears the same flag as aua_resume.
+resumeButton.onclick=async()=>{
+  if(resumeButton.disabled)return;
+  resumeButton.disabled=true;
+  try{const result=await call('action',{action:'resume'});if(!result?.ok)throw new Error('resume_failed');}
+  catch{showNotice('恢复未完成，请重试或让 Agent 恢复');}
+  finally{resumeButton.disabled=false;schedule(0);}
+};
 buttons.refresh.onclick=()=>{if(preview?.paused){showNotice('接管期间保持暂停');return;}void action('refresh');};
 buttons.home.onclick=()=>void action('home');buttons.back.onclick=()=>void action('back');
 buttons.copy.onclick=()=>{

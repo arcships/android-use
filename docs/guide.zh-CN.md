@@ -188,12 +188,12 @@ uv run android-use --serial SERIAL ready
 
 ### 安装发行包 ZIP
 
-从 [GitHub Release v0.7.0](https://github.com/arcships/android-use/releases/tag/v0.7.0) 下载 `android-use-0.7.0-plugin.zip` 和 `SHA256SUMS`。包内包含编译好的界面、源码与锁文件、固定入口安装器、技能和双语说明；先准备 uv、ADB、ffmpeg 和 Codex CLI，首次安装需下载 Python 依赖。
+从 [GitHub Release v0.7.1](https://github.com/arcships/android-use/releases/tag/v0.7.1) 下载 `android-use-0.7.1-plugin.zip` 和 `SHA256SUMS`。包内包含编译好的界面、源码与锁文件、固定入口安装器、技能和双语说明；先准备 uv、ADB、ffmpeg 和 Codex CLI，首次安装需下载 Python 依赖。
 
 ```bash
 shasum -a 256 -c SHA256SUMS  # Linux: sha256sum -c SHA256SUMS
-unzip android-use-0.7.0-plugin.zip -d android-use-v0.7.0
-cd android-use-v0.7.0
+unzip android-use-0.7.1-plugin.zip -d android-use-v0.7.1
+cd android-use-v0.7.1
 uv run --no-project --python 3.13 python scripts/install.py doctor
 uv run --no-project --python 3.13 python scripts/install.py install --source . --codex
 ```

@@ -13,6 +13,7 @@ def release_tree(root, version="1.2.3", screen=None, notes=True):
     shutil.copyfile(Path(__file__).resolve().parents[1] / "scripts/release_check.py", script)
     files = {
         ".codex-plugin/plugin.json": json.dumps({"name": "android-use", "version": version}),
+        ".claude-plugin/plugin.json": json.dumps({"name": "android-use", "version": version}),
         "pyproject.toml": f'[project]\nname = "android-use"\nversion = "{version}"\n',
         "uv.lock": f'[[package]]\nname = "android-use"\nversion = "{version}"\n',
         "src/android_use/__init__.py": f'__version__ = "{version}"\n',
